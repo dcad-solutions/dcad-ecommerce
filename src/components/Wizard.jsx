@@ -114,7 +114,7 @@ const CATALOG=[
    services:[
      {id:"placa",name:"Placa Oclusal Impressa",desc:"Resina rígida biocompatível",fullDesc:"Placa rígida planejada em articulador virtual com contatos oclusais uniformes.",exams:["STL dos modelos com registro em RC (JIG)"],price:360.37,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Placa Oclusal Digital",desc:"Arquivo STL para impressão própria",fullDesc:"Projeto digital da placa oclusal em articulador virtual. Entrega do arquivo STL para impressão pelo cliente.",price:200,days:5,exams:["STL dos modelos com registro em RC (JIG)"]}},
    ]},
-  {id:"perio",name:"Periodontia",color:"#A855F7",icon:"ti-plant",desc:"Perioguide",
+  {id:"perio",name:"Periodontia",color:C.blue,icon:"ti-plant",desc:"Perioguide",
    services:[
      {id:"perioguide",name:"Perioguide",desc:"Guia + planejamento periodontal",fullDesc:"Guia cirúrgico periodontal com definição milimétrica do nível de gengivectomia por dente.",exams:["Protocolo fotográfico (JPEG)","STL ou PLY dos modelos","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse (com afastador labial)"],price:650.88,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Perioguide Digital",desc:"Arquivo STL do guia periodontal",fullDesc:"Planejamento digital do guia periodontal com entrega do arquivo STL para impressão pelo cliente.",price:400,days:5,exams:["Protocolo fotográfico (JPEG)","STL ou PLY dos modelos","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse (com afastador labial)"]}},
    ]},
@@ -310,6 +310,7 @@ export default function App() {
   const [tutorialStep,setTutorialStep]=useState(0);
   const [tutorialNeverShow,setTutorialNeverShow]=useState(()=>{try{return localStorage.getItem("dcad_tutorial_done")==="1";}catch{return false;}});
   const [tutorialScrollStep,setTutorialScrollStep]=useState(0);
+  const tutorialShownRef=React.useRef(false); // prevents loop: shown only once per session
   function setTutorialNeverShowAndSave(val){setTutorialNeverShow(val);try{if(val)localStorage.setItem("dcad_tutorial_done","1");else localStorage.removeItem("dcad_tutorial_done");}catch{}}
   const TUTORIAL_VIDEO_URL=""; // Cole aqui a URL do vídeo (YouTube embed ou MP4)
   // Serviços frequentes (localStorage)
@@ -334,9 +335,12 @@ export default function App() {
   useEffect(()=>{
     if(screen==="dashboard"&&dentist){
       try{
-        const seen=localStorage.getItem("dcad_tutorial_done")==="1";
-        if(!seen){setTimeout(()=>{setScreen("tutorial");},400);}
-      }catch{setShowTutorial(true);}
+        if(!tutorialShownRef.current){
+          const seen=localStorage.getItem("dcad_tutorial_done")==="1";
+          if(!seen){tutorialShownRef.current=true;setTimeout(()=>{setScreen("tutorial");},400);}
+          else{tutorialShownRef.current=true;}
+        }
+      }catch{}
     }
   },[screen,dentist]);
 
@@ -1626,6 +1630,8 @@ input,textarea,select{touch-action:manipulation;}
         ════════════════════════════════ */}
         {screen==="dashboard"&&(
           <div style={{width:"100%"}}>
+            {/* Bloco unificado: carrossel + tutorial */}
+            <div style={{marginBottom:20,borderRadius:12,overflow:"hidden",border:`1px solid ${C.border}`}}>
             {/* Carrossel de novidades D-CAD */}
             {(()=>{
               const ann=ANNOUNCEMENTS[carouselIdx];
@@ -1683,6 +1689,18 @@ input,textarea,select{touch-action:manipulation;}
             })()
             }
 
+            {/* Botão Tutorial do Sistema — parte do mesmo bloco */}
+            <button onClick={()=>{try{localStorage.removeItem("dcad_tutorial_done");}catch{}tutorialShownRef.current=true;setScreen("tutorial");}}
+              style={{width:"100%",display:"flex",alignItems:"center",gap:12,background:"rgba(99,102,241,0.04)",borderTop:`1px solid ${C.border}`,padding:"12px 18px",color:C.text,cursor:"pointer",textAlign:"left",border:"none",fontFamily:"inherit"}}>
+              <div style={{width:36,height:36,borderRadius:10,background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.25)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>🎓</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{fontSize:13,fontWeight:700,color:C.blue}}>Tutorial do Sistema</div>
+                <div style={{fontSize:12,color:C.textSec}}>Aprenda o fluxo completo em 8 etapas ilustradas</div>
+              </div>
+              <div style={{fontSize:16,color:C.blue,flexShrink:0}}>›</div>
+            </button>
+            </div>{/* fim bloco unificado */}
+
             {/* Boas-vindas */}
             <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",marginBottom:24,gap:12}}>
               <div>
@@ -1699,17 +1717,6 @@ input,textarea,select{touch-action:manipulation;}
                 + Novo pedido
               </button>
             </div>
-
-            {/* Botão Tutorial do Sistema */}
-            <button onClick={()=>{try{localStorage.removeItem("dcad_tutorial_done");}catch{}setScreen("tutorial");}}
-              style={{width:"100%",marginBottom:20,display:"flex",alignItems:"center",gap:12,background:"linear-gradient(135deg,rgba(99,102,241,0.1) 0%,rgba(99,102,241,0.04) 100%)",border:`1px solid rgba(99,102,241,0.3)`,borderRadius:12,padding:"14px 18px",color:C.text,cursor:"pointer",textAlign:"left"}}>
-              <div style={{width:40,height:40,borderRadius:10,background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:20}}>🎓</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:14,fontWeight:700,color:C.blue,marginBottom:2}}>Tutorial do Sistema</div>
-                <div style={{fontSize:12,color:C.textSec,lineHeight:1.4}}>Aprenda a usar a plataforma D-CAD passo a passo — fluxo de pedidos, modalidades e dicas.</div>
-              </div>
-              <div style={{fontSize:18,color:C.blue,flexShrink:0}}>›</div>
-            </button>
 
             {/* Stats */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:24}}>
@@ -1914,7 +1921,7 @@ input,textarea,select{touch-action:manipulation;}
                     const STATUS={
                       pending_payment:{label:"Aguard. pagamento",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
                       planning:{label:"Em planejamento",color:C.blue,bg:"rgba(99,102,241,0.1)"},
-                      printing:{label:"Em impressão",color:"#A855F7",bg:"rgba(168,85,247,0.1)"},
+                      printing:{label:"Em impressão",color:C.blue,bg:"rgba(168,85,247,0.1)"},
                       shipped:{label:"Enviado",color:C.green,bg:"rgba(34,197,94,0.1)"},
                       delivered:{label:"Entregue",color:C.green,bg:"rgba(34,197,94,0.1)"},
                     };
@@ -2000,7 +2007,7 @@ input,textarea,select{touch-action:manipulation;}
             </div>
 
             {/* ── Header hero ── */}
-            <div style={{background:"linear-gradient(135deg,rgba(99,102,241,0.12) 0%,rgba(229,34,41,0.06) 100%)",borderBottom:`1px solid rgba(99,102,241,0.2)`,padding:"28px 24px 24px",marginBottom:0,position:"relative",overflow:"hidden"}}>
+            <div style={{background:`linear-gradient(135deg,${C.blue}1a 0%,${C.red}0d 100%)`,borderBottom:`1px solid rgba(99,102,241,0.2)`,padding:"28px 24px 24px",marginBottom:0,position:"relative",overflow:"hidden"}}>
               <div style={{position:"absolute",right:-30,top:-30,width:140,height:140,borderRadius:"50%",background:"rgba(99,102,241,0.06)",pointerEvents:"none"}}/>
               <div style={{fontSize:11,fontWeight:700,color:C.blue,letterSpacing:.8,marginBottom:8}}>D-CAD DIGITAL SOLUTIONS</div>
               <div style={{fontSize:24,fontWeight:900,marginBottom:8,lineHeight:1.2}}>Tutorial do Sistema</div>
@@ -2073,14 +2080,14 @@ input,textarea,select{touch-action:manipulation;}
                 svg:(
                   <svg viewBox="0 0 320 140" style={{width:"100%",borderRadius:10,display:"block"}}>
                     <rect width="320" height="140" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="30" fill="#A855F7" fontSize="11" fontWeight="700" fontFamily="system-ui">Dados do Paciente</text>
+                    <text x="16" y="30" fill="rgba(99,102,241,0.9)" fontSize="11" fontWeight="700" fontFamily="system-ui">Dados do Paciente</text>
                     <rect x="16" y="40" width="288" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
                     <text x="28" y="56" fill="#666" fontSize="10" fontFamily="system-ui">Nome completo do paciente</text>
                     <rect x="16" y="70" width="136" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
                     <text x="28" y="86" fill="#666" fontSize="10" fontFamily="system-ui">Data de nascimento</text>
                     <rect x="168" y="70" width="136" height="24" fill="#2a2a2a" rx="6" stroke="rgba(168,85,247,0.3)" strokeWidth="1"/>
                     <text x="236" y="86" textAnchor="middle" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Maria das Graças</text>
-                    <rect x="16" y="104" width="288" height="26" fill="#A855F7" rx="6"/>
+                    <rect x="16" y="104" width="288" height="26" fill="rgba(99,102,241,0.9)" rx="6"/>
                     <text x="160" y="121" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="system-ui">Continuar →</text>
                   </svg>
                 ),
@@ -2099,7 +2106,7 @@ input,textarea,select{touch-action:manipulation;}
                       {x:86,y:30,c:"#6366f1",t:"Dentística"},
                       {x:164,y:30,c:"#eab308",t:"Prótese"},
                       {x:242,y:30,c:"#22c55e",t:"Periodontia"},
-                      {x:8, y:108,c:"#A855F7",t:"Endodontia"},
+                      {x:8, y:108,c:"rgba(99,102,241,0.9)",t:"Endodontia"},
                       {x:86,y:108,c:"#0D9488",t:"DTM"},
                       {x:164,y:108,c:"#ea580c",t:"Estética"},
                       {x:242,y:108,c:"#2563eb",t:"Cirurgia"},
@@ -2194,7 +2201,7 @@ input,textarea,select{touch-action:manipulation;}
                 ),
               },
               {
-                n:7, color:C.teal, phase:"Após o pedido", ico:"📁",
+                n:7, color:C.blue, phase:"Após o pedido", ico:"📁",
                 title:"Envie os arquivos clínicos",
                 desc:"Após o pagamento, você receberá instruções para enviar os arquivos clínicos: tomografia (DICOM/CBCT), escaneamento intraoral (STL), e outros exames conforme o serviço. O planejamento começa após o recebimento e validação dos arquivos.",
                 tips:["CBCT obrigatório para cirurgia guiada (fatias ≤0.4mm)","Escaneamento intraoral substitui modelos de gesso","Dúvidas sobre arquivos: WhatsApp (98) 98542-5982"],
@@ -2219,7 +2226,7 @@ input,textarea,select{touch-action:manipulation;}
                 ),
               },
               {
-                n:8, color:C.teal, phase:"Após o pedido", ico:"🚀",
+                n:8, color:C.blue, phase:"Após o pedido", ico:"🚀",
                 title:"Acompanhe o planejamento",
                 desc:"Após o envio dos arquivos, nossa equipe inicia o planejamento. Você recebe atualizações por WhatsApp e pode acompanhar o status no dashboard. O prazo começa a contar a partir da validação dos arquivos.",
                 tips:["Tempo médio de planejamento: 48-72h úteis","Aprovação obrigatória antes da impressão","Suporte por WhatsApp em horário comercial"],
