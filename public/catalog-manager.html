@@ -204,6 +204,19 @@ select option{background:var(--s2)}
   .stats{overflow-x:auto;flex-wrap:nowrap}
   .stat{flex-shrink:0;min-width:120px}
 }
+
+/* ── CUSTO / INSUMO MODULE ── */
+.ins-row{display:grid;grid-template-columns:1fr 110px 90px 90px 90px auto;gap:6px;align-items:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:8px 10px;margin-bottom:5px}
+.ins-row.header{background:var(--s3);font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase;letter-spacing:.4px}
+.cost-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr auto;gap:6px;align-items:center;background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:8px 10px;margin-bottom:5px}
+.cost-section{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.cost-section-title{font-size:12px;font-weight:700;color:var(--tx2);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.cost-result{background:var(--bdim);border:1px solid var(--bbrd);border-radius:var(--r);padding:16px;text-align:center;margin-top:16px}
+.cost-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px}
+.cost-kpi-card{background:var(--s2);border:1px solid var(--bd);border-radius:var(--r2);padding:12px;text-align:center}
+.cost-kpi-val{font-size:20px;font-weight:900;color:var(--tx);line-height:1;margin-bottom:3px}
+.cost-kpi-lbl{font-size:10px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.pill-unit{display:inline-block;font-size:9px;font-weight:700;padding:2px 7px;border-radius:20px;background:var(--s3);color:var(--tx3);border:1px solid var(--bd);margin-left:4px}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--s3);border-radius:3px}
 code{background:var(--s3);padding:1px 5px;border-radius:3px;font-size:12px;font-family:monospace}
 </style>
@@ -214,6 +227,8 @@ code{background:var(--s3);padding:1px 5px;border-radius:3px;font-size:12px;font-
   <div class="logo">D-CAD</div><div class="sep"></div>
   <div class="crumb">Portal Interno › <b>Catálogo de Serviços</b></div>
   <div class="bar-r">
+    <button class="btn bg" onclick="openInsumos()">🧪 Insumos</button>
+    <button class="btn bg" onclick="openCustos()">💰 Custos</button>
     <button class="btn bg" onclick="openCarousel()">📢 Carrossel</button>
     <button class="btn bg" onclick="openSpecManager()">🎓 Especialidades</button>
     <button class="btn bg" onclick="openMem()">💡 Biblioteca</button>
@@ -555,6 +570,427 @@ function saveCarousel(){
   a.href=url;a.download='carousel-announcements.js';a.click();
   URL.revokeObjectURL(url);
   toast('Carrossel salvo! Arquivo .js gerado para substituir ANNOUNCEMENTS no Wizard.');
+}
+
+
+// ─── INSUMOS ─────────────────────────────────────────────────────────────────
+const LS_INS='dcad_insumos';
+let insumos=[];
+let editingInsId=null;
+
+function loadInsumos(){
+  try{insumos=JSON.parse(localStorage.getItem(LS_INS)||'[]');}catch{insumos=[];}
+}
+function saveInsumos(){localStorage.setItem(LS_INS,JSON.stringify(insumos));}
+
+function openInsumos(){
+  loadInsumos();
+  editingInsId=null;
+  insClear();
+  renderInsList();
+  cstRefreshInsPick();
+  document.getElementById('ins-ov').style.display='flex';
+}
+
+function insApresLabel(apres,pctQty){
+  const MAP={kg:'kg',g:'g',l:'L',ml:'mL',pct:`pct(${pctQty||'?'})`,un:'un'};
+  return MAP[apres]||apres;
+}
+function insUnitLabel(apres){
+  if(apres==='kg')return'g';
+  if(apres==='l')return'mL';
+  if(apres==='pct')return'un';
+  return apres;
+}
+function insCalcUnit(apres,qty,preco,waste,pctQty){
+  // Returns cost per base unit (g, mL, or un)
+  const w=1+(parseFloat(waste)||0)/100;
+  const p=parseFloat(preco)||0;
+  const q=parseFloat(qty)||1;
+  const pq=parseInt(pctQty)||1;
+  let totalUnits;
+  if(apres==='kg') totalUnits=q*1000;       // → grams
+  else if(apres==='g') totalUnits=q;         // already grams
+  else if(apres==='l') totalUnits=q*1000;    // → mL
+  else if(apres==='ml') totalUnits=q;        // already mL
+  else if(apres==='pct') totalUnits=q*pq;    // → units
+  else totalUnits=q;                          // un
+  return (p/totalUnits)*w;
+}
+
+function insUpdateCalc(){
+  const apres=document.getElementById('ins-apres').value;
+  const pctWrap=document.getElementById('ins-pct-wrap');
+  if(pctWrap) pctWrap.style.display=apres==='pct'?'flex':'none';
+  const qty=parseFloat(document.getElementById('ins-qty').value)||0;
+  const preco=parseFloat(document.getElementById('ins-preco').value)||0;
+  const waste=parseFloat(document.getElementById('ins-waste').value)||0;
+  const pctQty=parseInt(document.getElementById('ins-pct-qty')?.value)||1;
+  const preview=document.getElementById('ins-calc-preview');
+  const txt=document.getElementById('ins-calc-text');
+  if(!preco||!qty){preview&&(preview.style.display='none');return;}
+  const cuUnit=insCalcUnit(apres,qty,preco,waste,pctQty);
+  const unitLbl=insUnitLabel(apres);
+  const aparesLbl=insApresLabel(apres,pctQty);
+  const totalUnits=apres==='kg'?qty*1000:apres==='l'?qty*1000:apres==='pct'?qty*pctQty:qty;
+  if(preview){preview.style.display='block';}
+  if(txt){txt.innerHTML=`
+    <b>R$ ${preco.toFixed(2)}</b> por <b>${qty} ${aparesLbl}</b>
+    → <b>${Math.round(totalUnits)} ${unitLbl}</b> totais
+    → <span style="color:var(--blu);font-weight:700">R$ ${cuUnit.toFixed(4)} / ${unitLbl}</span>
+    <span style="font-size:11px;color:var(--tx3)">(incl. ${waste}% desperdício)</span>
+  `;}
+}
+
+function insSave(){
+  const nome=document.getElementById('ins-nome').value.trim();
+  if(!nome){alert('Informe o nome do insumo.');return;}
+  const apres=document.getElementById('ins-apres').value;
+  const pctQty=parseInt(document.getElementById('ins-pct-qty')?.value)||1;
+  const qty=parseFloat(document.getElementById('ins-qty').value)||1;
+  const preco=parseFloat(document.getElementById('ins-preco').value)||0;
+  const waste=parseFloat(document.getElementById('ins-waste').value)||0;
+  const cuUnit=insCalcUnit(apres,qty,preco,waste,pctQty);
+  const obj={
+    id: editingInsId||(Date.now()+''),
+    nome, marca:document.getElementById('ins-marca').value.trim(),
+    fornecedor:document.getElementById('ins-forn').value.trim(),
+    apres, pctQty, qty, preco, waste,
+    cuUnit, // custo por unidade base (g, mL ou un)
+    unitLbl:insUnitLabel(apres),
+  };
+  if(editingInsId){
+    const idx=insumos.findIndex(i=>i.id===editingInsId);
+    if(idx>=0)insumos[idx]=obj; else insumos.push(obj);
+  } else {insumos.push(obj);}
+  saveInsumos();
+  insClear();
+  renderInsList();
+  cstRefreshInsPick();
+  toast('Insumo salvo!');
+}
+
+function insClear(){
+  editingInsId=null;
+  ['ins-nome','ins-marca','ins-forn','ins-preco'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  const a=document.getElementById('ins-apres');if(a)a.value='kg';
+  const q=document.getElementById('ins-qty');if(q)q.value='1';
+  const w=document.getElementById('ins-waste');if(w)w.value='10';
+  const pq=document.getElementById('ins-pct-qty');if(pq)pq.value='10';
+  const pw=document.getElementById('ins-pct-wrap');if(pw)pw.style.display='none';
+  const prev=document.getElementById('ins-calc-preview');if(prev)prev.style.display='none';
+}
+
+function insEdit(id){
+  const ins=insumos.find(i=>i.id===id);if(!ins)return;
+  editingInsId=id;
+  document.getElementById('ins-nome').value=ins.nome||'';
+  document.getElementById('ins-marca').value=ins.marca||'';
+  document.getElementById('ins-forn').value=ins.fornecedor||'';
+  document.getElementById('ins-apres').value=ins.apres||'kg';
+  document.getElementById('ins-qty').value=ins.qty||1;
+  document.getElementById('ins-preco').value=ins.preco||'';
+  document.getElementById('ins-waste').value=ins.waste||10;
+  if(ins.apres==='pct'){
+    const pw=document.getElementById('ins-pct-wrap');if(pw)pw.style.display='flex';
+    const pq=document.getElementById('ins-pct-qty');if(pq)pq.value=ins.pctQty||10;
+  }
+  insUpdateCalc();
+  document.getElementById('ins-ov').scrollTop=0;
+}
+
+function insDel(id){
+  if(!confirm('Excluir este insumo?'))return;
+  insumos=insumos.filter(i=>i.id!==id);
+  saveInsumos();
+  renderInsList();
+  cstRefreshInsPick();
+  toast('Insumo excluído.');
+}
+
+function renderInsList(){
+  const el=document.getElementById('ins-list');if(!el)return;
+  if(!insumos.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--tx3);padding:10px 0;text-align:center">Nenhum insumo cadastrado.</div>';
+    return;
+  }
+  el.innerHTML=insumos.map(ins=>`
+    <div class="ins-row">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--tx)">${ins.nome}</div>
+        <div style="font-size:11px;color:var(--tx3)">${[ins.marca,ins.fornecedor].filter(Boolean).join(' · ')||'—'}</div>
+      </div>
+      <div style="font-size:12px;color:var(--tx2)">${insApresLabel(ins.apres,ins.pctQty)}</div>
+      <div style="font-size:12px;color:var(--tx2)">R$ ${(ins.preco||0).toFixed(2)}</div>
+      <div style="font-size:12px;font-weight:700;color:var(--blu)">R$ ${(ins.cuUnit||0).toFixed(4)}<span class="pill-unit">/${ins.unitLbl}</span></div>
+      <div style="font-size:12px;color:var(--tx3)">${ins.waste||0}%</div>
+      <div style="display:flex;gap:4px">
+        <button class="btn bg bi" onclick="insEdit('${ins.id}')" aria-label="Editar">✏️</button>
+        <button class="btn bg bi" onclick="insDel('${ins.id}')" aria-label="Excluir">🗑</button>
+      </div>
+    </div>`).join('');
+}
+
+// ─── COMPOSIÇÃO DE CUSTOS ─────────────────────────────────────────────────────
+const LS_CST='dcad_custos';
+let custos={};        // {serviceId: composicao}
+let cstSvcId=null;   // service being edited
+let cstInsItems=[];  // [{insId, qtdUso, unitLbl, cuUnit}]
+
+function loadCustos(){try{custos=JSON.parse(localStorage.getItem(LS_CST)||'{}');}catch{custos={};}}
+function saveCustos(){localStorage.setItem(LS_CST,JSON.stringify(custos));}
+
+function openCustos(){
+  loadInsumos();
+  loadCustos();
+  cstSvcId=null;
+  cstInsItems=[];
+  // populate service selector
+  const sel=document.getElementById('cst-svc-sel');
+  if(sel){
+    sel.innerHTML='<option value="">— selecione —</option>'+
+      catalog.map(s=>`<option value="${s.id}">${s.name} (${s.specialty||'—'})</option>`).join('');
+  }
+  cstRefreshInsPick();
+  document.getElementById('cst-body').style.display='none';
+  document.getElementById('cst-new-svc-form').style.display='none';
+  document.getElementById('cst-save-btn').style.display='none';
+  document.getElementById('cst-ov').style.display='flex';
+}
+
+function cstRefreshInsPick(){
+  const sel=document.getElementById('cst-ins-pick');if(!sel)return;
+  sel.innerHTML='<option value="">— selecionar insumo —</option>'+
+    insumos.map(i=>`<option value="${i.id}">${i.nome} (R$${(i.cuUnit||0).toFixed(4)}/${i.unitLbl})</option>`).join('');
+}
+
+function cstLoadService(id){
+  if(!id){document.getElementById('cst-body').style.display='none';return;}
+  loadCustos();
+  cstSvcId=id;
+  const svc=catalog.find(s=>s.id===id);
+  document.getElementById('cst-svc-name').textContent=svc?svc.name:id;
+  // Load saved composition or defaults
+  const comp=custos[id]||{};
+  cstInsItems=comp.insumos?JSON.parse(JSON.stringify(comp.insumos)):[];
+  // Restore fields
+  if(comp.mo){
+    const moH=document.getElementById('cst-mo-hora');if(moH)moH.value=comp.mo.hora||75;
+    const moT=document.getElementById('cst-mo-tempo');if(moT)moT.value=comp.mo.tempo||2;
+  }
+  if(comp.df){
+    const dfT=document.getElementById('cst-df-total');if(dfT)dfT.value=comp.df.total||8000;
+    const dfP=document.getElementById('cst-df-pedidos');if(dfP)dfP.value=comp.df.pedidos||40;
+    const dfPct=document.getElementById('cst-df-pct');if(dfPct)dfPct.value=comp.df.pct||100;
+  }
+  if(comp.imp){
+    const ir=document.getElementById('cst-imp-regime');if(ir)ir.value=comp.imp.regime||'simples_2';
+    const ip=document.getElementById('cst-imp-pct');if(ip)ip.value=comp.imp.pct||6;
+    const ig=document.getElementById('cst-imp-gateway');if(ig)ig.value=comp.imp.gateway||2.5;
+    const io=document.getElementById('cst-imp-outros');if(io)io.value=comp.imp.outros||0;
+  }
+  if(comp.ml){
+    const ml=document.getElementById('cst-ml-pct');if(ml)ml.value=comp.ml.pct||30;
+  }
+  const pp=document.getElementById('cst-preco-prat');
+  if(pp)pp.value=comp.precoPraticado||svc?.price||'';
+  document.getElementById('cst-body').style.display='block';
+  document.getElementById('cst-save-btn').style.display='inline-flex';
+  renderCstInsList();
+  cstCalc();
+}
+
+function cstNewService(){
+  const f=document.getElementById('cst-new-svc-form');
+  if(f)f.style.display=f.style.display==='none'?'block':'none';
+}
+
+function cstCreateService(){
+  const nome=document.getElementById('cst-new-nome')?.value.trim();
+  if(!nome){alert('Informe o nome do serviço.');return;}
+  const spec=document.getElementById('cst-new-spec')?.value.trim()||'';
+  const group=document.getElementById('cst-new-group')?.value.trim()||'';
+  const id='svc_'+(Date.now()+'');
+  const svc={id,name:nome,specialty:spec,group,desc:'',status:'Ativo',flow:'',price:0,steps:[],pricing:{},exams:[],includes:[]};
+  catalog.push(svc);
+  persist();
+  renderAll();
+  // Now select it in dropdown
+  const sel=document.getElementById('cst-svc-sel');
+  if(sel){
+    const opt=document.createElement('option');
+    opt.value=id;opt.textContent=`${nome} (${spec||'—'})`;
+    sel.appendChild(opt);sel.value=id;
+  }
+  document.getElementById('cst-new-svc-form').style.display='none';
+  cstLoadService(id);
+  toast('Serviço criado! Configure os custos e depois abra o formulário completo do serviço.');
+}
+
+function cstAddInsumo(){
+  const sel=document.getElementById('cst-ins-pick');
+  const id=sel?.value;if(!id)return;
+  if(cstInsItems.find(i=>i.insId===id)){toast('Insumo já adicionado.');return;}
+  const ins=insumos.find(i=>i.id===id);if(!ins)return;
+  cstInsItems.push({insId:id,nome:ins.nome,unitLbl:ins.unitLbl,cuUnit:ins.cuUnit||0,qtdUso:1});
+  renderCstInsList();
+  cstCalc();
+}
+
+function cstRemoveInsumo(insId){
+  cstInsItems=cstInsItems.filter(i=>i.insId!==insId);
+  renderCstInsList();
+  cstCalc();
+}
+
+function cstUpdateInsumoQtd(insId,val){
+  const item=cstInsItems.find(i=>i.insId===insId);
+  if(item){item.qtdUso=parseFloat(val)||0;}
+  cstCalc();
+}
+
+function renderCstInsList(){
+  const el=document.getElementById('cst-ins-list');if(!el)return;
+  if(!cstInsItems.length){
+    el.innerHTML='<div style="font-size:12px;color:var(--tx3);padding:8px 0">Nenhum insumo adicionado. Selecione abaixo.</div>';
+    return;
+  }
+  el.innerHTML=`<div class="cost-row" style="background:var(--s3);font-size:10px;font-weight:700;color:var(--tx3);text-transform:uppercase">
+    <span>Insumo</span><span>Custo/unid</span><span>Qtd usada</span><span>Subtotal</span><span></span>
+  </div>`+cstInsItems.map(item=>`
+    <div class="cost-row">
+      <div style="font-size:13px;font-weight:600">${item.nome}</div>
+      <div style="font-size:12px;color:var(--tx2)">R$ ${(item.cuUnit||0).toFixed(4)}/${item.unitLbl}</div>
+      <div style="display:flex;align-items:center;gap:4px">
+        <input type="number" value="${item.qtdUso}" min="0.001" step="0.001"
+          style="width:70px"
+          oninput="cstUpdateInsumoQtd('${item.insId}',this.value)">
+        <span class="pill-unit">${item.unitLbl}</span>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--blu)">R$ ${((item.cuUnit||0)*(item.qtdUso||0)).toFixed(4)}</div>
+      <button class="btn bg bi" onclick="cstRemoveInsumo('${item.insId}')" aria-label="Remover">✕</button>
+    </div>`).join('');
+}
+
+function cstImpRegimeChange(){
+  const regime=document.getElementById('cst-imp-regime')?.value;
+  const pctEl=document.getElementById('cst-imp-pct');
+  if(!pctEl)return;
+  const MAP={simples_1:4.5,simples_2:6,lucro_p:13.33,mei:0,custom:pctEl.value};
+  if(MAP[regime]!==undefined)pctEl.value=MAP[regime];
+  cstCalc();
+}
+
+function cstCalc(){
+  if(!cstSvcId)return;
+  // 1. Insumos
+  const custoInsumos=cstInsItems.reduce((s,i)=>s+(i.cuUnit||0)*(i.qtdUso||0),0);
+
+  // 2. MO
+  const moHora=parseFloat(document.getElementById('cst-mo-hora')?.value)||0;
+  const moTempo=parseFloat(document.getElementById('cst-mo-tempo')?.value)||0;
+  const custoMO=moHora*moTempo;
+  const moEl=document.getElementById('cst-mo-result');
+  if(moEl)moEl.textContent=`Custo de mão de obra: R$ ${custoMO.toFixed(2)}`;
+
+  // 3. Despesas fixas
+  const dfTotal=parseFloat(document.getElementById('cst-df-total')?.value)||0;
+  const dfPedidos=parseFloat(document.getElementById('cst-df-pedidos')?.value)||1;
+  const dfPct=parseFloat(document.getElementById('cst-df-pct')?.value)||100;
+  const custoDf=(dfTotal/dfPedidos)*(dfPct/100);
+  const dfEl=document.getElementById('cst-df-result');
+  if(dfEl)dfEl.textContent=`Rateio: R$ ${dfTotal.toFixed(0)} ÷ ${dfPedidos} pedidos × ${dfPct}% = R$ ${custoDf.toFixed(2)}/serviço`;
+
+  // 4. Custo total direto
+  const custoTotal=custoInsumos+custoMO+custoDf;
+
+  // 5. Impostos (calculados sobre preço de venda — markup inverso)
+  const impPct=(parseFloat(document.getElementById('cst-imp-pct')?.value)||0)/100;
+  const gatePct=(parseFloat(document.getElementById('cst-imp-gateway')?.value)||0)/100;
+  const outPct=(parseFloat(document.getElementById('cst-imp-outros')?.value)||0)/100;
+  const totalImpPct=impPct+gatePct+outPct;
+
+  // 6. Margem
+  const mlPct=(parseFloat(document.getElementById('cst-ml-pct')?.value)||0)/100;
+
+  // Preço mínimo: custo / (1 - impostos% - margem%)
+  const divisor=1-totalImpPct-mlPct;
+  const precoMin=divisor>0?custoTotal/divisor:custoTotal*2;
+  const impValor=precoMin*totalImpPct;
+  const mlValor=precoMin*mlPct;
+
+  const precoMinEl=document.getElementById('cst-preco-min');
+  if(precoMinEl)precoMinEl.value=precoMin.toFixed(2);
+
+  // 7. Preço praticado vs calculado
+  const precoPrat=parseFloat(document.getElementById('cst-preco-prat')?.value)||0;
+  const mlRealValor=precoPrat>0?precoPrat-custoTotal-(precoPrat*totalImpPct):0;
+  const mlRealPct=precoPrat>0?(mlRealValor/precoPrat)*100:0;
+
+  // KPIs
+  const kpis=[
+    {val:`R$ ${custoInsumos.toFixed(2)}`,lbl:'Insumos',cor:'var(--ylw)'},
+    {val:`R$ ${custoMO.toFixed(2)}`,lbl:'Mão de obra',cor:'var(--blu)'},
+    {val:`R$ ${custoDf.toFixed(2)}`,lbl:'Desp. fixas',cor:'var(--tx2)'},
+    {val:`R$ ${custoTotal.toFixed(2)}`,lbl:'Custo total',cor:'var(--red)'},
+  ];
+  const kpisEl=document.getElementById('cst-kpis');
+  if(kpisEl)kpisEl.innerHTML=kpis.map(k=>`
+    <div class="cost-kpi-card">
+      <div class="cost-kpi-val" style="color:${k.cor}">${k.val}</div>
+      <div class="cost-kpi-lbl">${k.lbl}</div>
+    </div>`).join('');
+
+  // Resultado
+  const ok=precoPrat>=precoMin;
+  const resEl=document.getElementById('cst-result-body');
+  if(resEl)resEl.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:560px;margin:0 auto 12px">
+      <div>
+        <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">CUSTO TOTAL DIRETO</div>
+        <div style="font-size:24px;font-weight:900;color:var(--tx)">R$ ${custoTotal.toFixed(2)}</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--tx3);margin-bottom:4px">PREÇO MÍNIMO (com ${(mlPct*100).toFixed(0)}% margem)</div>
+        <div style="font-size:24px;font-weight:900;color:var(--ylw)">R$ ${precoMin.toFixed(2)}</div>
+      </div>
+    </div>
+    ${precoPrat>0?`
+    <div style="background:${ok?'var(--gdim)':'var(--rdim)'};border:1px solid ${ok?'var(--gbrd)':'var(--rbrd)'};border-radius:var(--r2);padding:12px 16px;margin-top:8px">
+      <div style="font-size:13px;font-weight:700;color:${ok?'var(--grn)':'var(--red)'}">
+        ${ok?'✅ Preço praticado é viável':'⚠️ Preço praticado abaixo do mínimo recomendado'}
+      </div>
+      <div style="font-size:12px;color:var(--tx2);margin-top:6px">
+        Preço praticado: <b>R$ ${precoPrat.toFixed(2)}</b> ·
+        Impostos estimados: <b>R$ ${(precoPrat*totalImpPct).toFixed(2)}</b> ·
+        Margem real: <b style="color:${mlRealPct>=0?'var(--grn)':'var(--red)'}">${mlRealPct.toFixed(1)}%</b> (R$ ${mlRealValor.toFixed(2)})
+      </div>
+    </div>`:''}
+    <div style="font-size:11px;color:var(--tx3);margin-top:10px;line-height:1.6">
+      Impostos (${(totalImpPct*100).toFixed(1)}%): R$ ${impValor.toFixed(2)} ·
+      Markup necessário: ${divisor>0?((1/divisor-1)*100).toFixed(1):'∞'}%
+    </div>
+  `;
+}
+
+function cstSave(){
+  if(!cstSvcId)return;
+  const comp={
+    insumos:JSON.parse(JSON.stringify(cstInsItems)),
+    mo:{hora:parseFloat(document.getElementById('cst-mo-hora')?.value)||0,tempo:parseFloat(document.getElementById('cst-mo-tempo')?.value)||0},
+    df:{total:parseFloat(document.getElementById('cst-df-total')?.value)||0,pedidos:parseFloat(document.getElementById('cst-df-pedidos')?.value)||40,pct:parseFloat(document.getElementById('cst-df-pct')?.value)||100},
+    imp:{regime:document.getElementById('cst-imp-regime')?.value||'',pct:parseFloat(document.getElementById('cst-imp-pct')?.value)||0,gateway:parseFloat(document.getElementById('cst-imp-gateway')?.value)||0,outros:parseFloat(document.getElementById('cst-imp-outros')?.value)||0},
+    ml:{pct:parseFloat(document.getElementById('cst-ml-pct')?.value)||0},
+    precoPraticado:parseFloat(document.getElementById('cst-preco-prat')?.value)||0,
+    updatedAt:new Date().toISOString(),
+  };
+  custos[cstSvcId]=comp;
+  saveCustos();
+  // Also update service price if precoMin or practicado filled
+  const pp=comp.precoPraticado;
+  if(pp>0){const svc=catalog.find(s=>s.id===cstSvcId);if(svc){svc.price=pp;persist();}}
+  toast('Composição salva!');
+  renderAll();
 }
 
 // ─── CONSTANTS ────────────────────────────────────────────────────────────────
@@ -1899,5 +2335,242 @@ load();renderAll();
     </div>
   </div>
 </div>
+
+<!-- ── INSUMOS MODAL ── -->
+<div class="ov" id="ins-ov" style="display:none">
+  <div class="modal" style="max-width:1000px">
+    <div class="mh">
+      <div class="mht">🧪 Cadastro de Insumos</div>
+      <button class="btn bg bi" onclick="document.getElementById('ins-ov').style.display='none'" aria-label="Fechar">✕</button>
+    </div>
+    <div style="font-size:12px;color:var(--tx3);margin-bottom:14px;line-height:1.6">
+      Cadastre os insumos utilizados nos serviços. O sistema calcula automaticamente o custo unitário (por grama, mL ou unidade) com base na apresentação e preço de compra.
+    </div>
+
+    <!-- Form novo insumo -->
+    <div class="cost-section">
+      <div class="cost-section-title">➕ Novo insumo / editar</div>
+      <div class="fg g3">
+        <div class="f s2"><label>Nome do insumo</label><input type="text" id="ins-nome" placeholder="Ex: Resina para guia cirúrgico"></div>
+        <div class="f"><label>Marca</label><input type="text" id="ins-marca" placeholder="Ex: Nextdent, Liqcreate"></div>
+        <div class="f"><label>Fornecedor</label><input type="text" id="ins-forn" placeholder="Ex: 3D Ortho Brasil"></div>
+      </div>
+      <div class="fg g4" style="margin-top:8px">
+        <div class="f">
+          <label>Apresentação</label>
+          <select id="ins-apres" onchange="insUpdateCalc()">
+            <option value="kg">Quilograma (kg)</option>
+            <option value="g">Grama (g)</option>
+            <option value="l">Litro (L)</option>
+            <option value="ml">Mililitro (mL)</option>
+            <option value="pct">Pacote (informar qtd)</option>
+            <option value="un">Unidade</option>
+          </select>
+        </div>
+        <div class="f" id="ins-pct-wrap" style="display:none">
+          <label>Qtd por pacote</label>
+          <input type="number" id="ins-pct-qty" value="10" min="1" oninput="insUpdateCalc()" placeholder="Ex: 10">
+        </div>
+        <div class="f">
+          <label>Quantidade comprada</label>
+          <input type="number" id="ins-qty" value="1" min="0.001" step="0.001" oninput="insUpdateCalc()">
+        </div>
+        <div class="f">
+          <label>Preço total pago R$</label>
+          <input type="number" id="ins-preco" value="" step="0.01" placeholder="Ex: 1600.00" oninput="insUpdateCalc()">
+        </div>
+        <div class="f">
+          <label>Desperdício estimado %</label>
+          <input type="number" id="ins-waste" value="10" min="0" max="50" step="1" oninput="insUpdateCalc()">
+          <span class="hint">% de perda por cura, suporte, etc.</span>
+        </div>
+      </div>
+      <!-- Resultado do cálculo -->
+      <div id="ins-calc-preview" style="margin-top:12px;background:var(--bdim);border:1px solid var(--bbrd);border-radius:var(--r2);padding:12px;display:none">
+        <div style="font-size:11px;font-weight:700;color:var(--blu);margin-bottom:6px">📊 Custo unitário calculado</div>
+        <div id="ins-calc-text" style="font-size:13px;color:var(--tx);line-height:1.8"></div>
+      </div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn bg" onclick="insClear()">Limpar</button>
+        <button class="btn br" id="ins-save-btn" onclick="insSave()">💾 Salvar insumo</button>
+      </div>
+    </div>
+
+    <!-- Lista de insumos -->
+    <div class="cost-section-title" style="margin-bottom:8px">📋 Insumos cadastrados</div>
+    <div class="ins-row header">
+      <span>Nome / Marca</span><span>Apresentação</span><span>Preço pago</span><span>Custo/unid</span><span>Desperdício</span><span></span>
+    </div>
+    <div id="ins-list"></div>
+    <div style="font-size:11px;color:var(--tx3);margin-top:8px">* Custo unitário já inclui o percentual de desperdício estimado</div>
+
+    <div class="mf">
+      <button class="btn bg" onclick="document.getElementById('ins-ov').style.display='none'">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── COMPOSIÇÃO DE CUSTOS MODAL ── -->
+<div class="ov" id="cst-ov" style="display:none">
+  <div class="modal" style="max-width:1000px">
+    <div class="mh">
+      <div class="mht">💰 Composição de Custos — <span id="cst-svc-name" style="color:var(--blu)">Selecione um serviço</span></div>
+      <button class="btn bg bi" onclick="document.getElementById('cst-ov').style.display='none'" aria-label="Fechar">✕</button>
+    </div>
+
+    <!-- Seleção de serviço ou criação -->
+    <div class="cost-section">
+      <div class="cost-section-title">🔧 Serviço analisado</div>
+      <div class="fg g3">
+        <div class="f s2">
+          <label>Selecionar serviço existente</label>
+          <select id="cst-svc-sel" onchange="cstLoadService(this.value)">
+            <option value="">— selecione —</option>
+          </select>
+        </div>
+        <div class="f" style="display:flex;align-items:flex-end;padding-bottom:0">
+          <button class="btn bg" style="width:100%" onclick="cstNewService()">+ Criar novo serviço</button>
+        </div>
+      </div>
+      <div id="cst-new-svc-form" style="display:none;margin-top:12px">
+        <div class="fg g3">
+          <div class="f"><label>Nome do serviço</label><input type="text" id="cst-new-nome" placeholder="Ex: Cirurgia Guiada Unitária"></div>
+          <div class="f"><label>Especialidade</label><input type="text" id="cst-new-spec" placeholder="Ex: Implantodontia"></div>
+          <div class="f"><label>Grupo</label><input type="text" id="cst-new-group" placeholder="Ex: Guias Cirúrgicos"></div>
+        </div>
+        <button class="btn br" style="margin-top:8px" onclick="cstCreateService()">Criar e configurar custos →</button>
+      </div>
+    </div>
+
+    <!-- Conteúdo da composição (visível após selecionar serviço) -->
+    <div id="cst-body" style="display:none">
+
+      <!-- KPIs resumo -->
+      <div class="cost-kpi" id="cst-kpis"></div>
+
+      <!-- 1. Insumos -->
+      <div class="cost-section">
+        <div class="cost-section-title">🧪 1. Insumos utilizados</div>
+        <div style="font-size:11px;color:var(--tx3);margin-bottom:10px">Selecione os insumos e informe a quantidade usada por unidade do serviço.</div>
+        <div id="cst-ins-list"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+          <select id="cst-ins-pick" style="flex:1">
+            <option value="">— selecionar insumo —</option>
+          </select>
+          <button class="btn bg" onclick="cstAddInsumo()">+ Adicionar</button>
+        </div>
+      </div>
+
+      <!-- 2. Mão de obra -->
+      <div class="cost-section">
+        <div class="cost-section-title">👤 2. Mão de obra</div>
+        <div class="fg g3">
+          <div class="f">
+            <label>Cargo / função</label>
+            <select id="cst-mo-cargo" onchange="cstCalc()">
+              <option value="planejador">Planejador digital</option>
+              <option value="suporte">Suporte / atendimento</option>
+              <option value="impressao">Operador de impressão</option>
+              <option value="custom">Personalizado</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Custo/hora do profissional R$</label>
+            <input type="number" id="cst-mo-hora" value="75" step="0.01" oninput="cstCalc()" placeholder="Ex: 75.00">
+          </div>
+          <div class="f">
+            <label>Tempo de execução (horas)</label>
+            <input type="number" id="cst-mo-tempo" value="2" step="0.5" min="0.25" oninput="cstCalc()" placeholder="Ex: 2.0">
+          </div>
+        </div>
+        <div id="cst-mo-result" style="font-size:12px;color:var(--tx2);margin-top:6px"></div>
+      </div>
+
+      <!-- 3. Despesas fixas -->
+      <div class="cost-section">
+        <div class="cost-section-title">🏢 3. Rateio de despesas fixas</div>
+        <div class="fg g3">
+          <div class="f">
+            <label>Despesas fixas mensais R$</label>
+            <input type="number" id="cst-df-total" value="8000" step="100" oninput="cstCalc()" placeholder="Aluguel, energia, internet…">
+            <span class="hint">Inclua aluguel, energia, internet, software, salários fixos</span>
+          </div>
+          <div class="f">
+            <label>Qtd de pedidos/mês estimada</label>
+            <input type="number" id="cst-df-pedidos" value="40" step="1" min="1" oninput="cstCalc()">
+          </div>
+          <div class="f">
+            <label>% das despesas para este serviço</label>
+            <input type="number" id="cst-df-pct" value="100" step="1" min="0" max="100" oninput="cstCalc()">
+            <span class="hint">100% = divide igualmente entre todos os pedidos</span>
+          </div>
+        </div>
+        <div id="cst-df-result" style="font-size:12px;color:var(--tx2);margin-top:6px"></div>
+      </div>
+
+      <!-- 4. Impostos e taxas -->
+      <div class="cost-section">
+        <div class="cost-section-title">🧾 4. Impostos e taxas</div>
+        <div class="fg g4">
+          <div class="f">
+            <label>Regime tributário</label>
+            <select id="cst-imp-regime" onchange="cstImpRegimeChange()">
+              <option value="simples_1">Simples Nacional — Anexo I (até R$180k)</option>
+              <option value="simples_2">Simples Nacional — Anexo III (serviços)</option>
+              <option value="lucro_p">Lucro Presumido (~13.33%)</option>
+              <option value="mei">MEI (alíquota fixa mensal)</option>
+              <option value="custom">Alíquota personalizada</option>
+            </select>
+          </div>
+          <div class="f">
+            <label>Alíquota efetiva % (sobre receita)</label>
+            <input type="number" id="cst-imp-pct" value="6" step="0.1" min="0" oninput="cstCalc()" placeholder="Ex: 6.0">
+          </div>
+          <div class="f">
+            <label>Taxa de cartão / gateway %</label>
+            <input type="number" id="cst-imp-gateway" value="2.5" step="0.1" min="0" oninput="cstCalc()" placeholder="Ex: 2.5">
+          </div>
+          <div class="f">
+            <label>Outras taxas %</label>
+            <input type="number" id="cst-imp-outros" value="0" step="0.1" min="0" oninput="cstCalc()">
+          </div>
+        </div>
+      </div>
+
+      <!-- 5. Margem de lucro -->
+      <div class="cost-section">
+        <div class="cost-section-title">📈 5. Margem de lucro desejada</div>
+        <div class="fg g3">
+          <div class="f">
+            <label>Margem de lucro líquida %</label>
+            <input type="number" id="cst-ml-pct" value="30" step="1" min="0" oninput="cstCalc()">
+            <span class="hint">Percentual sobre o preço de venda</span>
+          </div>
+          <div class="f">
+            <label>Preço mínimo de venda calculado</label>
+            <input type="number" id="cst-preco-min" readonly style="opacity:.6;background:var(--s3)">
+          </div>
+          <div class="f">
+            <label>Preço de venda praticado R$</label>
+            <input type="number" id="cst-preco-prat" step="0.01" oninput="cstCalc()" placeholder="Ex: 389.00">
+          </div>
+        </div>
+      </div>
+
+      <!-- Resultado final -->
+      <div class="cost-result" id="cst-result">
+        <div style="font-size:14px;font-weight:700;color:var(--tx2);margin-bottom:10px">RESUMO DA COMPOSIÇÃO</div>
+        <div id="cst-result-body"></div>
+      </div>
+
+    </div><!-- /cst-body -->
+
+    <div class="mf">
+      <button class="btn bg" onclick="document.getElementById('cst-ov').style.display='none'">Fechar</button>
+      <button class="btn br" id="cst-save-btn" onclick="cstSave()" style="display:none">💾 Salvar composição</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
