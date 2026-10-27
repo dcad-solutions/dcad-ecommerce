@@ -20,6 +20,15 @@ export interface PlanOnly {
   priceByQty?: Record<string, number>
 }
 
+export interface CatalogAddon {
+  key: string
+  label: string
+  price: number
+  perUnit: boolean
+  desc?: string
+  requiresDsd?: boolean
+}
+
 export interface CatalogService {
   id: string
   type: string
@@ -46,6 +55,9 @@ export interface CatalogService {
   planOnly?: PlanOnly | null
   // Imagens do serviço (Storage Supabase)
   imagens?: string[]
+  // Regras de preço do Wizard (vindas do Supabase)
+  brandFees?: Record<string, number>
+  addons?: CatalogAddon[]
   // Metadados do Supabase
   _supabaseId?: number
 }
@@ -114,14 +126,20 @@ function rowToService(row: Record<string, unknown>): CatalogService {
   // planOnly: só existe se preco_po ou prazo_po estiverem preenchidos
   let planOnly: PlanOnly | null = null
   if (row.preco_po !== null || row.prazo_po !== null) {
+    const planPbq = row.plan_only_price_by_qty as Record<string, number> | null
     planOnly = {
       name:          `Planejamento — ${String(row.nome)}`,
       price:         row.preco_po as number | null,
       days:          row.prazo_po as number | null,
       exams:         (row.exames as string[]) || [],
       offersSlicedFile: ws?.sliced ?? false,
+      priceByQty:    planPbq && Object.keys(planPbq).length > 0 ? planPbq : undefined,
     }
   }
+
+  const pbq = row.price_by_qty as Record<string, number> | null
+  const bf  = row.brand_fees  as Record<string, number> | null
+  const ads = row.addons      as CatalogAddon[] | null
 
   const service: CatalogService = {
     id:            String(row.tipo || row.id),
@@ -145,6 +163,10 @@ function rowToService(row: Record<string, unknown>): CatalogService {
     archAffectsPrice: usesArch,
     ...flags,
     maxTeeth:      row.max_dentes as number | undefined,
+    // Regras de preço e fluxo vindas do Supabase
+    priceByQty:    pbq && Object.keys(pbq).length > 0 ? pbq : undefined,
+    brandFees:     bf  && Object.keys(bf).length  > 0 ? bf  : undefined,
+    addons:        ads && ads.length > 0 ? ads : undefined,
   }
 
   return service
