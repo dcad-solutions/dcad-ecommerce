@@ -11,9 +11,9 @@ const DCAD_LOGO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAQAAAABICAYAAAAZD
 const C={
   red:"#E52229",dark:"#0F0F0F",dark2:"#1A1A1A",dark3:"#242424",dark4:"#333",
   border:"rgba(255,255,255,0.08)",border2:"rgba(255,255,255,0.14)",
-  text:"#FFF",textSec:"#B8B8B8",textMut:"#666",textFaint:"#888",
+  text:"#FFF",textSec:"#B8B8B8",textMut:"#767676",textFaint:"#888",
   green:"#22C55E",greenBg:"rgba(34,197,94,0.08)",
-  yellow:"#EAB308",blue:"#6366F1",teal:"#0D9488",
+  yellow:"#EAB308",neutral:"#767676",teal:"#0D9488",
   // Radius tokens
   r:{sm:8,md:12,lg:16},
   // Spacing tokens (4dp rhythm)
@@ -114,7 +114,7 @@ const CATALOG=[
    services:[
      {id:"placa",name:"Placa Oclusal Impressa",desc:"Resina rígida biocompatível",fullDesc:"Placa rígida planejada em articulador virtual com contatos oclusais uniformes.",exams:["STL dos modelos com registro em RC (JIG)"],price:360.37,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Placa Oclusal Digital",desc:"Arquivo STL para impressão própria",fullDesc:"Projeto digital da placa oclusal em articulador virtual. Entrega do arquivo STL para impressão pelo cliente.",price:200,days:5,exams:["STL dos modelos com registro em RC (JIG)"]}},
    ]},
-  {id:"perio",name:"Periodontia",color:C.blue,icon:"ti-plant",desc:"Perioguide",
+  {id:"perio",name:"Periodontia",color:C.textSec,icon:"ti-plant",desc:"Perioguide",
    services:[
      {id:"perioguide",name:"Perioguide",desc:"Guia + planejamento periodontal",fullDesc:"Guia cirúrgico periodontal com definição milimétrica do nível de gengivectomia por dente.",exams:["Protocolo fotográfico (JPEG)","STL ou PLY dos modelos","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse (com afastador labial)"],price:650.88,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Perioguide Digital",desc:"Arquivo STL do guia periodontal",fullDesc:"Planejamento digital do guia periodontal com entrega do arquivo STL para impressão pelo cliente.",price:400,days:5,exams:["Protocolo fotográfico (JPEG)","STL ou PLY dos modelos","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse (com afastador labial)"]}},
    ]},
@@ -352,7 +352,7 @@ export default function App() {
       body:"Cirurgia Guiada Unitária, Parcial, Protocolos Edêntulos e Stackable Guide disponíveis agora.",
       badge:"Novo",
       badgeColor:C.red,
-      bg:"linear-gradient(135deg, rgba(229,34,41,0.15) 0%, rgba(99,102,241,0.08) 100%)",
+      bg:"linear-gradient(135deg, rgba(229,34,41,0.15) 0%, rgba(229,34,41,0.08) 100%)",
       borderColor:"rgba(229,34,41,0.3)",
       link:"",
       linkLabel:"",
@@ -363,9 +363,9 @@ export default function App() {
       title:"Prazo reduzido para guias cirúrgicos",
       body:"Agora entregamos guias cirúrgicos em até 5 dias úteis para todo o Brasil. Peça com urgência em até 48h.",
       badge:"Info",
-      badgeColor:C.blue,
-      bg:"linear-gradient(135deg, rgba(99,102,241,0.12) 0%, rgba(13,148,136,0.06) 100%)",
-      borderColor:"rgba(99,102,241,0.28)",
+      badgeColor:C.red,
+      bg:"linear-gradient(135deg, rgba(229,34,41,0.12) 0%, rgba(13,148,136,0.06) 100%)",
+      borderColor:"rgba(229,34,41,0.22)",
       link:"https://wa.me/5598985425982",
       linkLabel:"Falar com a equipe →",
       imageUrl:"",
@@ -763,24 +763,24 @@ input,textarea,select{touch-action:manipulation;}
 
       {showStackableInfo&&(
         <div onClick={()=>{setShowStackableInfo(false);setScreen(7);}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.85)",zIndex:70,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:"1px solid rgba(99,102,241,0.35)",borderRadius:16,padding:28,maxWidth:420,width:"100%"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:"1px solid rgba(229,34,41,0.28)",borderRadius:16,padding:28,maxWidth:420,width:"100%"}}>
             <div style={{display:"flex",justifyContent:"center",marginBottom:14}}>
-              <div style={{width:52,height:52,borderRadius:12,background:"rgba(99,102,241,0.1)",border:"1px solid rgba(99,102,241,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <Wrench size={26} color={C.blue}/>
+              <div style={{width:52,height:52,borderRadius:12,background:"rgba(229,34,41,0.10)",border:"1px solid rgba(229,34,41,0.25)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <Wrench size={26} color={C.textSec}/>
               </div>
             </div>
             <div style={{fontSize:16,fontWeight:800,textAlign:"center",marginBottom:8}}>Stackable Guide / Guias Empilháveis</div>
             <div style={{fontSize:13,color:C.textSec,lineHeight:1.7,textAlign:"center",marginBottom:16}}>Serviço alterado. O Stackable Guide já inclui todos os adicionais do protocolo.</div>
-            <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:12,padding:"12px 14px",marginBottom:20}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.blue,marginBottom:8,letterSpacing:.5}}>✓ INCLUSO NO SERVIÇO</div>
+            <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:12,padding:"12px 14px",marginBottom:20}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.textSec,marginBottom:8,letterSpacing:.5}}>✓ INCLUSO NO SERVIÇO</div>
               {["Guia cirúrgico empilhável (inferior + superior)","Prótese Protocolo Provisória para Captura","Relatório cirúrgico em PDF","Vídeo de planejamento para aprovação"].map((item,i)=>(
                 <div key={i} style={{fontSize:12,color:C.text,display:"flex",alignItems:"flex-start",gap:8,marginBottom:5}}>
-                  <span style={{color:C.blue,flexShrink:0}}>✓</span>{item}
+                  <span style={{color:C.textSec,flexShrink:0}}>✓</span>{item}
                 </div>
               ))}
             </div>
             <button onClick={()=>{setShowStackableInfo(false);setScreen(7);}}
-              style={{width:"100%",padding:"13px 0",background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.4)",borderRadius:12,color:C.blue,fontSize:14,fontWeight:700,cursor:"pointer"}}>
+              style={{width:"100%",padding:"13px 0",background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.35)",borderRadius:12,color:C.textSec,fontSize:14,fontWeight:700,cursor:"pointer"}}>
               Continuar → Informações do caso
             </button>
           </div>
@@ -892,7 +892,7 @@ input,textarea,select{touch-action:manipulation;}
           <Trash2 size={14} color={C.textSec}/>
           <span style={{fontSize:13,color:C.textSec}}>Serviço removido</span>
           <button onClick={()=>{setServices(s=>[...s,undoService.service]);clearTimeout(undoService.timer);setUndoService(null);}}
-            style={{display:"flex",alignItems:"center",gap:5,background:"rgba(99,102,241,0.15)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:8,padding:"5px 10px",color:C.blue,fontSize:12,fontWeight:700,cursor:"pointer"}}>
+            style={{display:"flex",alignItems:"center",gap:5,background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.25)",borderRadius:8,padding:"5px 10px",color:C.textSec,fontSize:12,fontWeight:700,cursor:"pointer"}}>
             <Undo2 size={12}/> Desfazer
           </button>
           <button onClick={()=>{clearTimeout(undoService.timer);setUndoService(null);}} aria-label="Fechar" style={{background:"none",border:"none",color:C.textSec,cursor:"pointer",padding:2,display:"flex",alignItems:"center"}}>
@@ -936,7 +936,7 @@ input,textarea,select{touch-action:manipulation;}
 
       {/* ── EDITING BANNER ── */}
       {editingId&&(
-        <div style={{background:"rgba(99,102,241,0.1)",borderBottom:"1px solid rgba(99,102,241,0.2)",padding:"7px 20px",display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.blue}}>
+        <div style={{background:"rgba(229,34,41,0.10)",borderBottom:"1px solid rgba(229,34,41,0.18)",padding:"7px 20px",display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textSec}}>
           <FileText size={14}/>
           <span>Modo de edição — reconfigure o serviço e avance até o final para salvar</span>
           <button onClick={()=>{
@@ -1192,7 +1192,7 @@ input,textarea,select{touch-action:manipulation;}
                 </button>
                 <div style={{textAlign:"center",marginTop:14}}>
                   <button onClick={()=>{setForgotPw(true);setForgotSent(false);setForgotEmail(loginForm.email||"");}}
-                    style={{background:"none",border:"none",color:C.blue,fontSize:12,cursor:"pointer",textDecoration:"underline",fontFamily:"inherit"}}>
+                    style={{background:"none",border:"none",color:C.textSec,fontSize:12,cursor:"pointer",textDecoration:"underline",fontFamily:"inherit"}}>
                     Esqueci minha senha
                   </button>
                 </div>
@@ -1202,7 +1202,7 @@ input,textarea,select{touch-action:manipulation;}
             {/* ── RECUPERAÇÃO DE SENHA ── */}
             {authTab==="login"&&forgotPw&&(
               <div>
-                <div style={{background:"rgba(99,102,241,0.06)",border:`1px solid rgba(99,102,241,0.2)`,borderRadius:12,padding:"16px",marginBottom:20}}>
+                <div style={{background:"rgba(229,34,41,0.06)",border:`1px solid rgba(229,34,41,0.18)`,borderRadius:12,padding:"16px",marginBottom:20}}>
                   <div style={{fontSize:14,fontWeight:700,marginBottom:4}}>Recuperar senha</div>
                   <div style={{fontSize:12,color:C.textSec,lineHeight:1.5}}>Informe o e-mail cadastrado. Você receberá um link para redefinir sua senha.</div>
                 </div>
@@ -1213,7 +1213,7 @@ input,textarea,select{touch-action:manipulation;}
                       if(!forgotEmail||!forgotEmail.includes("@")){setToast("Informe um e-mail válido.");return;}
                       // Aqui integrar com Supabase resetPasswordForEmail
                       setForgotSent(true);
-                    }} style={btnStyle(C.blue)}>
+                    }} style={btnStyle(C.red)}>
                       Enviar link de recuperação
                     </button>
                     <div style={{textAlign:"center",marginTop:12}}>
@@ -1311,15 +1311,15 @@ input,textarea,select{touch-action:manipulation;}
                       }
 
                       {/* Endereço de cobrança */}
-                      <div style={{fontSize:13,fontWeight:700,color:C.blue,letterSpacing:1,marginBottom:10,marginTop:4}}>ENDEREÇO DE COBRANÇA</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:10,marginTop:4}}>ENDEREÇO DE COBRANÇA</div>
                       <div style={{marginBottom:12}}>
-                        <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.blue,fontWeight:400}}>— Buscar preenche os campos automaticamente</span></label>
+                        <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche os campos automaticamente</span></label>
                         <div style={{display:"flex",gap:8}}>
                           <input value={regForm.cep} onChange={e=>setRegForm(f=>({...f,cep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                            style={{flex:1,background:C.dark2,border:`1px solid ${regForm.cep?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                            style={{flex:1,background:C.dark2,border:`1px solid ${regForm.cep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
                           <button onClick={()=>buscarCEP(regForm.cep,(d)=>setRegForm(f=>({...f,rua:d.logradouro||f.rua,bairro:d.bairro||f.bairro,cidade:d.localidade||f.cidade,estado:d.uf||f.estado})),"reg_billing")}
                             disabled={cepLoading==="reg_billing"}
-                            style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="reg_billing"?0.6:1,whiteSpace:"nowrap"}}>
+                            style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="reg_billing"?0.6:1,whiteSpace:"nowrap"}}>
                             {cepLoading==="reg_billing"?"...":"Buscar"}
                           </button>
                         </div>
@@ -1335,7 +1335,7 @@ input,textarea,select{touch-action:manipulation;}
                         <div style={{marginBottom:12}}>
                           <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>ESTADO *</label>
                           <select value={regForm.estado} onChange={e=>setRegForm(f=>({...f,estado:e.target.value}))}
-                            style={{width:"100%",background:C.dark2,border:`1px solid ${regForm.estado?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 12px",color:regForm.estado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
+                            style={{width:"100%",background:C.dark2,border:`1px solid ${regForm.estado?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 12px",color:regForm.estado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
                             <option value="">UF</option>
                             {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(s=><option key={s} value={s}>{s}</option>)}
                           </select>
@@ -1343,7 +1343,7 @@ input,textarea,select{touch-action:manipulation;}
                       </div>
 
                       {/* Endereço de entrega */}
-                      <div style={{fontSize:13,fontWeight:700,color:C.blue,letterSpacing:1,marginBottom:10,marginTop:4}}>ENDEREÇO DE ENTREGA</div>
+                      <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:10,marginTop:4}}>ENDEREÇO DE ENTREGA</div>
                       <button onClick={()=>setRegForm(f=>({...f,entregaIgual:!f.entregaIgual}))}
                         style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",cursor:"pointer",padding:"0 0 12px 0",color:C.text}}>
                         <div style={{width:18,height:18,borderRadius:8,background:regForm.entregaIgual?C.green:C.dark3,border:`1.5px solid ${regForm.entregaIgual?C.green:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:regForm.entregaIgual?"#111":"transparent",fontWeight:800,flexShrink:0}}>
@@ -1354,13 +1354,13 @@ input,textarea,select{touch-action:manipulation;}
                       {!regForm.entregaIgual&&(
                         <div>
                           <div style={{marginBottom:12}}>
-                            <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.blue,fontWeight:400}}>— Buscar preenche automaticamente</span></label>
+                            <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche automaticamente</span></label>
                             <div style={{display:"flex",gap:8}}>
                               <input value={regForm.entCep} onChange={e=>setRegForm(f=>({...f,entCep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                                style={{flex:1,background:C.dark2,border:`1px solid ${regForm.entCep?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                                style={{flex:1,background:C.dark2,border:`1px solid ${regForm.entCep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
                               <button onClick={()=>buscarCEP(regForm.entCep,(d)=>setRegForm(f=>({...f,entRua:d.logradouro||f.entRua,entBairro:d.bairro||f.entBairro,entCidade:d.localidade||f.entCidade,entEstado:d.uf||f.entEstado})),"reg_delivery")}
                                 disabled={cepLoading==="reg_delivery"}
-                                style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="reg_delivery"?0.6:1,whiteSpace:"nowrap"}}>
+                                style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="reg_delivery"?0.6:1,whiteSpace:"nowrap"}}>
                                 {cepLoading==="reg_delivery"?"...":"Buscar"}
                               </button>
                             </div>
@@ -1376,7 +1376,7 @@ input,textarea,select{touch-action:manipulation;}
                             <div style={{marginBottom:12}}>
                               <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>ESTADO *</label>
                               <select value={regForm.entEstado} onChange={e=>setRegForm(f=>({...f,entEstado:e.target.value}))}
-                                style={{width:"100%",background:C.dark2,border:`1px solid ${regForm.entEstado?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 12px",color:regForm.entEstado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
+                                style={{width:"100%",background:C.dark2,border:`1px solid ${regForm.entEstado?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 12px",color:regForm.entEstado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
                                 <option value="">UF</option>
                                 {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(s=><option key={s} value={s}>{s}</option>)}
                               </select>
@@ -1439,7 +1439,7 @@ input,textarea,select{touch-action:manipulation;}
               ))}
             </div>
 
-            <div style={{background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:12,padding:16,marginBottom:20,textAlign:"left",fontSize:13,color:C.textSec,lineHeight:1.6}}>
+            <div style={{background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:12,padding:16,marginBottom:20,textAlign:"left",fontSize:13,color:C.textSec,lineHeight:1.6}}>
               Dúvidas? Fale com a equipe D-CAD:<br/>
               <b style={{color:C.text}}>WhatsApp: (98) 98542-5982</b>
             </div>
@@ -1491,16 +1491,16 @@ input,textarea,select{touch-action:manipulation;}
             </div>
 
             {/* Endereço */}
-            <div style={{padding:"12px 14px",background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:12,marginBottom:14}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.blue,letterSpacing:1,marginBottom:12}}>ENDEREÇO DE COBRANÇA</div>
+            <div style={{padding:"12px 14px",background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:12,marginBottom:14}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:12}}>ENDEREÇO DE COBRANÇA</div>
               <div style={{marginBottom:12}}>
-                <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.blue,fontWeight:400}}>— Buscar preenche os campos automaticamente</span></label>
+                <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche os campos automaticamente</span></label>
                 <div style={{display:"flex",gap:8}}>
                   <input value={profile.cep} onChange={e=>setProfile(p=>({...p,cep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                    style={{flex:1,background:C.dark2,border:`1px solid ${profile.cep?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                    style={{flex:1,background:C.dark2,border:`1px solid ${profile.cep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
                   <button onClick={()=>buscarCEP(profile.cep,(d)=>setProfile(p=>({...p,rua:d.logradouro||p.rua,bairro:d.bairro||p.bairro,cidade:d.localidade||p.cidade,estado:d.uf||p.estado})),"prof_billing")}
                     disabled={cepLoading==="prof_billing"}
-                    style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="prof_billing"?0.6:1,whiteSpace:"nowrap"}}>
+                    style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="prof_billing"?0.6:1,whiteSpace:"nowrap"}}>
                     {cepLoading==="prof_billing"?"...":"Buscar"}
                   </button>
                 </div>
@@ -1516,7 +1516,7 @@ input,textarea,select{touch-action:manipulation;}
                 <div style={{marginBottom:12}}>
                   <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>ESTADO *</label>
                   <select value={profile.estado} onChange={e=>setProfile(p=>({...p,estado:e.target.value}))}
-                    style={{width:"100%",background:C.dark2,border:`1px solid ${profile.estado?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 12px",color:profile.estado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
+                    style={{width:"100%",background:C.dark2,border:`1px solid ${profile.estado?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 12px",color:profile.estado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
                     <option value="">UF</option>
                     {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(s=><option key={s} value={s}>{s}</option>)}
                   </select>
@@ -1525,8 +1525,8 @@ input,textarea,select{touch-action:manipulation;}
             </div>
 
             {/* Endereço de entrega */}
-            <div style={{padding:"12px 14px",background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:12,marginBottom:20}}>
-              <div style={{fontSize:13,fontWeight:700,color:C.blue,letterSpacing:1,marginBottom:12}}>ENDEREÇO DE ENTREGA</div>
+            <div style={{padding:"12px 14px",background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:12,marginBottom:20}}>
+              <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:12}}>ENDEREÇO DE ENTREGA</div>
               <button onClick={()=>setProfile(p=>({...p,entregaIgual:!p.entregaIgual}))}
                 style={{display:"flex",alignItems:"center",gap:8,background:"none",border:"none",cursor:"pointer",padding:"0 0 12px 0",color:C.text}}>
                 <div style={{width:18,height:18,borderRadius:8,background:profile.entregaIgual?C.green:C.dark3,border:`1.5px solid ${profile.entregaIgual?C.green:C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,color:profile.entregaIgual?"#111":"transparent",fontWeight:800,flexShrink:0}}>
@@ -1537,13 +1537,13 @@ input,textarea,select{touch-action:manipulation;}
               {!profile.entregaIgual&&(
                 <div>
                   <div style={{marginBottom:12}}>
-                    <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.blue,fontWeight:400}}>— Buscar preenche automaticamente</span></label>
+                    <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche automaticamente</span></label>
                     <div style={{display:"flex",gap:8}}>
                       <input value={profile.entCep} onChange={e=>setProfile(p=>({...p,entCep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                        style={{flex:1,background:C.dark2,border:`1px solid ${profile.entCep?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                        style={{flex:1,background:C.dark2,border:`1px solid ${profile.entCep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
                       <button onClick={()=>buscarCEP(profile.entCep,(d)=>setProfile(p=>({...p,entRua:d.logradouro||p.entRua,entBairro:d.bairro||p.entBairro,entCidade:d.localidade||p.entCidade,entEstado:d.uf||p.entEstado})),"prof_delivery")}
                         disabled={cepLoading==="prof_delivery"}
-                        style={{padding:"0 14px",background:C.blue,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="prof_delivery"?0.6:1,whiteSpace:"nowrap"}}>
+                        style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="prof_delivery"?0.6:1,whiteSpace:"nowrap"}}>
                         {cepLoading==="prof_delivery"?"...":"Buscar"}
                       </button>
                     </div>
@@ -1559,7 +1559,7 @@ input,textarea,select{touch-action:manipulation;}
                     <div style={{marginBottom:12}}>
                       <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>ESTADO *</label>
                       <select value={profile.entEstado} onChange={e=>setProfile(p=>({...p,entEstado:e.target.value}))}
-                        style={{width:"100%",background:C.dark2,border:`1px solid ${profile.entEstado?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 12px",color:profile.entEstado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
+                        style={{width:"100%",background:C.dark2,border:`1px solid ${profile.entEstado?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 12px",color:profile.entEstado?C.text:C.textSec,fontSize:13,outline:"none",boxSizing:"border-box"}}>
                         <option value="">UF</option>
                         {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(s=><option key={s} value={s}>{s}</option>)}
                       </select>
@@ -1595,7 +1595,7 @@ input,textarea,select{touch-action:manipulation;}
                   </div>
                   <div style={{display:"flex",gap:8,flexShrink:0}}>
                     <button onClick={()=>{setPrinterForm({...pr});setPrinterModal(pr);}}
-                      style={{background:"rgba(99,102,241,0.1)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:8,padding:"5px 10px",color:C.blue,fontSize:13,cursor:"pointer",fontWeight:600}}>Editar</button>
+                      style={{background:"rgba(229,34,41,0.10)",border:"1px solid rgba(229,34,41,0.25)",borderRadius:8,padding:"5px 10px",color:C.textSec,fontSize:13,cursor:"pointer",fontWeight:600}}>Editar</button>
                     <button onClick={()=>setPrinters(p=>p.filter((_,j)=>j!==i))}
                       style={{background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.2)",borderRadius:8,padding:"5px 8px",color:C.red,fontSize:13,cursor:"pointer"}}>
                       <Trash2 size={12}/>
@@ -1691,13 +1691,13 @@ input,textarea,select{touch-action:manipulation;}
 
             {/* Botão Tutorial do Sistema — parte do mesmo bloco */}
             <button onClick={()=>{try{localStorage.removeItem("dcad_tutorial_done");}catch{}tutorialShownRef.current=true;setScreen("tutorial");}}
-              style={{width:"100%",display:"flex",alignItems:"center",gap:12,background:"rgba(99,102,241,0.04)",borderTop:`1px solid ${C.border}`,padding:"12px 18px",color:C.text,cursor:"pointer",textAlign:"left",border:"none",fontFamily:"inherit"}}>
-              <div style={{width:36,height:36,borderRadius:10,background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.25)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>🎓</div>
+              style={{width:"100%",display:"flex",alignItems:"center",gap:12,background:"rgba(229,34,41,0.04)",borderTop:`1px solid ${C.border}`,padding:"12px 18px",color:C.text,cursor:"pointer",textAlign:"left",border:"none",fontFamily:"inherit"}}>
+              <div style={{width:36,height:36,borderRadius:10,background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.20)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,fontSize:18}}>🎓</div>
               <div style={{flex:1,minWidth:0}}>
-                <div style={{fontSize:13,fontWeight:700,color:C.blue}}>Tutorial do Sistema</div>
+                <div style={{fontSize:13,fontWeight:700,color:C.textSec}}>Tutorial do Sistema</div>
                 <div style={{fontSize:12,color:C.textSec}}>Aprenda o fluxo completo em 8 etapas ilustradas</div>
               </div>
-              <div style={{fontSize:16,color:C.blue,flexShrink:0}}>›</div>
+              <div style={{fontSize:16,color:C.textSec,flexShrink:0}}>›</div>
             </button>
             </div>{/* fim bloco unificado */}
 
@@ -1721,7 +1721,7 @@ input,textarea,select{touch-action:manipulation;}
             {/* Stats */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:24}}>
               {[
-                {label:"Total de pedidos",value:mockOrders.length,color:C.blue},
+                {label:"Total de pedidos",value:mockOrders.length,color:C.textSec},
                 {label:"Em andamento",value:mockOrders.filter(o=>o.status==="planning"||o.status==="printing").length,color:C.yellow},
                 {label:"Entregues",value:mockOrders.filter(o=>o.status==="shipped"||o.status==="delivered").length,color:C.green},
               ].map((s,i)=>(
@@ -1772,7 +1772,7 @@ input,textarea,select{touch-action:manipulation;}
               <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:10}}>ACESSO RÁPIDO</div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
                 {[
-                  {icon:<Archive size={18}/>,label:"Histórico completo",sub:"Todos os pedidos",action:()=>setToast("Histórico em breve"),clr:"rgba(99,102,241,0.12)"},
+                  {icon:<Archive size={18}/>,label:"Histórico completo",sub:"Todos os pedidos",action:()=>setToast("Histórico em breve"),clr:"rgba(229,34,41,0.12)"},
                   {icon:<Users size={18}/>,label:"Meus pacientes",sub:"Gerenciar pacientes",action:()=>setToast("Pacientes em breve"),clr:"rgba(34,197,94,0.08)"},
                   {icon:<FolderOpen size={18}/>,label:"Baixar arquivos",sub:"Resultados e planejamentos",action:()=>setToast("Arquivos em breve"),clr:"rgba(234,179,8,0.08)"},
                   {icon:<MessageCircle size={18}/>,label:"Falar com a D-CAD",sub:"Suporte via WhatsApp",action:()=>window.open("https://wa.me/5598985425982?text=Olá! Sou cliente D-CAD e preciso de suporte.","_blank"),clr:"rgba(34,197,94,0.08)"},
@@ -1920,8 +1920,8 @@ input,textarea,select{touch-action:manipulation;}
                   {mockOrders.slice(0, Math.max(0, 8-services.length)).map(o=>{
                     const STATUS={
                       pending_payment:{label:"Aguard. pagamento",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
-                      planning:{label:"Em planejamento",color:C.blue,bg:"rgba(99,102,241,0.1)"},
-                      printing:{label:"Em impressão",color:C.blue,bg:"rgba(168,85,247,0.1)"},
+                      planning:{label:"Em planejamento",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
+                      printing:{label:"Em impressão",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
                       shipped:{label:"Enviado",color:C.green,bg:"rgba(34,197,94,0.1)"},
                       delivered:{label:"Entregue",color:C.green,bg:"rgba(34,197,94,0.1)"},
                     };
@@ -1969,7 +1969,7 @@ input,textarea,select{touch-action:manipulation;}
                         )}
                         {o.status!=="pending_payment"&&o.filesSubmitted===false&&(
                           <a href={process.env.NEXT_PUBLIC_CLICKUP_FORM_URL||"#"} target="_blank" rel="noopener noreferrer"
-                            style={{background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.3)",borderRadius:8,padding:"5px 0",color:C.blue,fontSize:12,fontWeight:700,textDecoration:"none",display:"block",textAlign:"center",width:"100%"}}>
+                            style={{background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.25)",borderRadius:8,padding:"5px 0",color:C.textSec,fontSize:12,fontWeight:700,textDecoration:"none",display:"block",textAlign:"center",width:"100%"}}>
                             <FolderOpen size={12} style={{display:"inline",marginRight:4}}/> Enviar exames →
                           </a>
                         )}
@@ -2007,9 +2007,9 @@ input,textarea,select{touch-action:manipulation;}
             </div>
 
             {/* ── Header hero ── */}
-            <div style={{background:`linear-gradient(135deg,${C.blue}1a 0%,${C.red}0d 100%)`,borderBottom:`1px solid rgba(99,102,241,0.2)`,padding:"28px 24px 24px",marginBottom:0,position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",right:-30,top:-30,width:140,height:140,borderRadius:"50%",background:"rgba(99,102,241,0.06)",pointerEvents:"none"}}/>
-              <div style={{fontSize:11,fontWeight:700,color:C.blue,letterSpacing:.8,marginBottom:8}}>D-CAD DIGITAL SOLUTIONS</div>
+            <div style={{background:`linear-gradient(135deg,${C.red}1a 0%,${C.red}0d 100%)`,borderBottom:`1px solid rgba(229,34,41,0.18)`,padding:"28px 24px 24px",marginBottom:0,position:"relative",overflow:"hidden"}}>
+              <div style={{position:"absolute",right:-30,top:-30,width:140,height:140,borderRadius:"50%",background:"rgba(229,34,41,0.06)",pointerEvents:"none"}}/>
+              <div style={{fontSize:11,fontWeight:700,color:C.textSec,letterSpacing:.8,marginBottom:8}}>D-CAD DIGITAL SOLUTIONS</div>
               <div style={{fontSize:24,fontWeight:900,marginBottom:8,lineHeight:1.2}}>Tutorial do Sistema</div>
               <div style={{fontSize:13,color:C.textSec,lineHeight:1.7,marginBottom:20}}>Aprenda a solicitar planejamentos digitais e guias cirúrgicos em minutos. Siga o passo a passo abaixo — 8 etapas no total.</div>
 
@@ -2025,8 +2025,8 @@ input,textarea,select{touch-action:manipulation;}
                   }
                 </div>
               ):(
-                <div style={{borderRadius:12,border:`1px dashed rgba(99,102,241,0.3)`,padding:"18px",marginBottom:20,display:"flex",alignItems:"center",gap:14,background:"rgba(99,102,241,0.04)"}}>
-                  <div style={{width:44,height:44,borderRadius:12,background:"rgba(99,102,241,0.1)",border:"1px solid rgba(99,102,241,0.25)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎬</div>
+                <div style={{borderRadius:12,border:`1px dashed rgba(229,34,41,0.25)`,padding:"18px",marginBottom:20,display:"flex",alignItems:"center",gap:14,background:"rgba(229,34,41,0.04)"}}>
+                  <div style={{width:44,height:44,borderRadius:12,background:"rgba(229,34,41,0.10)",border:"1px solid rgba(229,34,41,0.20)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎬</div>
                   <div>
                     <div style={{fontSize:13,fontWeight:600,color:C.textSec,marginBottom:3}}>Vídeo tutorial em breve</div>
                     <div style={{fontSize:12,color:C.textMut,lineHeight:1.5}}>Estamos produzindo um vídeo guiado do sistema. Por ora, siga o passo a passo abaixo.</div>
@@ -2043,7 +2043,7 @@ input,textarea,select{touch-action:manipulation;}
                       const el=document.getElementById(`tut-step-${i}`);
                       if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
                     }} style={{background:"none",border:"none",color:C.textSec,fontSize:12,cursor:"pointer",textAlign:"left",padding:"3px 0",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
-                      <span style={{fontSize:10,fontWeight:700,color:C.blue,flexShrink:0,width:14}}>{i+1}</span>
+                      <span style={{fontSize:10,fontWeight:700,color:C.textSec,flexShrink:0,width:14}}>{i+1}</span>
                       <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
                     </button>
                   ))}
@@ -2054,7 +2054,7 @@ input,textarea,select{touch-action:manipulation;}
             {/* ── Etapas ── */}
             {[
               {
-                n:1, color:C.blue, phase:"Configuração da conta", ico:"👤",
+                n:1, color:C.textSec, phase:"Configuração da conta", ico:"👤",
                 title:"Acesse sua conta",
                 desc:"Faça login com seu e-mail e senha cadastrados. Na primeira vez, clique em 'Criar conta' e preencha seus dados profissionais (CRO, clínica e WhatsApp para contato).",
                 tips:["Use o mesmo e-mail em todos os acessos","Guarde sua senha em local seguro","Em caso de esquecimento, entre em contato via WhatsApp"],
@@ -2073,27 +2073,27 @@ input,textarea,select{touch-action:manipulation;}
                 ),
               },
               {
-                n:2, color:C.blue, phase:"Configuração da conta", ico:"🧑‍⚕️",
+                n:2, color:C.textSec, phase:"Configuração da conta", ico:"🧑‍⚕️",
                 title:"Informe os dados do paciente",
                 desc:"Após o login, clique em '+ Novo pedido'. Informe o nome completo e a data de nascimento do paciente. Você pode buscar pacientes já cadastrados ou criar um novo.",
                 tips:["Cada pedido é vinculado a um paciente","Pacientes anteriores ficam salvos para reutilização","O nome do paciente aparece no resumo do caso"],
                 svg:(
                   <svg viewBox="0 0 320 140" style={{width:"100%",borderRadius:10,display:"block"}}>
                     <rect width="320" height="140" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="30" fill="rgba(99,102,241,0.9)" fontSize="11" fontWeight="700" fontFamily="system-ui">Dados do Paciente</text>
+                    <text x="16" y="30" fill="rgba(229,34,41,0.85)" fontSize="11" fontWeight="700" fontFamily="system-ui">Dados do Paciente</text>
                     <rect x="16" y="40" width="288" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
                     <text x="28" y="56" fill="#666" fontSize="10" fontFamily="system-ui">Nome completo do paciente</text>
                     <rect x="16" y="70" width="136" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
                     <text x="28" y="86" fill="#666" fontSize="10" fontFamily="system-ui">Data de nascimento</text>
                     <rect x="168" y="70" width="136" height="24" fill="#2a2a2a" rx="6" stroke="rgba(168,85,247,0.3)" strokeWidth="1"/>
                     <text x="236" y="86" textAnchor="middle" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Maria das Graças</text>
-                    <rect x="16" y="104" width="288" height="26" fill="rgba(99,102,241,0.9)" rx="6"/>
+                    <rect x="16" y="104" width="288" height="26" fill="rgba(229,34,41,0.85)" rx="6"/>
                     <text x="160" y="121" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="system-ui">Continuar →</text>
                   </svg>
                 ),
               },
               {
-                n:3, color:C.blue, phase:"Configuração da conta", ico:"🏥",
+                n:3, color:C.textSec, phase:"Configuração da conta", ico:"🏥",
                 title:"Selecione a especialidade",
                 desc:"Escolha a especialidade odontológica do serviço que você precisa. As especialidades disponíveis são Implantodontia, Dentística, Prótese, DTM, Estética e outras.",
                 tips:["Cada especialidade tem serviços específicos","Implantodontia v1.0 está completa e disponível","Outras especialidades serão adicionadas em breve"],
@@ -2106,7 +2106,7 @@ input,textarea,select{touch-action:manipulation;}
                       {x:86,y:30,c:"#6366f1",t:"Dentística"},
                       {x:164,y:30,c:"#eab308",t:"Prótese"},
                       {x:242,y:30,c:"#22c55e",t:"Periodontia"},
-                      {x:8, y:108,c:"rgba(99,102,241,0.9)",t:"Endodontia"},
+                      {x:8, y:108,c:"rgba(229,34,41,0.85)",t:"Endodontia"},
                       {x:86,y:108,c:"#0D9488",t:"DTM"},
                       {x:164,y:108,c:"#ea580c",t:"Estética"},
                       {x:242,y:108,c:"#2563eb",t:"Cirurgia"},
@@ -2201,7 +2201,7 @@ input,textarea,select{touch-action:manipulation;}
                 ),
               },
               {
-                n:7, color:C.blue, phase:"Após o pedido", ico:"📁",
+                n:7, color:C.textSec, phase:"Após o pedido", ico:"📁",
                 title:"Envie os arquivos clínicos",
                 desc:"Após o pagamento, você receberá instruções para enviar os arquivos clínicos: tomografia (DICOM/CBCT), escaneamento intraoral (STL), e outros exames conforme o serviço. O planejamento começa após o recebimento e validação dos arquivos.",
                 tips:["CBCT obrigatório para cirurgia guiada (fatias ≤0.4mm)","Escaneamento intraoral substitui modelos de gesso","Dúvidas sobre arquivos: WhatsApp (98) 98542-5982"],
@@ -2226,7 +2226,7 @@ input,textarea,select{touch-action:manipulation;}
                 ),
               },
               {
-                n:8, color:C.blue, phase:"Após o pedido", ico:"🚀",
+                n:8, color:C.textSec, phase:"Após o pedido", ico:"🚀",
                 title:"Acompanhe o planejamento",
                 desc:"Após o envio dos arquivos, nossa equipe inicia o planejamento. Você recebe atualizações por WhatsApp e pode acompanhar o status no dashboard. O prazo começa a contar a partir da validação dos arquivos.",
                 tips:["Tempo médio de planejamento: 48-72h úteis","Aprovação obrigatória antes da impressão","Suporte por WhatsApp em horário comercial"],
@@ -2245,14 +2245,14 @@ input,textarea,select{touch-action:manipulation;}
                         <g key={i}>
                           <circle cx={i*72} cy="18" r="10"
                             fill={st.done?"#22c55e":st.active?"#6366f1":"#2a2a2a"}
-                            stroke={st.done?"rgba(34,197,94,0.4)":st.active?"rgba(99,102,241,0.6)":"rgba(255,255,255,0.1)"} strokeWidth="1.5"/>
+                            stroke={st.done?"rgba(34,197,94,0.4)":st.active?"rgba(229,34,41,0.60)":"rgba(255,255,255,0.1)"} strokeWidth="1.5"/>
                           <text x={i*72} y="23" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">{st.done?"✓":i+1}</text>
                           <text x={i*72} y="42" textAnchor="middle" fill={st.active?"#6366f1":"#555"} fontSize="8" fontFamily="system-ui">{st.label}</text>
                           {i<4&&<line x1={i*72+11} y1="18" x2={i*72+61} y2="18" stroke={st.done?"#22c55e":"rgba(255,255,255,0.1)"} strokeWidth="1.5" strokeDasharray={st.done?"0":"4 3"}/>}
                         </g>
                       ))}
                     </g>
-                    <rect x="16" y="96" width="288" height="34" fill="#242424" rx="8" stroke="rgba(99,102,241,0.2)" strokeWidth="1"/>
+                    <rect x="16" y="96" width="288" height="34" fill="#242424" rx="8" stroke="rgba(229,34,41,0.18)" strokeWidth="1"/>
                     <text x="28" y="110" fill="#6366f1" fontSize="10" fontWeight="700" fontFamily="system-ui">🔵 Em planejamento</text>
                     <text x="28" y="123" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Previsão de conclusão: 48h úteis · Cirurgia Guiada Unitária</text>
                   </svg>
@@ -2310,7 +2310,7 @@ input,textarea,select{touch-action:manipulation;}
               <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"10px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8,border:`1px solid ${C.border}`}}>
                 <input type="checkbox" checked={tutorialNeverShow}
                   onChange={e=>setTutorialNeverShowAndSave(e.target.checked)}
-                  style={{width:16,height:16,accentColor:C.blue,cursor:"pointer",flexShrink:0}}/>
+                  style={{width:16,height:16,accentColor:C.red,cursor:"pointer",flexShrink:0}}/>
                 <div>
                   <div style={{fontSize:13,fontWeight:600,color:C.text}}>Não exibir este tutorial automaticamente</div>
                   <div style={{fontSize:11,color:C.textMut,marginTop:1}}>Você poderá acessar pelo botão "Tutorial do Sistema" no dashboard a qualquer momento.</div>
@@ -2339,7 +2339,7 @@ input,textarea,select{touch-action:manipulation;}
               <svg style={{position:"absolute",left:12,top:"50%",transform:"translateY(-50%)",opacity:.4,pointerEvents:"none"}} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
               <input value={patSearch} onChange={e=>setPatSearch(e.target.value)}
                 placeholder="Buscar paciente pelo nome..."
-                style={{width:"100%",background:C.dark2,border:`1px solid ${patSearch?C.blue:C.border}`,borderRadius:12,padding:"11px 14px 11px 38px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/>
+                style={{width:"100%",background:C.dark2,border:`1px solid ${patSearch?C.red:C.border}`,borderRadius:12,padding:"11px 14px 11px 38px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/>
               {patSearch&&<button onClick={()=>setPatSearch("")} style={{position:"absolute",right:10,top:"50%",transform:"translateY(-50%)",background:"none",border:"none",color:C.textSec,cursor:"pointer",fontSize:16,lineHeight:1}}>×</button>}
             </div>
 
@@ -2372,16 +2372,16 @@ input,textarea,select{touch-action:manipulation;}
                       setSpecialty(null);setService(null);setServiceType(null);setSelectedGroup(null);
                       setScreen("specialties");
                     }} style={{display:"flex",alignItems:"center",gap:12,background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s"}}
-                      onMouseEnter={e=>e.currentTarget.style.borderColor=C.blue}
+                      onMouseEnter={e=>e.currentTarget.style.borderColor=C.red}
                       onMouseLeave={e=>e.currentTarget.style.borderColor=C.border}>
-                      <div style={{width:44,height:44,borderRadius:12,background:"rgba(99,102,241,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:C.blue,flexShrink:0}}>
+                      <div style={{width:44,height:44,borderRadius:12,background:"rgba(229,34,41,0.12)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:14,fontWeight:800,color:C.textSec,flexShrink:0}}>
                         {p.nome.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
                         <div style={{fontWeight:700,fontSize:13}}>{p.nome}</div>
                         {p.nasc&&<div style={{fontSize:13,color:C.textSec,marginTop:1}}>{calcAge(p.nasc)?`${calcAge(p.nasc)} · Nasc. ${p.nasc}`:p.nasc}</div>}
                       </div>
-                      <div style={{fontSize:12,color:C.blue,fontWeight:600,flexShrink:0}}>Selecionar →</div>
+                      <div style={{fontSize:12,color:C.textSec,fontWeight:600,flexShrink:0}}>Selecionar →</div>
                     </button>
                   ))}
                 </div>
@@ -2400,7 +2400,7 @@ input,textarea,select{touch-action:manipulation;}
             <div style={{marginBottom:12}}>
               <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>Data de nascimento *</label>
               <input value={patForm.nasc} onChange={e=>setPatForm(f=>({...f,nasc:maskDob(e.target.value)}))} placeholder="dd/mm/aaaa" inputMode="numeric" maxLength={10}
-                style={{width:"100%",background:C.dark2,border:`1px solid ${patForm.nasc&&!calcAge(patForm.nasc)?C.red:patForm.nasc?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/>
+                style={{width:"100%",background:C.dark2,border:`1px solid ${patForm.nasc&&!calcAge(patForm.nasc)?C.red:patForm.nasc?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/>
               {patForm.nasc&&calcAge(patForm.nasc)&&<div style={{fontSize:13,color:C.green,marginTop:5,fontWeight:600}}>Idade: {calcAge(patForm.nasc)}</div>}
               {patForm.nasc.length===10&&!calcAge(patForm.nasc)&&<div style={{fontSize:13,color:C.red,marginTop:5}}>Data inválida. Verifique dia, mês e ano.</div>}
             </div>
@@ -2565,20 +2565,20 @@ input,textarea,select{touch-action:manipulation;}
                             <div style={{display:"grid",gridTemplateColumns:hasIncludes?"1fr 1fr":"1fr",gap:8,marginBottom:4}}>
                               {/* Exames */}
                               {sv0.exams?.length>0&&(
-                                <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:8,padding:"7px 10px"}}>
-                                  <div style={{fontSize:12,fontWeight:700,color:C.blue,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
-                                    <FileText size={10} color={C.blue}/> ARQUIVOS NECESSÁRIOS
+                                <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:8,padding:"7px 10px"}}>
+                                  <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
+                                    <FileText size={10} color={C.textSec}/> ARQUIVOS NECESSÁRIOS
                                   </div>
                                   {sv0.exams.map((ex,ei)=>(
                                     <div key={ei} style={{fontSize:13,color:C.textSec,display:"flex",alignItems:"flex-start",gap:5,marginBottom:3}}>
-                                      <span style={{color:C.blue,flexShrink:0}}>·</span>{ex}
+                                      <span style={{color:C.textSec,flexShrink:0}}>·</span>{ex}
                                     </div>
                                   ))}
                                   <a href={EXAMS_MANUAL_URL} target="_blank" rel="noopener noreferrer"
                                     onClick={e=>e.stopPropagation()}
-                                    style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:6,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:16,padding:"3px 9px",textDecoration:"none",cursor:"pointer"}}>
-                                    <Search size={9} color={C.blue}/>
-                                    <span style={{fontSize:12,fontWeight:700,color:C.blue}}>DÚVIDAS? CLIQUE AQUI</span>
+                                    style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:6,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:16,padding:"3px 9px",textDecoration:"none",cursor:"pointer"}}>
+                                    <Search size={9} color={C.textSec}/>
+                                    <span style={{fontSize:12,fontWeight:700,color:C.textSec}}>DÚVIDAS? CLIQUE AQUI</span>
                                   </a>
                                 </div>
                               )}
@@ -2691,20 +2691,20 @@ input,textarea,select{touch-action:manipulation;}
                       {(disp.exams?.length>0||sv.includes?.length>0)&&(
                         <div style={{display:"grid",gridTemplateColumns:sv.includes?.length?"1fr 1fr":"1fr",gap:8}}>
                           {disp.exams?.length>0&&(
-                            <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:8,padding:"7px 10px"}}>
-                              <div style={{fontSize:12,fontWeight:700,color:C.blue,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
-                                <FileText size={10} color={C.blue}/> ARQUIVOS NECESSÁRIOS
+                            <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:8,padding:"7px 10px"}}>
+                              <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
+                                <FileText size={10} color={C.textSec}/> ARQUIVOS NECESSÁRIOS
                               </div>
                               {disp.exams.map((ex,ei)=>(
                                 <div key={ei} style={{fontSize:13,color:C.textSec,display:"flex",alignItems:"flex-start",gap:5,marginBottom:3}}>
-                                  <span style={{color:C.blue,flexShrink:0}}>·</span>{ex}
+                                  <span style={{color:C.textSec,flexShrink:0}}>·</span>{ex}
                                 </div>
                               ))}
                               <a href={EXAMS_MANUAL_URL} target="_blank" rel="noopener noreferrer"
                                 onClick={e=>e.stopPropagation()}
-                                style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:6,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:16,padding:"3px 9px",textDecoration:"none",cursor:"pointer"}}>
-                                <Search size={9} color={C.blue}/>
-                                <span style={{fontSize:12,fontWeight:700,color:C.blue}}>DÚVIDAS? CLIQUE AQUI</span>
+                                style={{display:"inline-flex",alignItems:"center",gap:4,marginTop:6,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:16,padding:"3px 9px",textDecoration:"none",cursor:"pointer"}}>
+                                <Search size={9} color={C.textSec}/>
+                                <span style={{fontSize:12,fontWeight:700,color:C.textSec}}>DÚVIDAS? CLIQUE AQUI</span>
                               </a>
                             </div>
                           )}
@@ -2857,10 +2857,10 @@ input,textarea,select{touch-action:manipulation;}
                   <div style={{display:"flex",gap:8}}>
                     <div style={{position:"relative"}}>
                       <button onClick={()=>setScreen(0)}
-                        style={{width:44,height:44,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}
-                        onMouseEnter={e=>{e.currentTarget.style.background="rgba(99,102,241,0.22)";e.currentTarget.nextSibling.style.opacity="1";}}
-                        onMouseLeave={e=>{e.currentTarget.style.background="rgba(99,102,241,0.08)";e.currentTarget.nextSibling.style.opacity="0";}}>
-                        <Pencil size={14} color={C.blue}/>
+                        style={{width:44,height:44,borderRadius:8,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}
+                        onMouseEnter={e=>{e.currentTarget.style.background="rgba(229,34,41,0.18)";e.currentTarget.nextSibling.style.opacity="1";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="rgba(229,34,41,0.08)";e.currentTarget.nextSibling.style.opacity="0";}}>
+                        <Pencil size={14} color={C.textSec}/>
                       </button>
                       <div style={{position:"absolute",bottom:"calc(100% + 6px)",right:0,background:"rgba(0,0,0,0.85)",color:"#fff",fontSize:12,fontWeight:600,padding:"4px 8px",borderRadius:8,whiteSpace:"nowrap",pointerEvents:"none",opacity:0,transition:"opacity .15s",zIndex:99}}>Editar</div>
                     </div>
@@ -2878,9 +2878,9 @@ input,textarea,select{touch-action:manipulation;}
               </div>
             </div>
             {/* Nota informativa */}
-            <div style={{background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.textSec,lineHeight:1.6}}>
+            <div style={{background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:12,padding:"10px 14px",marginBottom:14,fontSize:12,color:C.textSec,lineHeight:1.6}}>
               Após o pagamento, envie os arquivos pelo portal. Se o caso tiver viabilidade, {fmt(P.preplan)} será descontado.{" "}
-              <button onClick={()=>setShowRules(true)} style={{background:"none",border:"none",color:C.blue,fontWeight:700,fontSize:12,cursor:"pointer",textDecoration:"underline",padding:0}}>Ver regras</button>
+              <button onClick={()=>setShowRules(true)} style={{background:"none",border:"none",color:C.textSec,fontWeight:700,fontSize:12,cursor:"pointer",textDecoration:"underline",padding:0}}>Ver regras</button>
             </div>
             {/* Total */}
             <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.2)",borderRadius:12,padding:16,marginBottom:16}}>
@@ -2901,21 +2901,21 @@ input,textarea,select{touch-action:manipulation;}
         {screen===1&&(
           service?.usesArch
           /* ── Seleção de arcada (Protocolos / Stackable) ── */
-          ? <Step title="Selecione a(s) arcada(s)" sub="Selecione a(s) arcada(s) do caso." badge="Arcada" badgeColor={C.blue} onBack={()=>setScreen(0)}>
+          ? <Step title="Selecione a(s) arcada(s)" sub="Selecione a(s) arcada(s) do caso." badge="Arcada" badgeColor={C.red} onBack={()=>setScreen(0)}>
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
                 {[{key:"sup",label:"Arcada Superior"},{key:"inf",label:"Arcada Inferior"}].map(arc=>{
                   const sel=A.arch[arc.key];
                   return(
                     <button key={arc.key} onClick={()=>setA(a=>({...a,arch:{...a.arch,[arc.key]:!a.arch[arc.key]}}))}
-                      style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel?"rgba(99,102,241,0.1)":C.dark2,border:`1.5px solid ${sel?C.blue:C.border}`,borderRadius:12,padding:"16px 18px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
-                      <div style={{width:22,height:22,borderRadius:8,background:sel?C.blue:C.dark3,border:`2px solid ${sel?C.blue:C.border}`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800}}>
+                      style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel?"rgba(229,34,41,0.10)":C.dark2,border:`1.5px solid ${sel?C.red:C.border}`,borderRadius:12,padding:"16px 18px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
+                      <div style={{width:22,height:22,borderRadius:8,background:sel?C.red:C.dark3,border:`2px solid ${sel?C.red:C.border}`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800}}>
                         {sel?"✓":""}
                       </div>
                       <div style={{flex:1}}>
-                        <div style={{fontSize:15,fontWeight:800,color:sel?C.blue:"#fff"}}>{arc.label}</div>
+                        <div style={{fontSize:15,fontWeight:800,color:sel?C.red:"#fff"}}>{arc.label}</div>
                       </div>
                       {service.archAffectsPrice&&sel&&(
-                        <div style={{fontSize:13,fontWeight:800,color:C.blue,flexShrink:0}}>+{fmt(service.price)}</div>
+                        <div style={{fontSize:13,fontWeight:800,color:C.textSec,flexShrink:0}}>+{fmt(service.price)}</div>
                       )}
                     </button>
                   );
@@ -2937,7 +2937,7 @@ input,textarea,select{touch-action:manipulation;}
               sub={service?.exactQty
                 ?`Selecione exatamente ${service.exactQty} dente${service.exactQty>1?"s":""} para marcar os implantes.`
                 :"Selecione o dente do implante."}
-              badge="Dentes" badgeColor={C.blue} onBack={()=>setScreen(0)}>
+              badge="Dentes" badgeColor={C.red} onBack={()=>setScreen(0)}>
               {/* Contador de seleção */}
               {(()=>{
                 const isParcial=!!service?.priceByQty;
@@ -2951,8 +2951,8 @@ input,textarea,select{touch-action:manipulation;}
                   const infPrice=infValid?(pbyq[Math.min(infCount,8)]||0):0;
                   const total=supPrice+infPrice;
                   return(
-                    <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:12,padding:"12px 14px",marginBottom:14}}>
-                      <div style={{fontSize:13,fontWeight:700,color:C.blue,marginBottom:8,letterSpacing:.5}}>SELEÇÃO DE IMPLANTES</div>
+                    <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:12,padding:"12px 14px",marginBottom:14}}>
+                      <div style={{fontSize:13,fontWeight:700,color:C.textSec,marginBottom:8,letterSpacing:.5}}>SELEÇÃO DE IMPLANTES</div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
                         <div style={{background:supValid?"rgba(34,197,94,0.08)":"rgba(255,255,255,0.04)",border:`1px solid ${supValid?"rgba(34,197,94,0.3)":C.border}`,borderRadius:8,padding:"8px 10px",textAlign:"center"}}>
                           <div style={{fontSize:12,color:C.textSec,marginBottom:2}}>Arcada Superior</div>
@@ -2980,12 +2980,12 @@ input,textarea,select{touch-action:manipulation;}
                   const hasSupInf=supCount>0&&infCount>0;
                   const total=A.teeth.length;
                   return(
-                    <div style={{background:hasSupInf?"rgba(234,179,8,0.08)":total===limit?"rgba(34,197,94,0.08)":"rgba(99,102,241,0.06)",border:`1px solid ${hasSupInf?"rgba(234,179,8,0.35)":total===limit?"rgba(34,197,94,0.3)":"rgba(99,102,241,0.2)"}`,borderRadius:12,padding:"10px 14px",marginBottom:14}}>
+                    <div style={{background:hasSupInf?"rgba(234,179,8,0.08)":total===limit?"rgba(34,197,94,0.08)":"rgba(229,34,41,0.06)",border:`1px solid ${hasSupInf?"rgba(234,179,8,0.35)":total===limit?"rgba(34,197,94,0.3)":"rgba(229,34,41,0.18)"}`,borderRadius:12,padding:"10px 14px",marginBottom:14}}>
                       <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:hasSupInf?6:0}}>
                         <span style={{fontSize:13,color:C.textSec}}>
                           {total===0?"Nenhum dente selecionado":hasSupInf?`Superior: ${supCount}/${limit} · Inferior: ${infCount}/${limit}`:`${total}/${limit} dente${limit>1?"s":""}`}
                         </span>
-                        <span style={{fontSize:13,fontWeight:800,color:hasSupInf?C.yellow:total===limit?C.green:C.blue}}>
+                        <span style={{fontSize:13,fontWeight:800,color:hasSupInf?C.yellow:total===limit?C.green:C.red}}>
                           {hasSupInf?`×2 guias`:`${total}/${limit}`}
                         </span>
                       </div>
@@ -3052,25 +3052,25 @@ input,textarea,select{touch-action:manipulation;}
           const isReady=bothArches?(getVal("sup")!==null&&getVal("inf")!==null):A.implantQty!==null;
 
           return(
-            <Step title="Tipo de caso" sub={bothArches?"Selecione o tipo de caso para cada arcada.":"Selecione a quantidade de implantes planejada."} badge="Tipo de Caso" badgeColor={C.blue} onBack={()=>setScreen(1)}>
+            <Step title="Tipo de caso" sub={bothArches?"Selecione o tipo de caso para cada arcada.":"Selecione a quantidade de implantes planejada."} badge="Tipo de Caso" badgeColor={C.red} onBack={()=>setScreen(1)}>
               {bothArches
                 /* ── DUAS ARCADAS: coluna por arcada ── */
                 ?<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:16}}>
                   {[{arc:"sup",label:"Superior"},{arc:"inf",label:"Inferior"}].map(({arc,label})=>(
                     <div key={arc} style={{display:"flex",flexDirection:"column",gap:8}}>
                       {/* Cabeçalho da coluna */}
-                      <div style={{background:`rgba(99,102,241,0.08)`,border:"1px solid rgba(99,102,241,0.2)",borderRadius:8,padding:"6px 10px",textAlign:"center"}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.blue,letterSpacing:.5}}>ARCADA {label.toUpperCase()}</div>
-                        {getVal(arc)&&<div style={{fontSize:13,color:C.blue,fontWeight:600,marginTop:1}}>{opts.find(o=>o.qty===getVal(arc))?.label}</div>}
+                      <div style={{background:`rgba(229,34,41,0.08)`,border:"1px solid rgba(229,34,41,0.18)",borderRadius:8,padding:"6px 10px",textAlign:"center"}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:.5}}>ARCADA {label.toUpperCase()}</div>
+                        {getVal(arc)&&<div style={{fontSize:13,color:C.textSec,fontWeight:600,marginTop:1}}>{opts.find(o=>o.qty===getVal(arc))?.label}</div>}
                       </div>
                       {/* 3 opções empilhadas */}
                       {opts.map(opt=>{
                         const sel=getVal(arc)===opt.qty;
                         return(
                           <button key={opt.qty} onClick={()=>setVal(arc,opt.qty)}
-                            style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,background:sel?"rgba(99,102,241,0.12)":C.dark2,border:`2px solid ${sel?C.blue:C.border}`,borderRadius:12,padding:"12px 8px",cursor:"pointer",color:C.text,transition:"border-color .15s,background .15s",position:"relative"}}>
-                            {sel&&<div style={{position:"absolute",top:5,right:5,width:14,height:14,borderRadius:"50%",background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:800}}>✓</div>}
-                            <div style={{fontSize:13,fontWeight:900,color:sel?C.blue:"#fff"}}>{opt.label}</div>
+                            style={{width:"100%",display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",gap:3,background:sel?"rgba(229,34,41,0.12)":C.dark2,border:`2px solid ${sel?C.red:C.border}`,borderRadius:12,padding:"12px 8px",cursor:"pointer",color:C.text,transition:"border-color .15s,background .15s",position:"relative"}}>
+                            {sel&&<div style={{position:"absolute",top:5,right:5,width:14,height:14,borderRadius:"50%",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,color:"#fff",fontWeight:800}}>✓</div>}
+                            <div style={{fontSize:13,fontWeight:900,color:sel?C.red:"#fff"}}>{opt.label}</div>
                             <div style={{fontSize:12,color:C.textSec}}>{opt.sub}</div>
                           </button>
                         );
@@ -3084,15 +3084,15 @@ input,textarea,select{touch-action:manipulation;}
                     const sel=A.implantQty===opt.qty;
                     return(
                       <button key={opt.qty} onClick={()=>setA(a=>({...a,implantQty:opt.qty}))}
-                        style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel?"rgba(99,102,241,0.12)":C.dark2,border:`2px solid ${sel?C.blue:C.border}`,borderRadius:12,padding:"16px 18px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
-                        <div style={{width:56,height:52,borderRadius:12,background:sel?C.blue:"rgba(99,102,241,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                          <span style={{fontSize:14,fontWeight:900,color:sel?"#fff":C.blue}}>{opt.label}</span>
+                        style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel?"rgba(229,34,41,0.12)":C.dark2,border:`2px solid ${sel?C.red:C.border}`,borderRadius:12,padding:"16px 18px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
+                        <div style={{width:56,height:52,borderRadius:12,background:sel?C.red:"rgba(229,34,41,0.08)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                          <span style={{fontSize:14,fontWeight:900,color:sel?"#fff":C.red}}>{opt.label}</span>
                         </div>
                         <div style={{flex:1}}>
-                          <div style={{fontSize:16,fontWeight:800,color:sel?C.blue:"#fff"}}>{opt.label}</div>
+                          <div style={{fontSize:16,fontWeight:800,color:sel?C.red:"#fff"}}>{opt.label}</div>
                           <div style={{fontSize:12,color:C.textSec,marginTop:2}}>{opt.sub} na arcada selecionada</div>
                         </div>
-                        {sel&&<div style={{width:22,height:22,borderRadius:"50%",background:C.blue,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800,flexShrink:0}}>✓</div>}
+                        {sel&&<div style={{width:22,height:22,borderRadius:"50%",background:C.red,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800,flexShrink:0}}>✓</div>}
                       </button>
                     );
                   })}
@@ -3100,12 +3100,12 @@ input,textarea,select{touch-action:manipulation;}
               }
               {/* Resumo */}
               {isReady&&(
-                <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:12,padding:"10px 14px",marginBottom:14}}>
+                <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:12,padding:"10px 14px",marginBottom:14}}>
                   {bothArches
                     ?<>
-                      <div style={{fontSize:12,color:C.textSec}}>Superior: <b style={{color:C.blue}}>{opts.find(o=>o.qty===getVal("sup"))?.label}</b> · {getVal("sup")} implantes</div>
-                      <div style={{fontSize:12,color:C.textSec,marginTop:3}}>Inferior: <b style={{color:C.blue}}>{opts.find(o=>o.qty===getVal("inf"))?.label}</b> · {getVal("inf")} implantes</div>
-                      <div style={{fontSize:12,color:C.blue,fontWeight:700,marginTop:6,borderTop:`1px solid rgba(99,102,241,0.15)`,paddingTop:6}}>Total: {(getVal("sup")||0)+(getVal("inf")||0)} implantes</div>
+                      <div style={{fontSize:12,color:C.textSec}}>Superior: <b style={{color:C.textSec}}>{opts.find(o=>o.qty===getVal("sup"))?.label}</b> · {getVal("sup")} implantes</div>
+                      <div style={{fontSize:12,color:C.textSec,marginTop:3}}>Inferior: <b style={{color:C.textSec}}>{opts.find(o=>o.qty===getVal("inf"))?.label}</b> · {getVal("inf")} implantes</div>
+                      <div style={{fontSize:12,color:C.textSec,fontWeight:700,marginTop:6,borderTop:`1px solid rgba(229,34,41,0.12)`,paddingTop:6}}>Total: {(getVal("sup")||0)+(getVal("inf")||0)} implantes</div>
                     </>
                     :<div style={{fontSize:12,color:C.textSec}}>{opts.find(o=>o.qty===A.implantQty)?.label} · {A.implantQty} implantes na arcada selecionada</div>
                   }
@@ -3120,7 +3120,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP — SERVIÇO COMPLEMENTAR (Protocolo e Parcial) */}
         {screen==="protoCompl"&&(service?.usesArch||isParcial)&&(
-          <Step title="Serviço complementar" sub="Opcional. Adicione o planejamento digital do sorriso para orientar o posicionamento dos implantes." badge="Serviço Complementar" badgeColor={C.blue} onBack={()=>isParcial?setScreen(1):setScreen("implantQty")}>
+          <Step title="Serviço complementar" sub="Opcional. Adicione o planejamento digital do sorriso para orientar o posicionamento dos implantes." badge="Serviço Complementar" badgeColor={C.red} onBack={()=>isParcial?setScreen(1):setScreen("implantQty")}>
             {/* Card do serviço complementar */}
             <div style={{marginBottom:16}}>
               <button onClick={()=>setA(a=>({...a,dsd3dAddon:!a.dsd3dAddon}))}
@@ -3168,13 +3168,13 @@ input,textarea,select{touch-action:manipulation;}
                     </div>
                     {/* Exames + Incluso */}
                     <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>
-                      <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:8,padding:"7px 10px"}}>
-                        <div style={{fontSize:12,fontWeight:700,color:C.blue,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
-                          <FileText size={10} color={C.blue}/> ARQUIVOS NECESSÁRIOS
+                      <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:8,padding:"7px 10px"}}>
+                        <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
+                          <FileText size={10} color={C.textSec}/> ARQUIVOS NECESSÁRIOS
                         </div>
                         {["Protocolo fotográfico (JPEG)","Modelo digital das arcadas (arquivo STL)"].map((ex,i)=>(
                           <div key={i} style={{fontSize:13,color:C.textSec,display:"flex",alignItems:"flex-start",gap:5,marginBottom:3}}>
-                            <span style={{color:C.blue,flexShrink:0}}>·</span>{ex}
+                            <span style={{color:C.textSec,flexShrink:0}}>·</span>{ex}
                           </div>
                         ))}
                       </div>
@@ -3214,7 +3214,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP 2 — MARCA */}
         {screen===2&&(
-          <Step title="Qual a marca do implante?" sub="O kit e o modelo serão filtrados pela marca selecionada." badge="Marca do Implante" badgeColor={C.blue} onBack={()=>{
+          <Step title="Qual a marca do implante?" sub="O kit e o modelo serão filtrados pela marca selecionada." badge="Marca do Implante" badgeColor={C.red} onBack={()=>{
             if(isProto) return setScreen("protoCompl");
             if(isParcial){
               const anteriorSup=[11,12,13,21,22,23];
@@ -3248,7 +3248,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP 3 — KIT */}
         {screen===3&&(
-          <Step title={`Kit cirúrgico — ${A.brand}`} sub="Os modelos disponíveis serão filtrados pelo kit." badge="Kit Cirúrgico" badgeColor={C.blue} onBack={()=>setScreen(2)}>
+          <Step title={`Kit cirúrgico — ${A.brand}`} sub="Os modelos disponíveis serão filtrados pelo kit." badge="Kit Cirúrgico" badgeColor={C.red} onBack={()=>setScreen(2)}>
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:12}}>
               {kitsFor(A.brand).map(kit=>(
                 <button key={kit} onClick={()=>setA(a=>({...a,kit,model:null,modelText:""}))}
@@ -3266,7 +3266,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP 4 — MODELO */}
         {screen===4&&(
-          <Step title={`Modelo — ${A.kit}`} sub={`Modelos compatíveis com ${A.kit} · ${A.brand}.`} badge="Modelo do Implante" badgeColor={C.blue} onBack={()=>setScreen(3)}>
+          <Step title={`Modelo — ${A.kit}`} sub={`Modelos compatíveis com ${A.kit} · ${A.brand}.`} badge="Modelo do Implante" badgeColor={C.red} onBack={()=>setScreen(3)}>
             {modelsFor(A.brand,A.kit).length>0
               ?<><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14}}>
                 {modelsFor(A.brand,A.kit).map(model=>(
@@ -3371,11 +3371,11 @@ input,textarea,select{touch-action:manipulation;}
                     </button>
                     {/* Aviso proto_parc — trocar para Stackable Guide */}
                     {unavailableParc&&(
-                      <div style={{background:"rgba(99,102,241,0.05)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:12,marginBottom:10,overflow:"hidden"}}>
+                      <div style={{background:"rgba(229,34,41,0.05)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:12,marginBottom:10,overflow:"hidden"}}>
                         <div style={{display:"flex",alignItems:"flex-start",gap:8,padding:"10px 12px"}}>
-                          <AlertTriangle size={13} color={C.blue} style={{flexShrink:0,marginTop:1}}/>
+                          <AlertTriangle size={13} color={C.textSec} style={{flexShrink:0,marginTop:1}}/>
                           <div style={{fontSize:13,color:C.textSec,lineHeight:1.6}}>
-                            A <b style={{color:"#fff"}}>Prótese Protocolo Provisória</b> não está disponível no Protocolo Edêntulo Parcial. Para incluí-la, selecione o serviço <b style={{color:C.blue}}>Stackable Guide / Guias Empilháveis</b>, que já contempla este adicional.
+                            A <b style={{color:"#fff"}}>Prótese Protocolo Provisória</b> não está disponível no Protocolo Edêntulo Parcial. Para incluí-la, selecione o serviço <b style={{color:C.textSec}}>Stackable Guide / Guias Empilháveis</b>, que já contempla este adicional.
                           </div>
                         </div>
                         {/* Botão para trocar o serviço */}
@@ -3387,15 +3387,15 @@ input,textarea,select{touch-action:manipulation;}
                               setShowStackableInfo(true);
                             }
                           }}
-                          style={{width:"100%",display:"flex",alignItems:"center",gap:12,background:"rgba(99,102,241,0.06)",borderTop:"1px solid rgba(99,102,241,0.2)",padding:"12px 14px",cursor:"pointer",textAlign:"left",color:C.text,border:"none"}}>
-                          <div style={{width:44,height:44,borderRadius:12,background:"rgba(99,102,241,0.12)",border:"1px solid rgba(99,102,241,0.25)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
-                            <Wrench size={16} color={C.blue}/>
+                          style={{width:"100%",display:"flex",alignItems:"center",gap:12,background:"rgba(229,34,41,0.06)",borderTop:"1px solid rgba(229,34,41,0.18)",padding:"12px 14px",cursor:"pointer",textAlign:"left",color:C.text,border:"none"}}>
+                          <div style={{width:44,height:44,borderRadius:12,background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.20)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                            <Wrench size={16} color={C.textSec}/>
                           </div>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:13,fontWeight:700,color:C.blue,marginBottom:2}}>Alterar para Stackable Guide / Guias Empilháveis</div>
+                            <div style={{fontSize:13,fontWeight:700,color:C.textSec,marginBottom:2}}>Alterar para Stackable Guide / Guias Empilháveis</div>
                             <div style={{fontSize:13,color:C.textSec}}>Prótese Provisória já inclusa no serviço</div>
                           </div>
-                          <ChevronLeft size={14} color={C.blue} style={{transform:"rotate(180deg)",flexShrink:0}}/>
+                          <ChevronLeft size={14} color={C.textSec} style={{transform:"rotate(180deg)",flexShrink:0}}/>
                         </button>
                       </div>
                     )}
@@ -3627,7 +3627,7 @@ input,textarea,select{touch-action:manipulation;}
         {screen===7&&(
           <div>
             <BackBtn onClick={()=>A.preplan==="sim"?setScreen(0):setScreen(6)}/>
-            <span style={{display:"inline-block",fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:A.preplan==="sim"?"rgba(234,179,8,0.15)":"rgba(99,102,241,0.15)",color:A.preplan==="sim"?C.yellow:C.blue,padding:"3px 10px",borderRadius:16,marginBottom:10}}>{A.preplan==="sim"?"PRÉ-PLANEJAMENTO":"INFORMAÇÕES DO CASO"}</span>
+            <span style={{display:"inline-block",fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:A.preplan==="sim"?"rgba(234,179,8,0.15)":"rgba(229,34,41,0.12)",color:A.preplan==="sim"?C.yellow:C.textSec,padding:"3px 10px",borderRadius:16,marginBottom:10}}>{A.preplan==="sim"?"PRÉ-PLANEJAMENTO":"INFORMAÇÕES DO CASO"}</span>
             <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>{A.preplan==="sim"?"Observações para o pré-planejamento":"Observações para o planejamento"}</div>
             <div style={{fontSize:13,color:C.textSec,marginBottom:20,lineHeight:1.6}}>
               {A.preplan==="sim"
@@ -3653,7 +3653,7 @@ input,textarea,select{touch-action:manipulation;}
         {screen===8&&(
           <div>
             <BackBtn onClick={()=>setScreen(7)}/>
-            <span style={{display:"inline-block",fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:"rgba(99,102,241,0.15)",color:C.blue,padding:"3px 10px",borderRadius:16,marginBottom:10}}>FRETE</span>
+            <span style={{display:"inline-block",fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:"rgba(229,34,41,0.12)",color:C.textSec,padding:"3px 10px",borderRadius:16,marginBottom:10}}>FRETE</span>
             <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>Entrega</div>
             <div style={{fontSize:13,color:C.textSec,marginBottom:20,lineHeight:1.6}}>Selecione a modalidade de envio para a entrega dos dispositivos impressos.</div>
 
@@ -3757,7 +3757,7 @@ input,textarea,select{touch-action:manipulation;}
                         <div style={{flex:1}}>
                           <div style={{fontWeight:800,fontSize:13}}>{label}</div>
                           <div style={{fontSize:13,color:C.textSec,marginTop:1}}>{sub}</div>
-                          <div style={{fontSize:12,color:C.blue,fontWeight:600,marginTop:2}}>Entrega estimada: {eta} após aprovação</div>
+                          <div style={{fontSize:12,color:C.textSec,fontWeight:600,marginTop:2}}>Entrega estimada: {eta} após aprovação</div>
                         </div>
                         <div style={{textAlign:"right",flexShrink:0}}>
                           <div style={{fontWeight:900,fontSize:15,color:freight.method===key?C.red:C.text}}>{fmt(opt.valor)}</div>
@@ -3815,10 +3815,10 @@ input,textarea,select{touch-action:manipulation;}
                   <div style={{display:"flex",gap:8}}>
                     <div style={{position:"relative"}}>
                       <button onClick={()=>setScreen(0)} title="Editar"
-                        style={{width:44,height:44,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}
-                        onMouseEnter={e=>{e.currentTarget.style.background="rgba(99,102,241,0.22)";e.currentTarget.nextSibling.style.opacity="1";}}
-                        onMouseLeave={e=>{e.currentTarget.style.background="rgba(99,102,241,0.08)";e.currentTarget.nextSibling.style.opacity="0";}}>
-                        <Pencil size={14} color={C.blue}/>
+                        style={{width:44,height:44,borderRadius:8,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer"}}
+                        onMouseEnter={e=>{e.currentTarget.style.background="rgba(229,34,41,0.18)";e.currentTarget.nextSibling.style.opacity="1";}}
+                        onMouseLeave={e=>{e.currentTarget.style.background="rgba(229,34,41,0.08)";e.currentTarget.nextSibling.style.opacity="0";}}>
+                        <Pencil size={14} color={C.textSec}/>
                       </button>
                       <div style={{position:"absolute",bottom:"calc(100% + 6px)",right:0,background:"rgba(0,0,0,0.85)",color:"#fff",fontSize:12,fontWeight:600,padding:"4px 8px",borderRadius:8,whiteSpace:"nowrap",pointerEvents:"none",opacity:0,transition:"opacity .15s",zIndex:99}}>Editar</div>
                     </div>
@@ -3887,10 +3887,10 @@ input,textarea,select{touch-action:manipulation;}
                           setScreen(0);
                         }}
                           title="Editar serviço"
-                          style={{width:44,height:44,borderRadius:8,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .15s"}}
-                          onMouseEnter={e=>{e.currentTarget.style.background="rgba(99,102,241,0.22)";e.currentTarget.nextSibling.style.opacity="1";}}
-                          onMouseLeave={e=>{e.currentTarget.style.background="rgba(99,102,241,0.08)";e.currentTarget.nextSibling.style.opacity="0";}}>
-                          <Pencil size={14} color={C.blue}/>
+                          style={{width:44,height:44,borderRadius:8,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",transition:"all .15s"}}
+                          onMouseEnter={e=>{e.currentTarget.style.background="rgba(229,34,41,0.18)";e.currentTarget.nextSibling.style.opacity="1";}}
+                          onMouseLeave={e=>{e.currentTarget.style.background="rgba(229,34,41,0.08)";e.currentTarget.nextSibling.style.opacity="0";}}>
+                          <Pencil size={14} color={C.textSec}/>
                         </button>
                         <div style={{position:"absolute",bottom:"calc(100% + 6px)",right:0,background:"rgba(0,0,0,0.85)",color:"#fff",fontSize:12,fontWeight:600,padding:"4px 8px",borderRadius:8,whiteSpace:"nowrap",pointerEvents:"none",opacity:0,transition:"opacity .15s",zIndex:99}}>Editar serviço</div>
                       </div>
@@ -3922,8 +3922,8 @@ input,textarea,select{touch-action:manipulation;}
                 {sv.slicedFile&&<Row label="Arquivo p/ Impressão" val={`+ ${fmt(P.slicedFile)}`} small/>}
                 {sv.freight&&<Row label={`Frete ${sv.freight.method==="sedex"?"SEDEX":"PAC"}${sv.freight.value===0?" (Grátis)":""}`} val={sv.freight.value===0?"Grátis":`+ ${fmt(sv.freight.value)}`} small/>}
                 {sv.observacoes&&(
-                  <div style={{marginTop:10,padding:"10px 12px",background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.15)",borderRadius:8}}>
-                    <div style={{fontSize:12,fontWeight:700,color:C.blue,letterSpacing:1,marginBottom:4}}>OBSERVAÇÕES DO CASO</div>
+                  <div style={{marginTop:10,padding:"10px 12px",background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:8}}>
+                    <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:4}}>OBSERVAÇÕES DO CASO</div>
                     <div style={{fontSize:12,color:C.textSec,lineHeight:1.6}}>{sv.observacoes}</div>
                   </div>
                 )}
@@ -4117,7 +4117,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
     {id:"card",icon:<CreditCard size={18}/>,label:"Cartão de crédito",tag:"Sem juros",
      detail:"Em até 2× de",highlight:fmt2(installmentVal),
      sub:`Total: ${fmt2(amount)}`,color:"#6366F1",
-     tagColor:"rgba(99,102,241,0.15)",tagText:"#818CF8",action:"Pagar com cartão"},
+     tagColor:"rgba(229,34,41,0.12)",tagText:"#818CF8",action:"Pagar com cartão"},
     {id:"prazo",icon:<Calendar size={18}/>,label:"Cobrança a prazo",tag:"14 dias",
      detail:`Vencimento em ${dueDate}`,highlight:fmt2(amount),
      sub:"Via InfinitePay Gestão de Cobrança",color:"#EAB308",
@@ -4182,7 +4182,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
             <b style={{color:C.text}}>{success.label}</b>
           </div>
           {responsavel==="paciente"&&(
-            <div style={{fontSize:12,color:C.textSec,background:"rgba(99,102,241,0.08)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:8,padding:"8px 12px",marginTop:8,marginBottom:4}}>
+            <div style={{fontSize:12,color:C.textSec,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:8,padding:"8px 12px",marginTop:8,marginBottom:4}}>
               NF em nome de: <b style={{color:C.text}}>{nf.nome}</b>
             </div>
           )}
@@ -4270,8 +4270,8 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
 
       {/* ── DADOS DO PACIENTE PARA NF ── */}
       {responsavel==="paciente"&&nfConfirmed&&(
-        <div style={{background:"rgba(99,102,241,0.06)",border:"1px solid rgba(99,102,241,0.2)",borderRadius:12,padding:14,marginBottom:14}}>
-          <div style={{fontSize:13,fontWeight:700,color:C.blue,letterSpacing:1,marginBottom:12}}>DADOS DO PACIENTE — EMISSÃO DE NOTA FISCAL</div>
+        <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:12,padding:14,marginBottom:14}}>
+          <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:12}}>DADOS DO PACIENTE — EMISSÃO DE NOTA FISCAL</div>
           <NfField label="Nome completo do paciente *" value={nf.nome} onChange={v=>setN("nome",v)} placeholder="Nome conforme documento"/>
           <NfField label="CPF *" value={nf.cpf} onChange={v=>setN("cpf",v)} placeholder="000.000.000-00"/>
           <div style={{display:"grid",gridTemplateColumns:"1fr 70px",gap:8}}>
@@ -4285,7 +4285,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
             <div style={{marginBottom:10}}>
               <div style={{fontSize:12,fontWeight:700,color:C.textSec,marginBottom:4,letterSpacing:.4}}>ESTADO *</div>
               <select value={nf.estado} onChange={e=>setN("estado",e.target.value)}
-                style={{width:"100%",background:C.dark2,border:`1px solid ${nf.estado?"rgba(99,102,241,0.4)":C.border}`,borderRadius:8,padding:"9px 10px",color:nf.estado?C.text:C.textSec,fontSize:12,outline:"none",boxSizing:"border-box"}}>
+                style={{width:"100%",background:C.dark2,border:`1px solid ${nf.estado?"rgba(229,34,41,0.35)":C.border}`,borderRadius:8,padding:"9px 10px",color:nf.estado?C.text:C.textSec,fontSize:12,outline:"none",boxSizing:"border-box"}}>
                 <option value="">UF</option>
                 {["AC","AL","AP","AM","BA","CE","DF","ES","GO","MA","MT","MS","MG","PA","PB","PR","PE","PI","RJ","RN","RS","RO","RR","SC","SP","SE","TO"].map(s=><option key={s} value={s}>{s}</option>)}
               </select>
@@ -4349,7 +4349,7 @@ function NfField({label,value,onChange,placeholder}){
     <div style={{marginBottom:10}}>
       <div style={{fontSize:12,fontWeight:700,color:C.textSec,marginBottom:4,letterSpacing:.4}}>{label}</div>
       <input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder}
-        style={{width:"100%",background:C.dark2,border:`1px solid ${value?"rgba(99,102,241,0.4)":C.border}`,borderRadius:8,padding:"9px 11px",color:C.text,fontSize:12,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/>
+        style={{width:"100%",background:C.dark2,border:`1px solid ${value?"rgba(229,34,41,0.35)":C.border}`,borderRadius:8,padding:"9px 11px",color:C.text,fontSize:12,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/>
     </div>
   );
 }
@@ -4358,5 +4358,5 @@ function Step({title,sub,badge,badgeColor,children,onBack}){return(<div>{onBack&
 function BackBtn({onClick}){return(<button onClick={onClick} style={{display:"flex",alignItems:"center",gap:5,background:"none",border:"none",color:C.textSec,fontSize:13,cursor:"pointer",padding:"0 0 16px 0"}}>← Voltar</button>);}
 function Btn({children,onClick,disabled,style:sx}){return(<button onClick={onClick} disabled={disabled} style={{width:"100%",padding:"13px 20px",background:disabled?"#2a2a2a":C.red,border:"none",borderRadius:12,color:disabled?C.textMut:"#fff",fontSize:14,fontWeight:700,cursor:disabled?"not-allowed":"pointer",...(sx||{})}}>{children}</button>);}
 function Row({label,val,bold,red,small}){return(<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:small?"3px 0":"5px 0"}}><span style={{fontSize:small?11:13,color:bold?C.text:C.textSec}}>{label}</span><span style={{fontSize:small?11:13,fontWeight:bold?800:600,color:red?C.red:C.text}}>{val}</span></div>);}
-function Field({label,value,onChange,placeholder,type="text"}){return(<div style={{marginBottom:12}}><label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>{label}</label><input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{width:"100%",background:C.dark2,border:`1px solid ${value?"rgba(99,102,241,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/></div>);}
+function Field({label,value,onChange,placeholder,type="text"}){return(<div style={{marginBottom:12}}><label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>{label}</label><input type={type} value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{width:"100%",background:C.dark2,border:`1px solid ${value?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",transition:"border-color .2s"}}/></div>);}
 function btnStyle(bg,disabled){return{width:"100%",padding:"13px 20px",background:disabled?"#2a2a2a":bg,border:"none",borderRadius:12,color:disabled?C.textMut:"#fff",fontSize:14,fontWeight:700,cursor:disabled?"not-allowed":"pointer",marginBottom:0};}
