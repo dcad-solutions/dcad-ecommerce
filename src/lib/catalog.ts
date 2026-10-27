@@ -44,6 +44,8 @@ export interface CatalogService {
   offersSlicedFile?: boolean
   priceByQty?: Record<string, number>
   planOnly?: PlanOnly | null
+  // Imagens do serviço (Storage Supabase)
+  imagens?: string[]
   // Metadados do Supabase
   _supabaseId?: number
 }
@@ -135,6 +137,7 @@ function rowToService(row: Record<string, unknown>): CatalogService {
     built:         false,
     videoUrl:      null,
     planOnly,
+    imagens: (row.imagens as string[]) || [],
     // Flags do wizard
     usesOdontogram,
     usesArch,

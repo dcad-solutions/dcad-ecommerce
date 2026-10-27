@@ -163,6 +163,7 @@ function useCatalog() {
                   fullDesc: dynSvc.fullDesc || staticSvc.fullDesc,
                   exams:    dynSvc.exams?.length ? dynSvc.exams    : staticSvc.exams,
                   includes: dynSvc.includes?.length ? dynSvc.includes : staticSvc.includes,
+                  imagens:  dynSvc.imagens?.length  ? dynSvc.imagens  : (staticSvc.imagens || []),
                   days:     dynSvc.days     || staticSvc.days,
                   // Preço vem do Supabase apenas se autenticado (RLS); caso null usa estático
                   price:    dynSvc.price    ?? staticSvc.price,
@@ -2755,6 +2756,17 @@ input,textarea,select{touch-action:manipulation;}
                       )}
                       {/* Descrição */}
                       <div style={{fontSize:12,color:C.textSec,lineHeight:1.55,marginBottom:8}}>{disp.fullDesc}</div>
+                      {/* Galeria de imagens */}
+                      {sv.imagens?.length>0&&(
+                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+                          {sv.imagens.map((url,i)=>(
+                            <img key={i} src={url} alt={`${disp.name} ${i+1}`}
+                              style={{width:56,height:56,objectFit:"cover",borderRadius:6,border:`1px solid ${specialty.color}30`,cursor:"pointer"}}
+                              onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
+                            />
+                          ))}
+                        </div>
+                      )}
                       {/* Exames + O que está incluso — lado a lado */}
                       {(disp.exams?.length>0||sv.includes?.length>0)&&(
                         <div style={{display:"grid",gridTemplateColumns:sv.includes?.length?"1fr 1fr":"1fr",gap:8}}>
