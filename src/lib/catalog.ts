@@ -56,6 +56,7 @@ export interface CatalogSpecialty {
   color: string
   icon: string
   desc: string
+  imagem?: string
   services: CatalogService[]
 }
 
@@ -151,16 +152,23 @@ function rowToService(row: Record<string, unknown>): CatalogService {
 
 /** Busca o catálogo do Supabase e retorna no formato CatalogSpecialty[] */
 export async function fetchCatalog(): Promise<CatalogSpecialty[]> {
-  const { data, error } = await supabase
-    .from('servicos')
-    .select('*')
-    .eq('ativo', true)
-    .order('especialidade')
-    .order('nome')
+  // Busca serviços e imagens das especialidades em paralelo
+  const [servicosResult, especialidadesResult] = await Promise.all([
+    supabase.from('servicos').select('*').eq('ativo', true).order('especialidade').order('nome'),
+    supabase.from('especialidades').select('nome, imagem').eq('ativo', true),
+  ])
+
+  const { data, error } = servicosResult
 
   if (error || !data || data.length === 0) {
     console.warn('[D-CAD] fetchCatalog: usando fallback estático.', error?.message)
     return [] // Wizard.jsx usará CATALOG estático
+  }
+
+  // Mapa nome da especialidade → imagem
+  const imagemMap: Record<string, string> = {}
+  for (const esp of (especialidadesResult.data || [])) {
+    if (esp.imagem) imagemMap[String(esp.nome)] = String(esp.imagem)
   }
 
   // Agrupar por especialidade
@@ -180,6 +188,7 @@ export async function fetchCatalog(): Promise<CatalogSpecialty[]> {
       color:    meta.color,
       icon:     meta.icon,
       desc:     meta.desc,
+      imagem:   imagemMap[esp],
       services: rows.map(rowToService),
     }
   })

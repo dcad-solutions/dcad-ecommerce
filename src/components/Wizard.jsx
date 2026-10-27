@@ -2510,9 +2510,9 @@ input,textarea,select{touch-action:manipulation;}
                   onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
                   <div style={{height:3,background:sp.color,width:"100%",flexShrink:0}}/>
                   <div style={{width:"100%",aspectRatio:"1/1",background:`${sp.color}12`,display:"flex",alignItems:"center",justifyContent:"center",overflow:"hidden",flexShrink:0,position:"relative"}}>
-                    {SPEC_IMGS[sp.id]
-                      ? <img src={SPEC_IMGS[sp.id]} alt={sp.name}
-                          style={{width:"100%",height:"100%",objectFit:"contain",padding:8,boxSizing:"border-box",display:"block"}}/>
+                    {(sp.imagem || SPEC_IMGS[sp.id])
+                      ? <img src={sp.imagem || SPEC_IMGS[sp.id]} alt={sp.name}
+                          style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
                       : <SpecIcon id={sp.id} size={32} color={sp.color}/>
                     }
                     {discount>0&&<div style={{position:"absolute",top:4,right:4,fontSize:12,fontWeight:700,background:"rgba(34,197,94,0.92)",color:"#fff",padding:"1px 5px",borderRadius:16}}>-15%</div>}
