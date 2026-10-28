@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Eye, EyeOff, CheckCircle, ChevronRight, Building2, Stethoscope, GraduationCap } from 'lucide-react';
+import { Eye, EyeOff, CheckCircle, ChevronRight, Building2, Stethoscope, GraduationCap, Check } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type TipoCliente = 'dentista_clinica' | 'radiologia' | 'cursos';
@@ -51,7 +51,8 @@ export default function Cadastro() {
   // Campos comuns
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
-  const [telefone, setTelefone] = useState('');
+  const [celular, setCelular] = useState('');
+  const [temWhatsapp, setTemWhatsapp] = useState(true);
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
 
@@ -92,9 +93,9 @@ export default function Cadastro() {
       return;
     }
 
-    const tel = telefone.replace(/\D/g, '');
+    const tel = celular.replace(/\D/g, '');
     if (tel.length < 10) {
-      setErro('Informe um telefone válido com DDD.');
+      setErro('Informe um celular válido com DDD.');
       return;
     }
 
@@ -128,7 +129,7 @@ export default function Cadastro() {
       email: email.trim().toLowerCase(),
       password: senha,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: 'https://portal.dcadsolutions.com.br/login',
         data: { nome: nome.trim() },
       },
     });
@@ -148,7 +149,8 @@ export default function Cadastro() {
         id: data.user.id,
         email: email.trim().toLowerCase(),
         nome: nome.trim(),
-        telefone: telefone,
+        celular: celular,
+        tem_whatsapp: temWhatsapp,
         tipo_cliente: tipoSelecionado,
         ativo: false, // trigger ativa dentistas automaticamente ao confirmar email
         cadastro_completo: false,
@@ -376,10 +378,28 @@ export default function Cadastro() {
               </div>
 
               <div>
-                <label style={labelStyle}>Telefone / WhatsApp</label>
-                <input type="tel" value={telefone}
-                  onChange={e => setTelefone(formatarTelefone(e.target.value))}
-                  required autoComplete="tel" placeholder="(99) 99999-9999" style={inputStyle} />
+                <label style={labelStyle}>Celular *</label>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                  <input type="tel" value={celular}
+                    onChange={e => setCelular(formatarTelefone(e.target.value))}
+                    required autoComplete="tel" placeholder="(99) 99999-9999"
+                    style={{ ...inputStyle, flex: 1 }} />
+                  <button
+                    type="button"
+                    onClick={() => setTemWhatsapp(!temWhatsapp)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '5px',
+                      padding: '10px 10px', borderRadius: '8px', border: '1px solid', flexShrink: 0,
+                      borderColor: temWhatsapp ? '#25D366' : '#E5E5E5',
+                      background: temWhatsapp ? 'rgba(37,211,102,0.08)' : '#FAFAFA',
+                      color: temWhatsapp ? '#25D366' : '#999',
+                      cursor: 'pointer', fontSize: '12px', fontWeight: 600,
+                    }}
+                  >
+                    {temWhatsapp && <Check size={11} />}
+                    WA
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -531,7 +551,7 @@ export default function Cadastro() {
           <p style={{ fontSize: '12px', color: '#999', margin: '0 0 20px 0' }}>
             Não recebeu?{' '}
             <button
-              onClick={() => { setEtapa('tipo'); setNome(''); setEmail(''); setTelefone(''); setSenha(''); setNomeEmpresa(''); setCnpj(''); }}
+              onClick={() => { setEtapa('tipo'); setNome(''); setEmail(''); setCelular(''); setTemWhatsapp(true); setSenha(''); setNomeEmpresa(''); setCnpj(''); }}
               style={{ background: 'none', border: 'none', color: '#E52229', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: '600' }}
             >
               Tente novamente
