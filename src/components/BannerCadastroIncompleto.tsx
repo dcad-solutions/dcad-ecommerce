@@ -35,16 +35,16 @@ export default function BannerCadastroIncompleto() {
       position: 'sticky',
       top: 0,
       zIndex: 50,
-      backgroundColor: '#1c2f1a',
-      borderBottom: '1px solid #2d4d2a',
+      backgroundColor: '#FEF2F2',
+      borderBottom: '1px solid #FECACA',
       padding: '10px 16px',
       display: 'flex',
       alignItems: 'center',
       gap: '10px',
-      fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
+      fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
     }}>
-      <AlertCircle size={16} color="#4ade80" style={{ flexShrink: 0 }} />
-      <span style={{ fontSize: '13px', color: '#bbf7d0', flex: 1, lineHeight: '1.4' }}>
+      <AlertCircle size={16} color="#E52229" style={{ flexShrink: 0 }} />
+      <span style={{ fontSize: '13px', color: '#1A1A1A', flex: 1, lineHeight: '1.4' }}>
         <strong>Complete seu cadastro</strong> para realizar compras — precisamos de mais alguns dados.
       </span>
       <a
@@ -54,10 +54,10 @@ export default function BannerCadastroIncompleto() {
           alignItems: 'center',
           gap: '4px',
           padding: '5px 12px',
-          backgroundColor: '#166534',
-          border: '1px solid #15803d',
+          backgroundColor: '#E52229',
+          border: '1px solid #C41920',
           borderRadius: '6px',
-          color: '#bbf7d0',
+          color: '#fff',
           fontSize: '12px',
           fontWeight: '600',
           textDecoration: 'none',
@@ -73,7 +73,7 @@ export default function BannerCadastroIncompleto() {
           background: 'none',
           border: 'none',
           cursor: 'pointer',
-          color: '#4b7c4b',
+          color: '#999',
           padding: '2px',
           display: 'flex',
           flexShrink: 0,

@@ -209,25 +209,26 @@ export default function PerfilPage() {
   const s: Record<string, React.CSSProperties> = {
     page: {
       minHeight: '100vh',
-      backgroundColor: '#0a0a0a',
-      color: '#e5e7eb',
-      fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
+      backgroundColor: '#FAFAFA',
+      color: '#1A1A1A',
+      fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
     },
     topbar: {
-      borderBottom: '1px solid #1a1a1a',
+      borderBottom: '1px solid #E5E5E5',
       padding: '14px 20px',
       display: 'flex',
       alignItems: 'center',
       gap: '12px',
-      backgroundColor: '#0d0d0d',
+      backgroundColor: '#FFFFFF',
+      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
     },
     logo: {
       fontSize: '18px',
       fontWeight: '700',
-      color: '#fff',
+      color: '#1A1A1A',
       letterSpacing: '-0.3px',
     },
-    dot: { color: '#22c55e' },
+    dot: { color: '#E52229' },
     container: {
       maxWidth: '640px',
       margin: '0 auto',
@@ -236,30 +237,31 @@ export default function PerfilPage() {
     heading: {
       fontSize: '22px',
       fontWeight: '700',
-      color: '#fff',
+      color: '#1A1A1A',
       margin: '0 0 6px 0',
     },
     subheading: {
       fontSize: '14px',
-      color: '#6b7280',
+      color: '#999',
       margin: '0 0 32px 0',
     },
     section: {
-      backgroundColor: '#111',
-      border: '1px solid #1e1e1e',
+      backgroundColor: '#FFFFFF',
+      border: '1px solid #E5E5E5',
       borderRadius: '12px',
       padding: '20px',
       marginBottom: '16px',
+      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
     },
     sectionTitle: {
       display: 'flex',
       alignItems: 'center',
       gap: '8px',
-      fontSize: '13px',
-      fontWeight: '600',
-      color: '#9ca3af',
+      fontSize: '12px',
+      fontWeight: '700',
+      color: '#E52229',
       textTransform: 'uppercase' as const,
-      letterSpacing: '0.06em',
+      letterSpacing: '0.08em',
       marginBottom: '16px',
     },
     grid2: {
@@ -268,12 +270,12 @@ export default function PerfilPage() {
       gap: '12px',
     },
     group: { display: 'flex', flexDirection: 'column' as const, gap: '6px' },
-    label: { fontSize: '12px', fontWeight: '500', color: '#9ca3af' },
+    label: { fontSize: '12px', fontWeight: '500', color: '#555' },
     input: {
-      backgroundColor: '#161616',
-      border: '1px solid #252525',
+      backgroundColor: '#FAFAFA',
+      border: '1px solid #E5E5E5',
       borderRadius: '8px',
-      color: '#e5e7eb',
+      color: '#1A1A1A',
       fontSize: '14px',
       padding: '10px 12px',
       outline: 'none',
@@ -282,10 +284,10 @@ export default function PerfilPage() {
       boxSizing: 'border-box' as const,
     },
     select: {
-      backgroundColor: '#161616',
-      border: '1px solid #252525',
+      backgroundColor: '#FAFAFA',
+      border: '1px solid #E5E5E5',
       borderRadius: '8px',
-      color: '#e5e7eb',
+      color: '#1A1A1A',
       fontSize: '14px',
       padding: '10px 12px',
       outline: 'none',
@@ -298,17 +300,17 @@ export default function PerfilPage() {
       alignItems: 'center',
       gap: '10px',
       padding: '12px 14px',
-      backgroundColor: '#161616',
-      border: '1px solid #252525',
+      backgroundColor: '#FAFAFA',
+      border: '1px solid #E5E5E5',
       borderRadius: '8px',
       cursor: 'pointer',
       fontSize: '13px',
-      color: '#9ca3af',
+      color: '#555',
     },
     btn: {
       width: '100%',
       padding: '14px',
-      backgroundColor: '#16a34a',
+      backgroundColor: '#E52229',
       border: 'none',
       borderRadius: '10px',
       color: '#fff',
@@ -327,10 +329,10 @@ export default function PerfilPage() {
       alignItems: 'flex-start',
       gap: '10px',
       padding: '12px 14px',
-      backgroundColor: '#1f0909',
-      border: '1px solid #3b1212',
+      backgroundColor: '#FEF2F2',
+      border: '1px solid #FECACA',
       borderRadius: '8px',
-      color: '#f87171',
+      color: '#E52229',
       fontSize: '13px',
       marginBottom: '16px',
     },
@@ -339,10 +341,10 @@ export default function PerfilPage() {
       alignItems: 'center',
       gap: '10px',
       padding: '16px',
-      backgroundColor: '#052e16',
-      border: '1px solid #166534',
+      backgroundColor: '#DCFCE7',
+      border: '1px solid #86EFAC',
       borderRadius: '10px',
-      color: '#4ade80',
+      color: '#166534',
       fontSize: '14px',
       fontWeight: '500',
       marginBottom: '16px',
@@ -353,7 +355,7 @@ export default function PerfilPage() {
   if (carregando) {
     return (
       <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Loader2 size={24} color="#22c55e" style={{ animation: 'spin 1s linear infinite' }} />
+        <Loader2 size={24} color="#E52229" style={{ animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
       </div>
     );
@@ -363,9 +365,9 @@ export default function PerfilPage() {
     return (
       <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{ textAlign: 'center' }}>
-          <CheckCircle size={48} color="#22c55e" style={{ margin: '0 auto 16px' }} />
-          <p style={{ color: '#4ade80', fontSize: '18px', fontWeight: '600' }}>Cadastro completo!</p>
-          <p style={{ color: '#6b7280', fontSize: '13px' }}>Redirecionando...</p>
+          <CheckCircle size={48} color="#166534" style={{ margin: '0 auto 16px' }} />
+          <p style={{ color: '#166534', fontSize: '18px', fontWeight: '600' }}>Cadastro completo!</p>
+          <p style={{ color: '#999', fontSize: '13px' }}>Redirecionando...</p>
         </div>
       </div>
     );
@@ -377,13 +379,13 @@ export default function PerfilPage() {
       <div style={s.topbar}>
         <button
           onClick={() => router.push('/')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#6b7280', display: 'flex', padding: '2px' }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex', padding: '2px' }}
           aria-label="Voltar"
         >
           <ArrowLeft size={18} />
         </button>
         <span style={s.logo}>D<span style={s.dot}>-</span>CAD</span>
-        <span style={{ fontSize: '13px', color: '#4b5563', marginLeft: '4px' }}>/ Completar cadastro</span>
+        <span style={{ fontSize: '13px', color: '#999', marginLeft: '4px' }}>/ Completar cadastro</span>
       </div>
 
       <div style={s.container}>
@@ -560,7 +562,7 @@ export default function PerfilPage() {
                 type="checkbox"
                 checked={form.entregaIgualPrincipal}
                 onChange={e => set('entregaIgualPrincipal', e.target.checked)}
-                style={{ accentColor: '#22c55e', width: '16px', height: '16px', cursor: 'pointer' }}
+                style={{ accentColor: '#E52229', width: '16px', height: '16px', cursor: 'pointer' }}
               />
               Igual ao endereço principal
             </label>
@@ -635,8 +637,8 @@ export default function PerfilPage() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        input::placeholder { color: #4b5563; }
-        input:focus, select:focus { border-color: #22c55e !important; box-shadow: 0 0 0 3px rgba(34,197,94,0.1); }
+        input::placeholder { color: #CCC; }
+        input:focus, select:focus { border-color: #E52229 !important; box-shadow: 0 0 0 3px rgba(229,34,41,0.1); }
         @media (max-width: 480px) {
           .grid2 { grid-template-columns: 1fr !important; }
         }

@@ -22,7 +22,7 @@ const TIPOS = [
     icon: Stethoscope,
     badge: 'Acesso rápido',
     badgeColor: '#166534',
-    badgeBg: '#052e16',
+    badgeBg: '#DCFCE7',
   },
   {
     id: 'radiologia' as TipoCliente,
@@ -31,7 +31,7 @@ const TIPOS = [
     icon: Building2,
     badge: 'Aprovação necessária',
     badgeColor: '#92400e',
-    badgeBg: '#1c1008',
+    badgeBg: '#FEF3C7',
   },
   {
     id: 'cursos' as TipoCliente,
@@ -40,7 +40,7 @@ const TIPOS = [
     icon: GraduationCap,
     badge: 'Aprovação necessária',
     badgeColor: '#92400e',
-    badgeBg: '#1c1008',
+    badgeBg: '#FEF3C7',
   },
 ];
 
@@ -169,29 +169,30 @@ export default function Cadastro() {
   // ── Estilos compartilhados ──────────────────────────────────────────────
   const pageStyle: React.CSSProperties = {
     minHeight: '100vh',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#FAFAFA',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '24px',
-    fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
+    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
   };
 
   const cardStyle: React.CSSProperties = {
-    backgroundColor: '#111111',
-    border: '1px solid #222',
+    backgroundColor: '#FFFFFF',
+    border: '1px solid #E5E5E5',
     borderRadius: '16px',
     padding: '32px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.06)',
   };
 
   const inputStyle: React.CSSProperties = {
     width: '100%',
     boxSizing: 'border-box',
     padding: '10px 14px',
-    backgroundColor: '#1a1a1a',
-    border: '1px solid #2a2a2a',
+    backgroundColor: '#FAFAFA',
+    border: '1px solid #E5E5E5',
     borderRadius: '8px',
-    color: '#fff',
+    color: '#1A1A1A',
     fontSize: '14px',
     outline: 'none',
   };
@@ -200,14 +201,14 @@ export default function Cadastro() {
     display: 'block',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#d1d5db',
+    color: '#555',
     marginBottom: '6px',
   };
 
   const btnPrimario: React.CSSProperties = {
     width: '100%',
     padding: '11px',
-    backgroundColor: busy ? '#1d3a6e' : '#2563eb',
+    backgroundColor: busy ? '#C41920' : '#E52229',
     border: 'none',
     borderRadius: '8px',
     color: '#fff',
@@ -223,21 +224,21 @@ export default function Cadastro() {
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '6px' }}>
         <div style={{
           width: '36px', height: '36px', borderRadius: '9px',
-          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+          background: '#E52229',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '16px', fontWeight: '800', color: 'white',
         }}>D</div>
-        <span style={{ fontSize: '20px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>D-CAD</span>
+        <span style={{ fontSize: '20px', fontWeight: '700', color: '#1A1A1A', letterSpacing: '-0.5px' }}>D-CAD</span>
       </div>
-      <p style={{ color: '#6b7280', fontSize: '12px', margin: 0 }}>Portal do Cliente</p>
+      <p style={{ color: '#999', fontSize: '12px', margin: 0 }}>Portal do Cliente</p>
     </div>
   );
 
   const ErroBox = () => erro ? (
     <div style={{
-      backgroundColor: '#1f0909', border: '1px solid #3b1212',
+      backgroundColor: '#FEF2F2', border: '1px solid #FECACA',
       borderRadius: '8px', padding: '12px 14px', marginBottom: '20px',
-      fontSize: '13px', color: '#f87171',
+      fontSize: '13px', color: '#E52229',
     }}>{erro}</div>
   ) : null;
 
@@ -248,10 +249,10 @@ export default function Cadastro() {
         <div style={{ width: '100%', maxWidth: '480px' }}>
           <Logo />
           <div style={cardStyle}>
-            <h1 style={{ fontSize: '19px', fontWeight: '600', color: '#fff', margin: '0 0 4px 0' }}>
+            <h1 style={{ fontSize: '19px', fontWeight: '700', color: '#1A1A1A', margin: '0 0 4px 0' }}>
               Criar sua conta
             </h1>
-            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '13px', color: '#999', margin: '0 0 24px 0' }}>
               Selecione o tipo de cadastro para continuar
             </p>
 
@@ -268,8 +269,8 @@ export default function Cadastro() {
                       alignItems: 'center',
                       gap: '14px',
                       padding: '14px 16px',
-                      backgroundColor: selecionado ? '#0f2044' : '#161616',
-                      border: `1px solid ${selecionado ? '#2563eb' : '#252525'}`,
+                      backgroundColor: selecionado ? '#FEF2F2' : '#FAFAFA',
+                      border: `1px solid ${selecionado ? '#E52229' : '#E5E5E5'}`,
                       borderRadius: '10px',
                       cursor: 'pointer',
                       textAlign: 'left',
@@ -278,16 +279,16 @@ export default function Cadastro() {
                   >
                     <div style={{
                       width: '38px', height: '38px', borderRadius: '8px',
-                      backgroundColor: selecionado ? '#1d3a6e' : '#1e1e1e',
+                      backgroundColor: selecionado ? '#FECACA' : '#F5F5F5',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
-                      <Icon size={18} color={selecionado ? '#60a5fa' : '#6b7280'} />
+                      <Icon size={18} color={selecionado ? '#E52229' : '#999'} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: selecionado ? '#e5e7eb' : '#d1d5db', marginBottom: '3px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: selecionado ? '#1A1A1A' : '#2D2D2D', marginBottom: '3px' }}>
                         {tipo.label}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#6b7280' }}>{tipo.descricao}</div>
+                      <div style={{ fontSize: '12px', color: '#999' }}>{tipo.descricao}</div>
                     </div>
                     <div style={{
                       fontSize: '10px', fontWeight: '600', color: tipo.badgeColor,
@@ -306,8 +307,8 @@ export default function Cadastro() {
               disabled={!tipoSelecionado}
               style={{
                 ...btnPrimario,
-                backgroundColor: tipoSelecionado ? '#2563eb' : '#1a1a1a',
-                color: tipoSelecionado ? '#fff' : '#4b5563',
+                backgroundColor: tipoSelecionado ? '#E52229' : '#E5E5E5',
+                color: tipoSelecionado ? '#fff' : '#999',
                 cursor: tipoSelecionado ? 'pointer' : 'not-allowed',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
               }}
@@ -315,14 +316,14 @@ export default function Cadastro() {
               Continuar <ChevronRight size={15} />
             </button>
 
-            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#6b7280' }}>
+            <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '13px', color: '#999' }}>
               Já tem conta?{' '}
-              <a href="/login" style={{ color: '#3b82f6', textDecoration: 'none', fontWeight: '500' }}>
+              <a href="/login" style={{ color: '#E52229', textDecoration: 'none', fontWeight: '600' }}>
                 Fazer login
               </a>
             </p>
           </div>
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: '#4b5563' }}>
+          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: '#CCC' }}>
             © 2025 D-CAD Dental Digital Solutions
           </p>
         </div>
@@ -342,20 +343,20 @@ export default function Cadastro() {
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px',
               marginBottom: '24px', padding: '10px 12px',
-              backgroundColor: '#0f2044', border: '1px solid #1e3a5f',
+              backgroundColor: '#FEF2F2', border: '1px solid #FECACA',
               borderRadius: '8px',
             }}>
-              <tipoInfo.icon size={15} color="#60a5fa" />
-              <span style={{ fontSize: '12px', color: '#93c5fd' }}>{tipoInfo.label}</span>
+              <tipoInfo.icon size={15} color="#E52229" />
+              <span style={{ fontSize: '12px', color: '#E52229', fontWeight: '500' }}>{tipoInfo.label}</span>
               <button
                 onClick={() => { setEtapa('tipo'); setErro(''); }}
-                style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#6b7280', fontSize: '11px', cursor: 'pointer', padding: 0 }}
+                style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#999', fontSize: '11px', cursor: 'pointer', padding: 0 }}
               >
                 alterar
               </button>
             </div>
 
-            <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#fff', margin: '0 0 20px 0' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#1A1A1A', margin: '0 0 20px 0' }}>
               {tipoSelecionado === 'dentista_clinica' ? 'Seus dados' : 'Dados de contato'}
             </h1>
 
@@ -407,7 +408,7 @@ export default function Cadastro() {
               </button>
             </form>
           </div>
-          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: '#4b5563' }}>
+          <p style={{ textAlign: 'center', marginTop: '20px', fontSize: '12px', color: '#CCC' }}>
             © 2025 D-CAD Dental Digital Solutions
           </p>
         </div>
@@ -426,17 +427,17 @@ export default function Cadastro() {
           <div style={cardStyle}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '24px',
-              padding: '10px 12px', backgroundColor: '#1c1008', border: '1px solid #92400e33',
+              padding: '10px 12px', backgroundColor: '#FEF9C3', border: '1px solid #FDE047',
               borderRadius: '8px',
             }}>
-              <tipoInfo.icon size={15} color="#f59e0b" />
-              <span style={{ fontSize: '12px', color: '#fbbf24' }}>{tipoInfo.label}</span>
+              <tipoInfo.icon size={15} color="#92400e" />
+              <span style={{ fontSize: '12px', color: '#78350f', fontWeight: '500' }}>{tipoInfo.label}</span>
             </div>
 
-            <h1 style={{ fontSize: '18px', fontWeight: '600', color: '#fff', margin: '0 0 8px 0' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: '700', color: '#1A1A1A', margin: '0 0 8px 0' }}>
               Dados da empresa
             </h1>
-            <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 20px 0', lineHeight: '1.5' }}>
+            <p style={{ fontSize: '13px', color: '#999', margin: '0 0 20px 0', lineHeight: '1.5' }}>
               Necessários para análise e liberação de acesso com valores diferenciados.
             </p>
 
@@ -457,10 +458,10 @@ export default function Cadastro() {
               </div>
 
               <div style={{
-                backgroundColor: '#1c1008', border: '1px solid #92400e33',
+                backgroundColor: '#FEF9C3', border: '1px solid #FDE047',
                 borderRadius: '8px', padding: '12px 14px',
               }}>
-                <p style={{ fontSize: '12px', color: '#d97706', margin: 0, lineHeight: '1.5' }}>
+                <p style={{ fontSize: '12px', color: '#78350f', margin: 0, lineHeight: '1.5' }}>
                   ⚠️ Após o cadastro, sua conta será analisada pela equipe D-CAD. Você receberá um e-mail quando o acesso for liberado.
                 </p>
               </div>
@@ -491,47 +492,47 @@ export default function Cadastro() {
         <div style={cardStyle}>
           <div style={{
             width: '56px', height: '56px', borderRadius: '50%',
-            backgroundColor: isDentistaClinica ? '#052e16' : '#1c1008',
-            border: `1px solid ${isDentistaClinica ? '#166534' : '#92400e'}`,
+            backgroundColor: isDentistaClinica ? '#DCFCE7' : '#FEF9C3',
+            border: `1px solid ${isDentistaClinica ? '#86EFAC' : '#FDE047'}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             margin: '0 auto 20px',
           }}>
-            <CheckCircle size={28} color={isDentistaClinica ? '#4ade80' : '#f59e0b'} />
+            <CheckCircle size={28} color={isDentistaClinica ? '#166534' : '#92400e'} />
           </div>
 
           {isDentistaClinica ? (
             <>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', margin: '0 0 12px 0' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1A1A1A', margin: '0 0 12px 0' }}>
                 Verifique seu e-mail
               </h2>
-              <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6', margin: '0 0 8px 0' }}>
+              <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.6', margin: '0 0 8px 0' }}>
                 Enviamos um link de confirmação para{' '}
-                <strong style={{ color: '#d1d5db' }}>{email}</strong>.
+                <strong style={{ color: '#1A1A1A' }}>{email}</strong>.
               </p>
-              <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6', margin: '0 0 24px 0' }}>
+              <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.6', margin: '0 0 24px 0' }}>
                 Após confirmar, seu acesso será liberado automaticamente.
               </p>
             </>
           ) : (
             <>
-              <h2 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', margin: '0 0 12px 0' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: '700', color: '#1A1A1A', margin: '0 0 12px 0' }}>
                 Cadastro recebido!
               </h2>
-              <p style={{ fontSize: '14px', color: '#9ca3af', lineHeight: '1.6', margin: '0 0 8px 0' }}>
+              <p style={{ fontSize: '14px', color: '#555', lineHeight: '1.6', margin: '0 0 8px 0' }}>
                 Primeiro, confirme seu e-mail: enviamos um link para{' '}
-                <strong style={{ color: '#d1d5db' }}>{email}</strong>.
+                <strong style={{ color: '#1A1A1A' }}>{email}</strong>.
               </p>
-              <p style={{ fontSize: '14px', color: '#d97706', lineHeight: '1.6', margin: '0 0 24px 0', backgroundColor: '#1c1008', borderRadius: '8px', padding: '10px 14px', fontSize: '13px' }}>
+              <p style={{ fontSize: '13px', color: '#78350f', lineHeight: '1.6', margin: '0 0 24px 0', backgroundColor: '#FEF9C3', borderRadius: '8px', padding: '10px 14px' }}>
                 Após a confirmação, sua conta passará por análise da equipe D-CAD. Você será notificado por e-mail quando o acesso for liberado.
               </p>
             </>
           )}
 
-          <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 20px 0' }}>
+          <p style={{ fontSize: '12px', color: '#999', margin: '0 0 20px 0' }}>
             Não recebeu?{' '}
             <button
               onClick={() => { setEtapa('tipo'); setNome(''); setEmail(''); setTelefone(''); setSenha(''); setNomeEmpresa(''); setCnpj(''); }}
-              style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+              style={{ background: 'none', border: 'none', color: '#E52229', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: '600' }}
             >
               Tente novamente
             </button>
@@ -539,14 +540,14 @@ export default function Cadastro() {
 
           <a href="/login" style={{
             display: 'block', padding: '10px',
-            backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a',
-            borderRadius: '8px', color: '#d1d5db', fontSize: '14px',
+            backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5',
+            borderRadius: '8px', color: '#1A1A1A', fontSize: '14px',
             textDecoration: 'none', textAlign: 'center',
           }}>
             Voltar ao login
           </a>
         </div>
-        <p style={{ marginTop: '20px', fontSize: '12px', color: '#4b5563' }}>
+        <p style={{ marginTop: '20px', fontSize: '12px', color: '#CCC' }}>
           © 2025 D-CAD Dental Digital Solutions
         </p>
       </div>
