@@ -50,6 +50,7 @@ export default function Cadastro() {
   const [cnpj, setCnpj] = useState('');
 
   const [erro, setErro] = useState('');
+  const [erroEmailDuplicado, setErroEmailDuplicado] = useState(false);
   const [busy, setBusy] = useState(false);
 
   function formatarTelefone(valor: string) {
@@ -76,6 +77,7 @@ export default function Cadastro() {
   async function submeterDados(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
+    setErroEmailDuplicado(false);
 
     if (senha.length < 8) {
       setErro('A senha deve ter pelo menos 8 caracteres.');
@@ -100,6 +102,7 @@ export default function Cadastro() {
   async function submeterExtra(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
+    setErroEmailDuplicado(false);
 
     const cnpjNums = cnpj.replace(/\D/g, '');
     if (cnpjNums.length < 14) {
@@ -134,6 +137,7 @@ export default function Cadastro() {
       if (!res.ok) {
         setBusy(false);
         setErro(json.error ?? 'Erro ao criar conta. Tente novamente.');
+        if (res.status === 409) setErroEmailDuplicado(true);
         return;
       }
 
@@ -218,7 +222,21 @@ export default function Cadastro() {
       backgroundColor: '#FEF2F2', border: '1px solid #FECACA',
       borderRadius: '8px', padding: '12px 14px', marginBottom: '20px',
       fontSize: '13px', color: '#E52229',
-    }}>{erro}</div>
+    }}>
+      {erro}
+      {erroEmailDuplicado && (
+        <div style={{ marginTop: '10px' }}>
+          <a href="/login" style={{
+            display: 'inline-block', padding: '8px 16px',
+            backgroundColor: '#E52229', color: '#fff',
+            borderRadius: '6px', fontSize: '13px',
+            fontWeight: '600', textDecoration: 'none',
+          }}>
+            Ir para o login
+          </a>
+        </div>
+      )}
+    </div>
   ) : null;
 
   // ── ETAPA: TIPO ─────────────────────────────────────────────────────────
