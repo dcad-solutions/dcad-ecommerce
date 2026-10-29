@@ -124,48 +124,36 @@ export default function Cadastro() {
 
   async function realizarCadastro() {
     setBusy(true);
-    const sb = supabaseBrowser();
 
-    const { data, error } = await sb.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password: senha,
-      options: {
-        emailRedirectTo: 'https://portal.dcadsolutions.com.br/login',
-        data: { nome: nome.trim() },
-      },
-    });
+    try {
+      const res = await fetch('/api/cadastro', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: email.trim().toLowerCase(),
+          senha,
+          nome: nome.trim(),
+          celular,
+          temWhatsapp,
+          tipoCliente: tipoSelecionado,
+          nomeEmpresa: nomeEmpresa.trim(),
+          cnpj,
+        }),
+      });
 
-    if (error) {
-      setBusy(false);
-      if (error.message.includes('already registered') || error.message.includes('already been registered')) {
-        setErro('Este e-mail já está cadastrado. Faça login ou recupere sua senha.');
-      } else {
-        setErro('Erro ao criar conta. Tente novamente.');
-      }
-      return;
-    }
+      const json = await res.json();
 
-    if (data.user) {
-      const registro: Record<string, unknown> = {
-        id: data.user.id,
-        email: email.trim().toLowerCase(),
-        nome: nome.trim(),
-        celular: celular,
-        tem_whatsapp: temWhatsapp,
-        tipo_cliente: tipoSelecionado,
-        ativo: false, // trigger ativa dentistas automaticamente ao confirmar email
-        cadastro_completo: false,
-      };
-
-      if (tipoSelecionado !== 'dentista_clinica') {
-        registro.nome_clinica = nomeEmpresa.trim();
-        registro.cnpj = cnpj.replace(/\D/g, '');
+      if (!res.ok) {
+        setBusy(false);
+        setErro(json.error ?? 'Erro ao criar conta. Tente novamente.');
+        return;
       }
 
-      await sb.from('dcad_clientes').insert(registro);
+      setEtapa('sucesso');
+    } catch {
+      setErro('Erro de conexão. Verifique sua internet e tente novamente.');
     }
 
-    setEtapa('sucesso');
     setBusy(false);
   }
 
