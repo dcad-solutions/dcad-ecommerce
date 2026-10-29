@@ -52,7 +52,7 @@ export default function Cadastro() {
   const [nome, setNome] = useState('');
   const [email, setEmail] = useState('');
   const [celular, setCelular] = useState('');
-  const [temWhatsapp, setTemWhatsapp] = useState(true);
+  const [temWhatsapp, setTemWhatsapp] = useState(false);
   const [mostrarModalWA, setMostrarModalWA] = useState(false);
   const [senha, setSenha] = useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
@@ -638,7 +638,7 @@ export default function Cadastro() {
           <p style={{ fontSize: '12px', color: '#999', margin: '0 0 20px 0' }}>
             Não recebeu?{' '}
             <button
-              onClick={() => { setEtapa('tipo'); setNome(''); setEmail(''); setCelular(''); setTemWhatsapp(true); setMostrarModalWA(false); setSenha(''); setNomeEmpresa(''); setCnpj(''); }}
+              onClick={() => { setEtapa('tipo'); setNome(''); setEmail(''); setCelular(''); setTemWhatsapp(false); setMostrarModalWA(false); setSenha(''); setNomeEmpresa(''); setCnpj(''); }}
               style={{ background: 'none', border: 'none', color: '#E52229', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: '600' }}
             >
               Tente novamente
