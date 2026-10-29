@@ -365,6 +365,94 @@ export default function Cadastro() {
 
             <ErroBox />
 
+            {/* Modal de consentimento WhatsApp / LGPD — fora do form para evitar stacking context */}
+            {mostrarModalWA && (
+              <div style={{
+                position: 'fixed', inset: 0, zIndex: 9999,
+                background: 'rgba(0,0,0,0.55)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                padding: '16px',
+              }} onClick={() => setMostrarModalWA(false)}>
+                <div style={{
+                  background: '#fff', borderRadius: '12px', maxWidth: '520px', width: '100%',
+                  boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                  maxHeight: '90vh', display: 'flex', flexDirection: 'column',
+                }} onClick={e => e.stopPropagation()}>
+                  {/* Header */}
+                  <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #F0F0F0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
+                      <span style={{ fontSize: '20px' }}>💬</span>
+                      <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111' }}>
+                        Autorização de Comunicação via WhatsApp
+                      </h3>
+                    </div>
+                    <p style={{ margin: 0, fontSize: '12px', color: '#888' }}>
+                      D-CAD Dental Digital Solutions · LGPD Art. 7º, I e Art. 8º
+                    </p>
+                  </div>
+
+                  {/* Body */}
+                  <div style={{ padding: '20px 24px', overflowY: 'auto', fontSize: '13px', color: '#333', lineHeight: '1.6' }}>
+                    <p style={{ margin: '0 0 12px' }}>
+                      Ao marcar esta opção, você, <strong>titular dos dados pessoais</strong> (número de celular
+                      informado neste cadastro), <strong>consente livremente, de forma informada e inequívoca</strong>,
+                      nos termos do Art. 7º, inciso I, da Lei nº 13.709/2018 (LGPD), que a{' '}
+                      <strong>D-CAD Dental Digital Solutions</strong> inclua seu número na lista de transmissão
+                      de WhatsApp para envio de:
+                    </p>
+                    <ul style={{ margin: '0 0 12px', paddingLeft: '20px' }}>
+                      <li>Avisos operacionais e atualizações sobre os serviços contratados;</li>
+                      <li>Novidades, lançamentos e conteúdos educacionais em odontologia digital;</li>
+                      <li>Promoções, condições especiais e comunicados comerciais;</li>
+                      <li>Mensagens automáticas sobre o <em>status</em> e andamento dos seus pedidos.</li>
+                    </ul>
+                    <p style={{ margin: '0 0 12px' }}>
+                      Suas mensagens serão enviadas pelo número oficial da D-CAD e a frequência será
+                      proporcional à relevância do conteúdo — sem spam.
+                    </p>
+                    <div style={{ background: '#F8F8F8', borderRadius: '8px', padding: '12px', marginBottom: '12px', fontSize: '12px', color: '#555' }}>
+                      <strong>Revogação do consentimento (Art. 8º, §5º e Art. 18, VI da LGPD):</strong>{' '}
+                      Você pode revogar esta autorização a qualquer momento, sem custo, respondendo{' '}
+                      <strong>SAIR</strong> ou <strong>CANCELAR</strong> a qualquer mensagem recebida,
+                      ou solicitando por escrito ao e-mail{' '}
+                      <strong>contato@dcadsolutions.com.br</strong>.
+                    </div>
+                    <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>
+                      Base legal: LGPD Art. 7º, I (consentimento). Finalidade específica conforme Art. 8º,
+                      §4º. Registro de aceitação: data/hora, canal digital (formulário de cadastro web),
+                      número e finalidade declarada.
+                    </p>
+                  </div>
+
+                  {/* Footer */}
+                  <div style={{ padding: '16px 24px', borderTop: '1px solid #F0F0F0', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+                    <button
+                      type="button"
+                      onClick={() => { setTemWhatsapp(false); setMostrarModalWA(false); }}
+                      style={{
+                        padding: '10px 20px', borderRadius: '8px', border: '1px solid #E5E5E5',
+                        background: '#FAFAFA', color: '#555', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: 600,
+                      }}
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setTemWhatsapp(true); setMostrarModalWA(false); }}
+                      style={{
+                        padding: '10px 24px', borderRadius: '8px', border: 'none',
+                        background: '#25D366', color: '#fff', cursor: 'pointer',
+                        fontSize: '13px', fontWeight: 700,
+                      }}
+                    >
+                      ✓ Autorizar
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <form onSubmit={submeterDados} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
               <div>
                 <label style={labelStyle}>Nome completo</label>
@@ -400,94 +488,6 @@ export default function Cadastro() {
                   <span style={{ fontSize: '13px', color: '#555', lineHeight: '1.4' }}>Este número possui WhatsApp?</span>
                 </label>
               </div>
-
-              {/* Modal de consentimento WhatsApp / LGPD */}
-              {mostrarModalWA && (
-                <div style={{
-                  position: 'fixed', inset: 0, zIndex: 9999,
-                  background: 'rgba(0,0,0,0.55)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  padding: '16px',
-                }} onClick={() => setMostrarModalWA(false)}>
-                  <div style={{
-                    background: '#fff', borderRadius: '12px', maxWidth: '520px', width: '100%',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
-                    maxHeight: '90vh', display: 'flex', flexDirection: 'column',
-                  }} onClick={e => e.stopPropagation()}>
-                    {/* Header */}
-                    <div style={{ padding: '20px 24px 16px', borderBottom: '1px solid #F0F0F0' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '4px' }}>
-                        <span style={{ fontSize: '20px' }}>💬</span>
-                        <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#111' }}>
-                          Autorização de Comunicação via WhatsApp
-                        </h3>
-                      </div>
-                      <p style={{ margin: 0, fontSize: '12px', color: '#888' }}>
-                        D-CAD Dental Digital Solutions · LGPD Art. 7º, I e Art. 8º
-                      </p>
-                    </div>
-
-                    {/* Body */}
-                    <div style={{ padding: '20px 24px', overflowY: 'auto', fontSize: '13px', color: '#333', lineHeight: '1.6' }}>
-                      <p style={{ margin: '0 0 12px' }}>
-                        Ao marcar esta opção, você, <strong>titular dos dados pessoais</strong> (número de celular
-                        informado neste cadastro), <strong>consente livremente, de forma informada e inequívoca</strong>,
-                        nos termos do Art. 7º, inciso I, da Lei nº 13.709/2018 (LGPD), que a{' '}
-                        <strong>D-CAD Dental Digital Solutions</strong> inclua seu número na lista de transmissão
-                        de WhatsApp para envio de:
-                      </p>
-                      <ul style={{ margin: '0 0 12px', paddingLeft: '20px' }}>
-                        <li>Avisos operacionais e atualizações sobre os serviços contratados;</li>
-                        <li>Novidades, lançamentos e conteúdos educacionais em odontologia digital;</li>
-                        <li>Promoções, condições especiais e comunicados comerciais;</li>
-                        <li>Mensagens automáticas sobre o <em>status</em> e andamento dos seus pedidos.</li>
-                      </ul>
-                      <p style={{ margin: '0 0 12px' }}>
-                        Suas mensagens serão enviadas pelo número oficial da D-CAD e a frequência será
-                        proporcional à relevância do conteúdo — sem spam.
-                      </p>
-                      <div style={{ background: '#F8F8F8', borderRadius: '8px', padding: '12px', marginBottom: '12px', fontSize: '12px', color: '#555' }}>
-                        <strong>Revogação do consentimento (Art. 8º, §5º e Art. 18, VI da LGPD):</strong>{' '}
-                        Você pode revogar esta autorização a qualquer momento, sem custo, respondendo{' '}
-                        <strong>SAIR</strong> ou <strong>CANCELAR</strong> a qualquer mensagem recebida,
-                        ou solicitando por escrito ao e-mail{' '}
-                        <strong>contato@dcadsolutions.com.br</strong>.
-                      </div>
-                      <p style={{ margin: 0, fontSize: '11px', color: '#999' }}>
-                        Base legal: LGPD Art. 7º, I (consentimento). Finalidade específica conforme Art. 8º,
-                        §4º. Registro de aceitação: data/hora, canal digital (formulário de cadastro web),
-                        número e finalidade declarada.
-                      </p>
-                    </div>
-
-                    {/* Footer */}
-                    <div style={{ padding: '16px 24px', borderTop: '1px solid #F0F0F0', display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
-                      <button
-                        type="button"
-                        onClick={() => { setTemWhatsapp(false); setMostrarModalWA(false); }}
-                        style={{
-                          padding: '10px 20px', borderRadius: '8px', border: '1px solid #E5E5E5',
-                          background: '#FAFAFA', color: '#555', cursor: 'pointer',
-                          fontSize: '13px', fontWeight: 600,
-                        }}
-                      >
-                        Cancelar
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => { setTemWhatsapp(true); setMostrarModalWA(false); }}
-                        style={{
-                          padding: '10px 24px', borderRadius: '8px', border: 'none',
-                          background: '#25D366', color: '#fff', cursor: 'pointer',
-                          fontSize: '13px', fontWeight: 700,
-                        }}
-                      >
-                        ✓ Autorizar
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
 
               <div>
                 <label style={labelStyle}>Senha</label>
