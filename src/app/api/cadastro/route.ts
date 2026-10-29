@@ -32,8 +32,18 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Erro ao criar usuário.' }, { status: 500 });
     }
 
-    // 2. Inserir na tabela dcad_clientes com service role (bypassa RLS)
-    // O e-mail de confirmação é enviado automaticamente pelo Supabase via createUser
+    // 2. Gerar e enviar e-mail de confirmação explicitamente
+    // admin.createUser NÃO envia e-mail automaticamente — é preciso chamar generateLink
+    await admin.auth.admin.generateLink({
+      type: 'signup',
+      email: email.trim().toLowerCase(),
+      password: senha,
+      options: {
+        redirectTo: 'https://portal.dcadsolutions.com.br/auth/callback',
+      },
+    });
+
+    // 3. Inserir na tabela dcad_clientes com service role (bypassa RLS)
     const registro: Record<string, unknown> = {
       id: authData.user.id,
       email: email.trim().toLowerCase(),
