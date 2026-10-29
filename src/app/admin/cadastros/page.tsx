@@ -85,20 +85,24 @@ function CadastrosHub() {
 // ─── CLIENTES ──────────────────────────────────────────────────────────────
 
 import { useEffect, useState, useCallback } from 'react';
-import { Search, CheckCircle, XCircle, Clock, RefreshCw, ChevronDown, Plus, X, Stethoscope, GraduationCap } from 'lucide-react';
+import { Search, CheckCircle, XCircle, Clock, AlertCircle, RefreshCw, ChevronDown, Plus, X, Stethoscope, GraduationCap, Pencil } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
 type TipoCliente = 'dentista_clinica' | 'radiologia' | 'cursos' | 'todos';
-type StatusFiltro = 'todos' | 'ativo' | 'pendente' | 'bloqueado';
+type StatusFiltro = 'todos' | 'ativo' | 'pendente' | 'incompleto' | 'bloqueado';
 
 interface Cliente {
   id: string;
   nome: string;
   email: string;
   telefone?: string;
+  celular?: string;
   tipo_cliente: 'dentista_clinica' | 'radiologia' | 'cursos';
   nome_clinica?: string;
   cnpj?: string;
+  cpf?: string;
+  cro?: string;
+  tipo_pessoa?: string;
   ativo: boolean;
   cadastro_completo: boolean;
   aprovado_em?: string;
@@ -119,10 +123,21 @@ const TIPO_ICON: Record<string, React.ElementType> = {
 };
 
 function StatusBadge({ cliente }: { cliente: Cliente }) {
+  // INCOMPLETO: dentista_clinica que ainda não completou o perfil
+  const isIncompleto = cliente.tipo_cliente === 'dentista_clinica' && !cliente.ativo && !cliente.cadastro_completo;
+  // PENDENTE: radiologia ou cursos aguardando aprovação
   const isPendente = !cliente.ativo && (cliente.tipo_cliente === 'radiologia' || cliente.tipo_cliente === 'cursos');
+  // BLOQUEADO: dentista com cadastro completo mas bloqueado pelo admin
+  const isBloqueado = !cliente.ativo && cliente.tipo_cliente === 'dentista_clinica' && cliente.cadastro_completo;
+
   if (cliente.ativo) return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', backgroundColor: '#052e16', border: '1px solid #166534', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#4ade80' }}>
       <CheckCircle size={10} /> Ativo
+    </span>
+  );
+  if (isIncompleto) return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', backgroundColor: '#1a0f2e', border: '1px solid #5b21b6', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#a78bfa' }}>
+      <AlertCircle size={10} /> Incompleto
     </span>
   );
   if (isPendente) return (
@@ -130,6 +145,12 @@ function StatusBadge({ cliente }: { cliente: Cliente }) {
       <Clock size={10} /> Aguardando aprovação
     </span>
   );
+  if (isBloqueado) return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', backgroundColor: '#1f0909', border: '1px solid #3b1212', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#f87171' }}>
+      <XCircle size={10} /> Bloqueado
+    </span>
+  );
+  // fallback
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', backgroundColor: '#1f0909', border: '1px solid #3b1212', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#f87171' }}>
       <XCircle size={10} /> Bloqueado
@@ -234,6 +255,181 @@ function ModalNovoCliente({ onClose, onSalvo }: { onClose: () => void; onSalvo: 
   );
 }
 
+// ─── MODAL EDITAR CLIENTE ──────────────────────────────────────────────────
+
+function ModalEditarCliente({ cliente, onClose, onSalvo }: { cliente: Cliente; onClose: () => void; onSalvo: () => void }) {
+  const [form, setForm] = useState<Record<string, string>>({
+    nome: cliente.nome || '',
+    email: cliente.email || '',
+    telefone: cliente.telefone || cliente.celular || '',
+    nome_clinica: cliente.nome_clinica || '',
+    cnpj: cliente.cnpj || '',
+    cpf: cliente.cpf || '',
+    cro: cliente.cro || '',
+    tipo_cliente: cliente.tipo_cliente || 'dentista_clinica',
+    tipo_pessoa: cliente.tipo_pessoa || 'juridica',
+    ativo: String(cliente.ativo),
+    cadastro_completo: String(cliente.cadastro_completo),
+  });
+  const [busy, setBusy] = useState(false);
+  const [erro, setErro] = useState('');
+
+  async function salvar(e: React.FormEvent) {
+    e.preventDefault();
+    setErro('');
+    setBusy(true);
+    const sb = supabaseBrowser();
+    const { error } = await sb.from('dcad_clientes').update({
+      nome: form.nome.trim(),
+      email: form.email.trim().toLowerCase(),
+      telefone: form.telefone || null,
+      celular: form.telefone || null,
+      nome_clinica: form.nome_clinica || null,
+      cnpj: form.cnpj?.replace(/\D/g, '') || null,
+      cpf: form.cpf?.replace(/\D/g, '') || null,
+      cro: form.cro || null,
+      tipo_cliente: form.tipo_cliente,
+      tipo_pessoa: form.tipo_pessoa || null,
+      ativo: form.ativo === 'true',
+      cadastro_completo: form.cadastro_completo === 'true',
+    }).eq('id', cliente.id);
+    setBusy(false);
+    if (error) { setErro('Erro ao salvar: ' + error.message); return; }
+    onSalvo();
+  }
+
+  const inputS: React.CSSProperties = {
+    width: '100%', boxSizing: 'border-box', padding: '9px 12px',
+    backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: '7px',
+    color: '#e5e7eb', fontSize: '13px', outline: 'none',
+  };
+  const labelS: React.CSSProperties = { display: 'block', fontSize: '12px', fontWeight: '500', color: '#9ca3af', marginBottom: '5px' };
+  const selS: React.CSSProperties = { ...inputS, appearance: 'none', paddingRight: '32px', cursor: 'pointer' };
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50, padding: '20px' }}>
+      <div style={{ backgroundColor: '#111', border: '1px solid #222', borderRadius: '14px', padding: '28px', width: '100%', maxWidth: '520px', maxHeight: '90vh', overflowY: 'auto' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
+          <h2 style={{ fontSize: '16px', fontWeight: '700', color: '#fff', margin: 0 }}>Editar cadastro</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', color: '#6b7280', cursor: 'pointer', padding: 0 }}><X size={18} /></button>
+        </div>
+        <p style={{ fontSize: '12px', color: '#4b5563', marginBottom: '20px', marginTop: 0 }}>{cliente.email}</p>
+
+        {erro && <div style={{ backgroundColor: '#1f0909', border: '1px solid #3b1212', borderRadius: '7px', padding: '10px 12px', marginBottom: '16px', fontSize: '12px', color: '#f87171' }}>{erro}</div>}
+
+        <form onSubmit={salvar} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+
+          {/* Seção: Dados pessoais */}
+          <div style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '4px', marginBottom: '2px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Dados pessoais</span>
+          </div>
+
+          <div>
+            <label style={labelS}>Nome completo *</label>
+            <input type="text" value={form.nome} onChange={e => setForm(f => ({ ...f, nome: e.target.value }))} required placeholder="Dr. João Silva" style={inputS} />
+          </div>
+
+          <div>
+            <label style={labelS}>E-mail *</label>
+            <input type="email" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} required placeholder="email@clinica.com" style={inputS} />
+          </div>
+
+          <div>
+            <label style={labelS}>Telefone / WhatsApp</label>
+            <input type="tel" value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} placeholder="(98) 99999-9999" style={inputS} />
+          </div>
+
+          <div>
+            <label style={labelS}>CRO</label>
+            <input type="text" value={form.cro} onChange={e => setForm(f => ({ ...f, cro: e.target.value }))} placeholder="MA-12345" style={inputS} />
+          </div>
+
+          {/* Seção: Dados da empresa */}
+          <div style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '4px', marginBottom: '2px', marginTop: '4px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Empresa / Clínica</span>
+          </div>
+
+          <div>
+            <label style={labelS}>Nome da clínica</label>
+            <input type="text" value={form.nome_clinica} onChange={e => setForm(f => ({ ...f, nome_clinica: e.target.value }))} placeholder="Clínica Odontológica Exemplo" style={inputS} />
+          </div>
+
+          <div>
+            <label style={labelS}>Tipo de pessoa</label>
+            <div style={{ position: 'relative' }}>
+              <select value={form.tipo_pessoa} onChange={e => setForm(f => ({ ...f, tipo_pessoa: e.target.value }))} style={selS}>
+                <option value="fisica">Pessoa Física (CPF)</option>
+                <option value="juridica">Pessoa Jurídica (CNPJ)</option>
+              </select>
+              <ChevronDown size={13} color="#6b7280" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          {form.tipo_pessoa === 'fisica' ? (
+            <div>
+              <label style={labelS}>CPF</label>
+              <input type="text" value={form.cpf} onChange={e => setForm(f => ({ ...f, cpf: e.target.value }))} placeholder="000.000.000-00" style={inputS} />
+            </div>
+          ) : (
+            <div>
+              <label style={labelS}>CNPJ</label>
+              <input type="text" value={form.cnpj} onChange={e => setForm(f => ({ ...f, cnpj: e.target.value }))} placeholder="00.000.000/0001-00" style={inputS} />
+            </div>
+          )}
+
+          {/* Seção: Configurações do cadastro */}
+          <div style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '4px', marginBottom: '2px', marginTop: '4px' }}>
+            <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Configurações</span>
+          </div>
+
+          <div>
+            <label style={labelS}>Tipo de cliente *</label>
+            <div style={{ position: 'relative' }}>
+              <select value={form.tipo_cliente} onChange={e => setForm(f => ({ ...f, tipo_cliente: e.target.value }))} style={selS}>
+                <option value="dentista_clinica">Dentista / Clínica</option>
+                <option value="radiologia">Radiologia</option>
+                <option value="cursos">Cursos / Educação</option>
+              </select>
+              <ChevronDown size={13} color="#6b7280" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelS}>Status de acesso</label>
+            <div style={{ position: 'relative' }}>
+              <select value={form.ativo} onChange={e => setForm(f => ({ ...f, ativo: e.target.value }))} style={selS}>
+                <option value="true">Ativo (acesso liberado)</option>
+                <option value="false">Inativo (acesso bloqueado)</option>
+              </select>
+              <ChevronDown size={13} color="#6b7280" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelS}>Cadastro completo</label>
+            <div style={{ position: 'relative' }}>
+              <select value={form.cadastro_completo} onChange={e => setForm(f => ({ ...f, cadastro_completo: e.target.value }))} style={selS}>
+                <option value="true">Sim (perfil completo)</option>
+                <option value="false">Não (perfil incompleto)</option>
+              </select>
+              <ChevronDown size={13} color="#6b7280" style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
+            <button type="button" onClick={onClose} style={{ flex: 1, padding: '9px', backgroundColor: 'transparent', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>
+              Cancelar
+            </button>
+            <button type="submit" disabled={busy} style={{ flex: 1, padding: '9px', backgroundColor: busy ? '#1a4d2e' : '#16a34a', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: busy ? 'not-allowed' : 'pointer' }}>
+              {busy ? 'Salvando...' : 'Salvar alterações'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 function ClientesContent() {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [carregando, setCarregando] = useState(true);
@@ -243,6 +439,7 @@ function ClientesContent() {
   const [atualizando, setAtualizando] = useState<string | null>(null);
   const [admin, setAdmin] = useState<{ id: string } | null>(null);
   const [modalAberto, setModalAberto] = useState(false);
+  const [clienteEditando, setClienteEditando] = useState<Cliente | null>(null);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -279,18 +476,23 @@ function ClientesContent() {
       c.email.toLowerCase().includes(busca.toLowerCase()) ||
       (c.nome_clinica || '').toLowerCase().includes(busca.toLowerCase());
     const matchTipo = filtroTipo === 'todos' || c.tipo_cliente === filtroTipo;
+    const isIncompleto = c.tipo_cliente === 'dentista_clinica' && !c.ativo && !c.cadastro_completo;
+    const isPendente = !c.ativo && (c.tipo_cliente === 'radiologia' || c.tipo_cliente === 'cursos');
+    const isBloqueado = !c.ativo && c.tipo_cliente === 'dentista_clinica' && c.cadastro_completo;
     const matchStatus = filtroStatus === 'todos' ||
       (filtroStatus === 'ativo' && c.ativo) ||
-      (filtroStatus === 'pendente' && !c.ativo && c.tipo_cliente !== 'dentista_clinica') ||
-      (filtroStatus === 'bloqueado' && !c.ativo && c.tipo_cliente === 'dentista_clinica');
+      (filtroStatus === 'pendente' && isPendente) ||
+      (filtroStatus === 'incompleto' && isIncompleto) ||
+      (filtroStatus === 'bloqueado' && isBloqueado);
     return matchBusca && matchTipo && matchStatus;
   });
 
   const contadores = {
     total: clientes.length,
     ativos: clientes.filter(c => c.ativo).length,
-    pendentes: clientes.filter(c => !c.ativo && c.tipo_cliente !== 'dentista_clinica').length,
-    bloqueados: clientes.filter(c => !c.ativo && c.tipo_cliente === 'dentista_clinica').length,
+    pendentes: clientes.filter(c => !c.ativo && (c.tipo_cliente === 'radiologia' || c.tipo_cliente === 'cursos')).length,
+    incompletos: clientes.filter(c => c.tipo_cliente === 'dentista_clinica' && !c.ativo && !c.cadastro_completo).length,
+    bloqueados: clientes.filter(c => !c.ativo && c.tipo_cliente === 'dentista_clinica' && c.cadastro_completo).length,
   };
 
   const card: React.CSSProperties = { backgroundColor: '#111', border: '1px solid #222', borderRadius: '12px', padding: '16px 20px' };
@@ -300,14 +502,16 @@ function ClientesContent() {
   return (
     <>
       {modalAberto && <ModalNovoCliente onClose={() => setModalAberto(false)} onSalvo={() => { setModalAberto(false); carregar(); }} />}
+      {clienteEditando && <ModalEditarCliente cliente={clienteEditando} onClose={() => setClienteEditando(null)} onSalvo={() => { setClienteEditando(null); carregar(); }} />}
 
       {/* Ações e métricas */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', flex: 1, minWidth: '300px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', flex: 1, minWidth: '360px' }}>
           {[
             { label: 'Total', valor: contadores.total, cor: '#9ca3af' },
             { label: 'Ativos', valor: contadores.ativos, cor: '#4ade80' },
             { label: 'Aguardando', valor: contadores.pendentes, cor: '#fbbf24' },
+            { label: 'Incompletos', valor: contadores.incompletos, cor: '#a78bfa' },
             { label: 'Bloqueados', valor: contadores.bloqueados, cor: '#f87171' },
           ].map(m => (
             <div key={m.label} style={{ ...card, textAlign: 'center', padding: '12px' }}>
@@ -349,6 +553,7 @@ function ClientesContent() {
               <option value="todos">Todos os status</option>
               <option value="ativo">Ativos</option>
               <option value="pendente">Aguardando aprovação</option>
+              <option value="incompleto">Incompletos</option>
               <option value="bloqueado">Bloqueados</option>
             </select>
             <ChevronDown size={12} color="#6b7280" style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }} />
@@ -385,7 +590,7 @@ function ClientesContent() {
                   </div>
                   <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
                     {cliente.email}
-                    {cliente.telefone && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.telefone}</span>}
+                    {(cliente.telefone || cliente.celular) && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.telefone || cliente.celular}</span>}
                     {cliente.nome_clinica && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.nome_clinica}</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' as const }}>
@@ -396,7 +601,15 @@ function ClientesContent() {
                     </span>
                   </div>
                 </div>
-                <div style={{ flexShrink: 0 }}>
+                <div style={{ flexShrink: 0, display: 'flex', gap: '6px', alignItems: 'center' }}>
+                  {/* Botão editar */}
+                  <button
+                    onClick={() => setClienteEditando(cliente)}
+                    title="Editar cadastro"
+                    style={{ padding: '6px 8px', backgroundColor: '#1a1a2e', border: '1px solid #2a2a4e', borderRadius: '6px', color: '#818cf8', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Pencil size={12} />
+                  </button>
+                  {/* Botão bloquear/liberar */}
                   {cliente.ativo ? (
                     <button onClick={() => alterarStatus(cliente.id, false)} disabled={!!isAtualizando}
                       style={{ padding: '6px 12px', backgroundColor: '#1f0909', border: '1px solid #3b1212', borderRadius: '6px', color: '#f87171', fontSize: '12px', fontWeight: '500', cursor: isAtualizando ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '5px' }}>
