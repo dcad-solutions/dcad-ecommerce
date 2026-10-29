@@ -18,29 +18,17 @@ const TIPOS = [
   {
     id: 'dentista_clinica' as TipoCliente,
     label: 'Dentista / Clínica Odontológica',
-    descricao: 'Acesso imediato após confirmação de e-mail',
     icon: Stethoscope,
-    badge: 'Acesso rápido',
-    badgeColor: '#166534',
-    badgeBg: '#DCFCE7',
   },
   {
     id: 'radiologia' as TipoCliente,
     label: 'Clínica Radiológica',
-    descricao: 'Valores diferenciados — aprovação manual necessária',
     icon: Building2,
-    badge: 'Aprovação necessária',
-    badgeColor: '#92400e',
-    badgeBg: '#FEF3C7',
   },
   {
     id: 'cursos' as TipoCliente,
     label: 'Cursos / Educação',
-    descricao: 'Valores diferenciados — aprovação manual necessária',
     icon: GraduationCap,
-    badge: 'Aprovação necessária',
-    badgeColor: '#92400e',
-    badgeBg: '#FEF3C7',
   },
 ];
 
@@ -276,17 +264,9 @@ export default function Cadastro() {
                       <Icon size={18} color={selecionado ? '#E52229' : '#999'} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: '14px', fontWeight: '500', color: selecionado ? '#1A1A1A' : '#2D2D2D', marginBottom: '3px' }}>
+                      <div style={{ fontSize: '14px', fontWeight: '500', color: selecionado ? '#1A1A1A' : '#2D2D2D' }}>
                         {tipo.label}
                       </div>
-                      <div style={{ fontSize: '12px', color: '#999' }}>{tipo.descricao}</div>
-                    </div>
-                    <div style={{
-                      fontSize: '10px', fontWeight: '600', color: tipo.badgeColor,
-                      backgroundColor: tipo.badgeBg, border: `1px solid ${tipo.badgeColor}33`,
-                      borderRadius: '4px', padding: '2px 6px', whiteSpace: 'nowrap',
-                    }}>
-                      {tipo.badge}
                     </div>
                   </button>
                 );
