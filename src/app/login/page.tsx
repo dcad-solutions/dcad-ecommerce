@@ -145,9 +145,14 @@ function LoginForm() {
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#d1d5db', marginBottom: '6px' }}>
-                Senha
-              </label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '6px' }}>
+                <label style={{ fontSize: '13px', fontWeight: '500', color: '#d1d5db' }}>
+                  Senha
+                </label>
+                <a href="/recuperar-senha" style={{ fontSize: '12px', color: '#3b82f6', textDecoration: 'none' }}>
+                  Esqueci minha senha
+                </a>
+              </div>
               <div style={{ position: 'relative' }}>
                 <input
                   type={mostrarSenha ? 'text' : 'password'}

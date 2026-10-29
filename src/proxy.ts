@@ -25,7 +25,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rotas públicas: login, cadastro, callback de email, API pública de cadastro
-  const rotasPublicas = ['/login', '/cadastro', '/auth/callback', '/api/cadastro'];
+  const rotasPublicas = ['/login', '/cadastro', '/auth/callback', '/api/cadastro', '/recuperar-senha', '/nova-senha'];
   const ehPublica = rotasPublicas.some(r => pathname.startsWith(r));
 
   if (ehPublica) {
