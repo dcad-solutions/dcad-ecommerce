@@ -24,8 +24,8 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Rotas públicas: login, cadastro, callback de email
-  const rotasPublicas = ['/login', '/cadastro', '/auth/callback'];
+  // Rotas públicas: login, cadastro, callback de email, API pública de cadastro
+  const rotasPublicas = ['/login', '/cadastro', '/auth/callback', '/api/cadastro'];
   const ehPublica = rotasPublicas.some(r => pathname.startsWith(r));
 
   if (ehPublica) {
