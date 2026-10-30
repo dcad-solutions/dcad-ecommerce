@@ -465,7 +465,7 @@ export default function KanbanOS() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setOrdens((data ?? []) as OrdemServico[]);
+      setOrdens((data ?? []) as unknown as OrdemServico[]);
     } catch (e: unknown) {
       setErro(e instanceof Error ? e.message : 'Erro ao buscar ordens');
     } finally {
