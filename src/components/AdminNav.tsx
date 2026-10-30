@@ -2,14 +2,14 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Users, LayoutDashboard, LogOut } from 'lucide-react';
+import { Users, LayoutDashboard, LogOut, ShoppingCart } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 
 const NAV_ITEMS = [
   { href: '/admin/cadastros', label: 'Cadastros', icon: Users },
   { href: '/admin/clientes', label: 'Clientes', icon: LayoutDashboard },
+  { href: '/admin/os', label: 'Ordens de Serviço', icon: ShoppingCart },
   // Sprint 1 — adicionar quando existirem:
-  // { href: '/admin/os', label: 'Ordens de Serviço', icon: ShoppingCart },
   // { href: '/admin/catalogo', label: 'Catálogo', icon: Package },
 ];
 
