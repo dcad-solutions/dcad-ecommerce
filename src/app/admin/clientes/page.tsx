@@ -132,7 +132,7 @@ export default function AdminClientes() {
       backgroundColor: '#0a0a0a',
       color: '#e5e7eb',
       fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 24px)',
     },
     header: {
       display: 'flex',
@@ -256,6 +256,7 @@ export default function AdminClientes() {
             return (
               <div
                 key={cliente.id}
+                className="clientes-item"
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -299,7 +300,7 @@ export default function AdminClientes() {
                 </div>
 
                 {/* Ações */}
-                <div style={{ flexShrink: 0, display: 'flex', gap: '8px' }}>
+                <div className="clientes-acoes" style={{ flexShrink: 0, display: 'flex', gap: '8px' }}>
                   {cliente.ativo ? (
                     <button
                       onClick={() => alterarStatus(cliente.id, false)}
@@ -351,6 +352,23 @@ export default function AdminClientes() {
           {clientesFiltrados.length} de {clientes.length} cliente{clientes.length !== 1 ? 's' : ''}
         </p>
       )}
+
+      {/* Responsividade mobile */}
+      <style>{`
+        @media (max-width: 640px) {
+          .clientes-item {
+            flex-wrap: wrap !important;
+          }
+          .clientes-acoes {
+            width: 100%;
+            padding-left: 50px;
+          }
+          .clientes-acoes button {
+            flex: 1;
+            justify-content: center;
+          }
+        }
+      `}</style>
     </div>
   );
 }

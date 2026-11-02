@@ -424,6 +424,81 @@ function CardOS({ os, onClick }: { os: OrdemServico; onClick: () => void }) {
   );
 }
 
+// ─── Card mobile (lista) — versão mais larga e informativa ───────────────────
+
+function CardOSMobile({
+  os,
+  onClick,
+}: {
+  os: OrdemServico;
+  onClick: () => void;
+}) {
+  const col = COLUNAS.find(c => c.key === os.os_status)!;
+  const total = (os.total ?? 0) - (os.discount ?? 0) + (os.freight_value ?? 0);
+
+  return (
+    <div
+      onClick={onClick}
+      style={{
+        backgroundColor: '#161616',
+        border: '1px solid #222',
+        borderRadius: '12px',
+        padding: '16px',
+        cursor: 'pointer',
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '10px',
+      }}
+    >
+      {/* Topo: nome + badge status */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '8px' }}>
+        <span style={{ fontSize: '14px', fontWeight: '700', color: '#f3f4f6', lineHeight: '1.3', flex: 1 }}>
+          {os.service_name ?? 'Sem nome'}
+        </span>
+        <span style={{
+          fontSize: '11px',
+          fontWeight: '600',
+          padding: '3px 10px',
+          borderRadius: '99px',
+          backgroundColor: col.cor + '22',
+          color: col.cor,
+          border: `1px solid ${col.cor}44`,
+          flexShrink: 0,
+        }}>
+          {col.label}
+        </span>
+      </div>
+
+      {/* Dentista + especialidade */}
+      <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: '8px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#9ca3af' }}>
+          <User size={12} />
+          {nomeCurto(os)}
+        </div>
+        {os.specialty && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#9ca3af' }}>
+            <Package size={12} />
+            {os.specialty}
+          </div>
+        )}
+      </div>
+
+      {/* Rodapé: data + total */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '12px', color: '#6b7280' }}>
+          <Clock size={12} />
+          {formatData(os.created_at)}
+        </div>
+        {os.total != null && (
+          <span style={{ fontSize: '13px', fontWeight: '700', color: '#22c55e' }}>
+            {formatMoeda(total)}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // ─── Página principal ─────────────────────────────────────────────────────────
 
 export default function KanbanOS() {
@@ -432,6 +507,7 @@ export default function KanbanOS() {
   const [erro, setErro] = useState<string | null>(null);
   const [selecionada, setSelecionada] = useState<OrdemServico | null>(null);
   const [avancando, setAvancando] = useState(false);
+  const [filtroMobile, setFiltroMobile] = useState<OsStatus | 'todos'>('todos');
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -505,6 +581,11 @@ export default function KanbanOS() {
     ordens.filter(o => o.os_status === status);
 
   const totalOS = ordens.length;
+
+  const ordensFiltrados =
+    filtroMobile === 'todos'
+      ? ordens
+      : ordens.filter(o => o.os_status === filtroMobile);
 
   // ── Estilos ──
 
@@ -627,7 +708,6 @@ export default function KanbanOS() {
         </button>
       </div>
 
-      {/* Board */}
       {erro ? (
         <div style={s.erroBox}>
           <span style={{ color: '#f87171', fontSize: '14px' }}>{erro}</span>
@@ -639,56 +719,210 @@ export default function KanbanOS() {
           </button>
         </div>
       ) : (
-        <div style={s.board}>
-          {COLUNAS.map(col => {
-            const lista = ordensPorStatus(col.key);
-            return (
-              <div key={col.key} style={s.coluna}>
-                {/* Header da coluna */}
-                <div
+        <>
+          {/* ── VIEW MOBILE: lista vertical + filtro (<1024px) ── */}
+          <div className="os-mobile-view" style={{ display: 'none', flexDirection: 'column', flex: 1, overflow: 'hidden' }}>
+            {/* Tabs de filtro */}
+            <div style={{
+              overflowX: 'auto',
+              flexShrink: 0,
+              borderBottom: '1px solid #1a1a1a',
+            }}>
+              <div style={{
+                display: 'flex',
+                gap: '4px',
+                padding: '8px 16px',
+                minWidth: 'max-content',
+              }}>
+                {/* Tab "Todos" */}
+                <button
+                  onClick={() => setFiltroMobile('todos')}
                   style={{
-                    ...s.colunaHeader,
-                    backgroundColor: col.cor + '15',
-                    border: `1px solid ${col.cor}30`,
+                    padding: '6px 14px',
+                    borderRadius: '99px',
+                    border: filtroMobile === 'todos' ? 'none' : '1px solid #2a2a2a',
+                    backgroundColor: filtroMobile === 'todos' ? '#E52229' : 'transparent',
+                    color: filtroMobile === 'todos' ? '#fff' : '#6b7280',
+                    fontSize: '12px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    minHeight: 36,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    whiteSpace: 'nowrap' as const,
                   }}
                 >
-                  <span style={{ ...s.colunaLabel, color: col.cor }}>
-                    {col.label}
+                  Todos
+                  <span style={{
+                    backgroundColor: filtroMobile === 'todos' ? 'rgba(255,255,255,0.25)' : '#1e1e1e',
+                    color: filtroMobile === 'todos' ? '#fff' : '#9ca3af',
+                    borderRadius: '99px',
+                    padding: '1px 7px',
+                    fontSize: '11px',
+                    fontWeight: '700',
+                  }}>
+                    {totalOS}
                   </span>
-                  <span
-                    style={{
-                      ...s.colunaBadge,
-                      backgroundColor: col.cor + '25',
-                      color: col.cor,
-                    }}
-                  >
-                    {lista.length}
+                </button>
+
+                {/* Tabs por status */}
+                {COLUNAS.map(col => {
+                  const count = ordensPorStatus(col.key).length;
+                  const ativo = filtroMobile === col.key;
+                  return (
+                    <button
+                      key={col.key}
+                      onClick={() => setFiltroMobile(col.key)}
+                      style={{
+                        padding: '6px 14px',
+                        borderRadius: '99px',
+                        border: ativo ? 'none' : '1px solid #2a2a2a',
+                        backgroundColor: ativo ? col.cor : 'transparent',
+                        color: ativo ? '#000' : '#6b7280',
+                        fontSize: '12px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        minHeight: 36,
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        whiteSpace: 'nowrap' as const,
+                      }}
+                    >
+                      {col.label}
+                      {count > 0 && (
+                        <span style={{
+                          backgroundColor: ativo ? 'rgba(0,0,0,0.2)' : col.cor + '22',
+                          color: ativo ? '#000' : col.cor,
+                          borderRadius: '99px',
+                          padding: '1px 7px',
+                          fontSize: '11px',
+                          fontWeight: '700',
+                        }}>
+                          {count}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Lista de cards */}
+            <div style={{
+              flex: 1,
+              overflowY: 'auto',
+              padding: '12px 16px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+            }}>
+              {carregando ? (
+                [1, 2, 3].map(i => (
+                  <div key={i} style={{
+                    backgroundColor: '#161616',
+                    border: '1px solid #222',
+                    borderRadius: '12px',
+                    height: '100px',
+                    animation: 'pulse 1.5s ease-in-out infinite',
+                  }} />
+                ))
+              ) : ordensFiltrados.length === 0 ? (
+                <div style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: '60px 20px',
+                  gap: '10px',
+                  color: '#374151',
+                }}>
+                  <span style={{ fontSize: '32px' }}>📋</span>
+                  <span style={{ fontSize: '14px', color: '#4b5563', textAlign: 'center' as const }}>
+                    {filtroMobile === 'todos'
+                      ? 'Nenhuma OS cadastrada'
+                      : `Nenhuma OS com status "${COLUNAS.find(c => c.key === filtroMobile)?.label}"`}
                   </span>
                 </div>
+              ) : (
+                ordensFiltrados.map(os => (
+                  <CardOSMobile
+                    key={os.id}
+                    os={os}
+                    onClick={() => setSelecionada(os)}
+                  />
+                ))
+              )}
+            </div>
+          </div>
 
-                {/* Cards */}
-                {lista.length === 0 ? (
-                  <div style={s.vazio}>vazio</div>
-                ) : (
-                  lista.map(os => (
-                    <CardOS
-                      key={os.id}
-                      os={os}
-                      onClick={() => setSelecionada(os)}
-                    />
-                  ))
-                )}
-              </div>
-            );
-          })}
-        </div>
+          {/* ── VIEW DESKTOP: Kanban (≥1024px) ── */}
+          <div className="os-desktop-view" style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
+            <div style={s.board}>
+              {COLUNAS.map(col => {
+                const lista = ordensPorStatus(col.key);
+                return (
+                  <div key={col.key} style={s.coluna}>
+                    {/* Header da coluna */}
+                    <div
+                      style={{
+                        ...s.colunaHeader,
+                        backgroundColor: col.cor + '15',
+                        border: `1px solid ${col.cor}30`,
+                      }}
+                    >
+                      <span style={{ ...s.colunaLabel, color: col.cor }}>
+                        {col.label}
+                      </span>
+                      <span
+                        style={{
+                          ...s.colunaBadge,
+                          backgroundColor: col.cor + '25',
+                          color: col.cor,
+                        }}
+                      >
+                        {lista.length}
+                      </span>
+                    </div>
+
+                    {/* Cards */}
+                    {lista.length === 0 ? (
+                      <div style={s.vazio}>vazio</div>
+                    ) : (
+                      lista.map(os => (
+                        <CardOS
+                          key={os.id}
+                          os={os}
+                          onClick={() => setSelecionada(os)}
+                        />
+                      ))
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
       )}
 
-      {/* Animação spin */}
+      {/* Estilos responsivos + animações */}
       <style>{`
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        @media (max-width: 1023px) {
+          .os-mobile-view  { display: flex !important; }
+          .os-desktop-view { display: none !important; }
+        }
+        @media (min-width: 1024px) {
+          .os-mobile-view  { display: none !important; }
+          .os-desktop-view { display: flex !important; }
         }
       `}</style>
 

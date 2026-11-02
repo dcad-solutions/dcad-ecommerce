@@ -14,29 +14,38 @@ export default async function AdminLayout({
   // Verificação server-side redundante (middleware já bloqueia, mas defense-in-depth)
   const { user, cliente } = await clienteAtual();
 
-  if (!user) {
-    redirect('/login');
-  }
-
-  if (!cliente?.is_admin) {
-    redirect('/acesso-negado');
-  }
+  if (!user) redirect('/login');
+  if (!cliente?.is_admin) redirect('/acesso-negado');
 
   return (
     <div style={{
       display: 'flex',
-      minHeight: '100vh',
+      minHeight: '100dvh',
       backgroundColor: '#0a0a0a',
       fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
     }}>
       <AdminNav />
-      <main style={{
-        flex: 1,
-        overflow: 'auto',
-        color: '#e5e7eb',
-      }}>
+      {/*
+        Em mobile a sidebar some e aparece uma top bar fixa de 52px.
+        O padding-top empurra o conteúdo para baixo dessa barra.
+        Em desktop (≥768px) a sidebar está visível e o padding-top é 0.
+      */}
+      <main
+        className="admin-main"
+        style={{
+          flex: 1,
+          overflow: 'auto',
+          color: '#e5e7eb',
+        }}
+      >
         {children}
       </main>
+
+      <style>{`
+        @media (max-width: 767px) {
+          .admin-main { padding-top: 52px; }
+        }
+      `}</style>
     </div>
   );
 }

@@ -15,11 +15,11 @@ function CadastrosHub() {
 
   const s: Record<string, React.CSSProperties> = {
     page: {
-      minHeight: '100vh',
+      minHeight: '100dvh',
       backgroundColor: '#0a0a0a',
       color: '#e5e7eb',
       fontFamily: 'var(--font-geist-sans, system-ui, sans-serif)',
-      padding: '24px',
+      padding: 'clamp(16px, 4vw, 24px)',
     },
     header: {
       marginBottom: '24px',
@@ -55,6 +55,19 @@ function CadastrosHub() {
 
   return (
     <div style={s.page}>
+      <style>{`
+        @media (max-width: 640px) {
+          .cad-metricas-grid { grid-template-columns: repeat(3, 1fr) !important; min-width: 0 !important; }
+          .cad-metricas-grid-4 { grid-template-columns: repeat(2, 1fr) !important; min-width: 0 !important; }
+          .cad-header-row { flex-direction: column !important; align-items: stretch !important; }
+          .cad-header-row > div:first-child { width: 100% !important; }
+          .cad-header-acoes { width: 100%; display: flex; gap: 8px; }
+          .cad-header-acoes button { flex: 1; justify-content: center; }
+          .cad-item-row { flex-wrap: wrap !important; }
+          .cad-item-acoes { width: 100%; padding-left: 50px; display: flex; gap: 6px; }
+          .cad-item-acoes button { flex: 1; justify-content: center; }
+        }
+      `}</style>
       <div style={s.header}>
         <h1 style={{ fontSize: '22px', fontWeight: '700', color: '#fff', margin: '0 0 4px 0' }}>Cadastros</h1>
         <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
@@ -505,8 +518,8 @@ function ClientesContent() {
       {clienteEditando && <ModalEditarCliente cliente={clienteEditando} onClose={() => setClienteEditando(null)} onSalvo={() => { setClienteEditando(null); carregar(); }} />}
 
       {/* Ações e métricas */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', flex: 1, minWidth: '360px' }}>
+      <div className="cad-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+        <div className="cad-metricas-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '10px', flex: 1, minWidth: '360px' }}>
           {[
             { label: 'Total', valor: contadores.total, cor: '#9ca3af' },
             { label: 'Ativos', valor: contadores.ativos, cor: '#4ade80' },
@@ -520,7 +533,7 @@ function ClientesContent() {
             </div>
           ))}
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="cad-header-acoes" style={{ display: 'flex', gap: '8px' }}>
           <button onClick={carregar} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', backgroundColor: '#161616', border: '1px solid #252525', borderRadius: '8px', color: '#9ca3af', fontSize: '12px', cursor: 'pointer' }}>
             <RefreshCw size={13} /> Atualizar
           </button>
@@ -577,7 +590,7 @@ function ClientesContent() {
             const isUltimo = i === filtrados.length - 1;
             const isAtualizando = atualizando === cliente.id;
             return (
-              <div key={cliente.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px', borderBottom: isUltimo ? 'none' : '1px solid #1a1a1a' }}>
+              <div key={cliente.id} className="cad-item-row" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px', borderBottom: isUltimo ? 'none' : '1px solid #1a1a1a' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Icon size={16} color="#6b7280" />
                 </div>
@@ -601,7 +614,7 @@ function ClientesContent() {
                     </span>
                   </div>
                 </div>
-                <div style={{ flexShrink: 0, display: 'flex', gap: '6px', alignItems: 'center' }}>
+                <div className="cad-item-acoes" style={{ flexShrink: 0, display: 'flex', gap: '6px', alignItems: 'center' }}>
                   {/* Botão editar */}
                   <button
                     onClick={() => setClienteEditando(cliente)}
@@ -913,8 +926,8 @@ function FornecedoresContent() {
       {modalImport && <ModalImportarFornecedores onClose={() => setModalImport(false)} onImportado={() => { setModalImport(false); carregar(); }} />}
 
       {/* Ações e métricas */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', flex: 1, minWidth: '300px' }}>
+      <div className="cad-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+        <div className="cad-metricas-grid-4" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', flex: 1, minWidth: '300px' }}>
           {(['laboratorio','material','servico','outro'] as TipoFornecedor[]).map(tipo => {
             const cor = TIPO_FORNECEDOR_COR[tipo];
             const count = fornecedores.filter(f => f.tipo_fornecedor === tipo && f.ativo).length;
@@ -926,7 +939,7 @@ function FornecedoresContent() {
             );
           })}
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div className="cad-header-acoes" style={{ display: 'flex', gap: '8px' }}>
           <button onClick={() => setModalImport(true)} style={{ display: 'flex', alignItems: 'center', gap: '5px', padding: '8px 12px', backgroundColor: '#161616', border: '1px solid #252525', borderRadius: '8px', color: '#9ca3af', fontSize: '12px', cursor: 'pointer' }}>
             ⬆ Importar CSV
           </button>
@@ -973,7 +986,7 @@ function FornecedoresContent() {
             const isUltimo = i === filtrados.length - 1;
             const isRemovendo = removendo === f.id;
             return (
-              <div key={f.id} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px', borderBottom: isUltimo ? 'none' : '1px solid #1a1a1a' }}>
+              <div key={f.id} className="cad-item-row" style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '14px 20px', borderBottom: isUltimo ? 'none' : '1px solid #1a1a1a' }}>
                 <div style={{ width: '36px', height: '36px', borderRadius: '8px', backgroundColor: cor.bg, border: `1px solid ${cor.border}`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <Building2 size={16} color={cor.text} />
                 </div>
@@ -996,7 +1009,7 @@ function FornecedoresContent() {
                     </div>
                   )}
                 </div>
-                <div style={{ flexShrink: 0 }}>
+                <div className="cad-item-acoes" style={{ flexShrink: 0 }}>
                   <button onClick={() => toggleAtivo(f.id, f.ativo)} disabled={!!isRemovendo}
                     style={{
                       padding: '6px 12px',
