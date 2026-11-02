@@ -1,5 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+// Esta rota foi unificada no Wizard em /
+// Redireciona automaticamente para a tela unificada
+export default function Login() {
+  const router = useRouter();
+  useEffect(() => { router.replace('/'); }, [router]);
+  return null;
+}
+
+/*
 import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
@@ -242,3 +254,4 @@ export default function Login() {
     </Suspense>
   );
 }
+*/

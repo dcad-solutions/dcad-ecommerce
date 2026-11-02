@@ -44,6 +44,9 @@ export default function ClientNav() {
 
   const dark = theme === 'dark';
 
+  // Ocultar header completamente na tela de autenticação do Wizard
+  if (screen === 'auth') return null;
+
   // Cores baseadas no tema
   const C = {
     bg:     dark ? '#0A0A0A' : '#FFFFFF',
@@ -71,7 +74,8 @@ export default function ClientNav() {
   async function sair() {
     const sb = supabaseBrowser();
     await sb.auth.signOut();
-    router.push('/login');
+    if (setScreen) setScreen('auth');
+    else router.push('/');
   }
 
   function toggleTheme() {

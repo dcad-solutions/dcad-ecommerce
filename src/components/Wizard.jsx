@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
 import { fetchCatalog } from "@/lib/catalog";
+import { supabaseBrowser } from "@/lib/supabase-browser";
 
 // ── Catálogo local (fallback) ─────────────────────────────────────────────────
 // Usado quando o Supabase não está disponível ou o usuário não está autenticado.
@@ -332,6 +333,8 @@ export default function App() {
   const [printers,setPrinters]=useState([]); // [{id,apelido,marca,modelo,resina_marca,resina_modelo,camada,exposicao,serviceTypes[]}]
   const [printerModal,setPrinterModal]=useState(null); // null | 'new' | {printer object being edited}
   const [printerForm,setPrinterForm]=useState({apelido:"",marca:"",modelo:"",resina_marca:"",resina_modelo:"",camada:"",exposicao:"",serviceTypes:[]});
+  const [authBusy,setAuthBusy]=useState(false);
+  const [authError,setAuthError]=useState("");
   const [loginForm,setLoginForm]=useState({email:"",senha:""});
   const [regForm,setRegForm]=useState({tipo:"dentista",nome:"",cro:"",especialidade:"",clinica:"",whatsapp:"",email:"",senha:"",confirmaSenha:"",docType:"cnpj",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
   const [patient,setPatient]=useState(null);
@@ -1228,7 +1231,7 @@ input,textarea,select{touch-action:manipulation;}
         {screen==="auth"&&(
           <div style={{maxWidth:460,margin:"0 auto",paddingTop:isDesktop?40:24}}>
             <div style={{textAlign:"center",marginBottom:28}}>
-              <div style={{width:56,height:56,background:C.red,borderRadius:12,display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:26,fontWeight:900,color:"#fff",marginBottom:14}}>D</div>
+              <img src={DCAD_LOGO} alt="D-CAD" style={{height:48,marginBottom:14,filter:"brightness(0) invert(1)"}} />
               <div style={{fontSize:22,fontWeight:800,marginBottom:4}}>D-CAD Portal</div>
               <div style={{fontSize:13,color:C.textSec}}>Acesso exclusivo para dentistas cadastrados</div>
             </div>
@@ -1252,14 +1255,37 @@ input,textarea,select{touch-action:manipulation;}
                     {showPass?<EyeOff size={16}/>:<Eye size={16}/>}
                   </button>
                 </div>
-                <button onClick={()=>{
+                <button onClick={async()=>{
                   if(!loginForm.email||!loginForm.senha){setToast("Preencha e-mail e senha.");return;}
-                  setDentist({nome:"Dr. Leonardo Araújo",cro:"CRO-MA 6789",clinica:"D-CAD Dental Digital Solutions",email:loginForm.email,whatsapp:"(98) 98542-5982",accountType:"dentista",accountStatus:"active"});
-                  setProfile({docType:"cpf",cpf:"000.000.000-00",rua:"Av. Colares Moreira",numero:"444",bairro:"Renascença II",complemento:"Sala 343",cidade:"São Luís",estado:"MA",cep:"65060-645",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entCidade:"",entEstado:"",entCep:""});
-                  setProfileComplete(true);setScreen("dashboard");
-                }} style={btnStyle(C.red)}>
-                  Entrar
+                  setAuthBusy(true);setAuthError("");
+                  const sb=supabaseBrowser();
+                  const {data,error}=await sb.auth.signInWithPassword({email:loginForm.email.trim().toLowerCase(),password:loginForm.senha});
+                  setAuthBusy(false);
+                  if(error){
+                    if(error.message.includes("Email not confirmed")){setAuthError("E-mail ainda não confirmado. Verifique sua caixa de entrada.");}
+                    else{setAuthError("E-mail ou senha incorretos.");}
+                    return;
+                  }
+                  if(!data.user?.email_confirmed_at){setAuthError("Confirme seu e-mail antes de acessar. Verifique sua caixa de entrada.");return;}
+                  // Buscar dados do cliente no banco
+                  const {data:cliente}=await sb.from("dcad_clientes").select("*").eq("email",data.user.email).maybeSingle();
+                  if(cliente){
+                    const needsAdminApproval=["clinica","cursos"].includes(cliente.tipo_cliente);
+                    if(needsAdminApproval&&!cliente.ativo){
+                      setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente,accountStatus:"pending"});
+                      setScreen("pending");return;
+                    }
+                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active"});
+                    setProfileComplete(!!cliente.cadastro_completo);
+                    setScreen("dashboard");
+                  } else {
+                    setDentist({nome:data.user.email,cro:"",clinica:"",email:data.user.email,whatsapp:"",accountType:"dentista",accountStatus:"active"});
+                    setScreen("dashboard");
+                  }
+                }} disabled={authBusy} style={{...btnStyle(C.red),opacity:authBusy?0.7:1}}>
+                  {authBusy?"Entrando...":"Entrar"}
                 </button>
+                {authError&&<div style={{marginTop:10,padding:"10px 14px",background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.25)",borderRadius:10,fontSize:13,color:"#ff6b6b"}}>{authError}</div>}
                 <div style={{textAlign:"center",marginTop:14}}>
                   <button onClick={()=>{setForgotPw(true);setForgotSent(false);setForgotEmail(loginForm.email||"");}}
                     style={{background:"none",border:"none",color:C.textSec,fontSize:12,cursor:"pointer",textDecoration:"underline",fontFamily:"inherit"}}>
@@ -1279,11 +1305,14 @@ input,textarea,select{touch-action:manipulation;}
                 {!forgotSent?(
                   <div>
                     <Field label="E-mail cadastrado" type="email" value={forgotEmail} onChange={v=>setForgotEmail(v)} placeholder="seu@email.com"/>
-                    <button onClick={()=>{
+                    <button onClick={async()=>{
                       if(!forgotEmail||!forgotEmail.includes("@")){setToast("Informe um e-mail válido.");return;}
-                      // Aqui integrar com Supabase resetPasswordForEmail
+                      setAuthBusy(true);
+                      const sb=supabaseBrowser();
+                      await sb.auth.resetPasswordForEmail(forgotEmail.trim().toLowerCase(),{redirectTo:`${window.location.origin}/`});
+                      setAuthBusy(false);
                       setForgotSent(true);
-                    }} style={btnStyle(C.red)}>
+                    }} disabled={authBusy} style={{...btnStyle(C.red),opacity:authBusy?0.7:1}}>
                       Enviar link de recuperação
                     </button>
                     <div style={{textAlign:"center",marginTop:12}}>
@@ -1458,23 +1487,48 @@ input,textarea,select{touch-action:manipulation;}
                 </div>
                 )}
 
-                <button onClick={()=>{
+                <button onClick={async()=>{
                   if(!regForm.nome||!regForm.cro||!regForm.whatsapp||!regForm.email||!regForm.senha){setToast("Preencha todos os campos obrigatórios.");return;}
                   if(regForm.senha!==regForm.confirmaSenha){setToast("As senhas não coincidem.");return;}
+                  if(regForm.senha.length<8){setToast("A senha deve ter no mínimo 8 caracteres.");return;}
                   const needsApproval=["clinica","cursos"].includes(regForm.tipo);
                   if(needsApproval){
-                    const doc=regForm.docType==="cpf"?regForm.cpf:regForm.cnpj;
-                    const razao=regForm.docType==="cnpj"&&!regForm.razaoSocial;
+                    const doc=regForm.cnpj;
+                    const razao=!regForm.razaoSocial;
                     const addr=!regForm.rua||!regForm.numero||!regForm.bairro||!regForm.cidade||!regForm.estado||!regForm.cep;
                     const ent=!regForm.entregaIgual&&(!regForm.entRua||!regForm.entNumero||!regForm.entCidade||!regForm.entEstado||!regForm.entCep);
                     if(!doc||razao||addr||ent){setToast("Preencha todos os campos obrigatórios para aprovação.");return;}
-                    // Save profile from regForm
-                    setProfile({docType:regForm.docType,cpf:regForm.cpf,cnpj:regForm.cnpj,razaoSocial:regForm.razaoSocial,rua:regForm.rua,numero:regForm.numero,bairro:regForm.bairro,complemento:regForm.complemento,cidade:regForm.cidade,estado:regForm.estado,cep:regForm.cep,entregaIgual:regForm.entregaIgual,entRua:regForm.entRua,entNumero:regForm.entNumero,entBairro:regForm.entBairro,entComplemento:regForm.entComplemento,entCidade:regForm.entCidade,entEstado:regForm.entEstado,entCep:regForm.entCep});
-                    setProfileComplete(true);
                   }
+                  setAuthBusy(true);setAuthError("");
+                  const sb=supabaseBrowser();
+                  const {data,error}=await sb.auth.signUp({email:regForm.email.trim().toLowerCase(),password:regForm.senha});
+                  if(error){setAuthBusy(false);setAuthError(error.message.includes("already registered")?"Este e-mail já está cadastrado. Faça login.":error.message);return;}
+                  // Inserir dados complementares na tabela dcad_clientes
+                  const enderecoObj={rua:regForm.rua,numero:regForm.numero,bairro:regForm.bairro,complemento:regForm.complemento,cidade:regForm.cidade,estado:regForm.estado,cep:regForm.cep};
+                  const endEntrega=regForm.entregaIgual?enderecoObj:{rua:regForm.entRua,numero:regForm.entNumero,bairro:regForm.entBairro,complemento:regForm.entComplemento,cidade:regForm.entCidade,estado:regForm.entEstado,cep:regForm.entCep};
+                  await sb.from("dcad_clientes").upsert({
+                    email:regForm.email.trim().toLowerCase(),
+                    nome:regForm.nome,telefone:regForm.whatsapp,
+                    tipo_cliente:regForm.tipo,cro:regForm.cro,
+                    nome_clinica:regForm.clinica||null,
+                    cnpj:regForm.cnpj||null,cpf:regForm.cpf||null,
+                    razao_social:regForm.razaoSocial||null,
+                    endereco:JSON.stringify(enderecoObj),
+                    endereco_entrega:JSON.stringify(endEntrega),
+                    cadastro_completo:needsApproval,
+                    ativo:!needsApproval,
+                  },{onConflict:"email"});
+                  setAuthBusy(false);
                   setDentist({nome:regForm.nome,cro:regForm.cro,clinica:regForm.clinica,email:regForm.email,accountType:regForm.tipo,accountStatus:needsApproval?"pending":"active"});
-                  setScreen(needsApproval?"pending":"profile");
-                }} style={btnStyle(C.red)}>
+                  if(needsApproval){
+                    setScreen("pending");
+                  } else {
+                    // Dentista: mostrar mensagem de confirmação de e-mail
+                    setAuthError("");
+                    setAuthTab("login");
+                    setToast("Conta criada! Confirme seu e-mail antes de entrar.");
+                  }
+                }} disabled={authBusy} style={{...btnStyle(C.red),opacity:authBusy?0.7:1}}>
                   {["clinica","cursos"].includes(regForm.tipo)?"Criar conta e aguardar aprovação":"Criar conta e continuar"}
                 </button>
               </div>

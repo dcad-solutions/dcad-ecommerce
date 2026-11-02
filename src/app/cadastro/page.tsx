@@ -1,5 +1,17 @@
 'use client';
 
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+
+// Esta rota foi unificada no Wizard em /
+// Redireciona automaticamente para a tela unificada
+export default function Cadastro() {
+  const router = useRouter();
+  useEffect(() => { router.replace('/'); }, [router]);
+  return null;
+}
+
+/*
 import { useState } from 'react';
 import { Eye, EyeOff, CheckCircle, ChevronRight, Building2, Stethoscope, GraduationCap } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -647,3 +659,5 @@ export default function Cadastro() {
     </div>
   );
 }
+
+*/
