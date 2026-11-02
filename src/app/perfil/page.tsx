@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
-  User, Phone, MapPin, Building2, Award, ChevronRight,
-  CheckCircle, AlertCircle, Loader2, ArrowLeft
+  User, Phone, MapPin, Building2, Award,
+  CheckCircle, AlertCircle, Loader2, ArrowLeft,
+  RefreshCw, MessageCircle
 } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -20,9 +21,12 @@ interface Endereco {
 
 interface FormData {
   nome: string;
-  telefone: string;
+  celular: string;
+  tem_whatsapp: boolean;
   cro: string;
   nome_clinica: string;
+  cpf: string;
+  onde_conheceu: string;
   // Endereço principal
   rua: string;
   numero: string;
@@ -62,6 +66,14 @@ function formatarCep(v: string) {
   return `${d.slice(0,5)}-${d.slice(5)}`;
 }
 
+function formatarCpf(v: string) {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `${d.slice(0,3)}.${d.slice(3)}`;
+  if (d.length <= 9) return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6)}`;
+  return `${d.slice(0,3)}.${d.slice(3,6)}.${d.slice(6,9)}-${d.slice(9)}`;
+}
+
 export const dynamic = 'force-dynamic';
 
 export default function PerfilPage() {
@@ -71,12 +83,19 @@ export default function PerfilPage() {
   const [sucesso, setSucesso] = useState(false);
   const [erro, setErro] = useState('');
   const [userId, setUserId] = useState<string | null>(null);
+  const [cadastroCompleto, setCadastroCompleto] = useState(false);
+  const [buscandoCep, setBuscandoCep] = useState(false);
+  const [buscandoCepEntrega, setBuscandoCepEntrega] = useState(false);
+  const [lgpdModal, setLgpdModal] = useState(false);
 
   const [form, setForm] = useState<FormData>({
     nome: '',
-    telefone: '',
+    celular: '',
+    tem_whatsapp: false,
     cro: '',
     nome_clinica: '',
+    cpf: '',
+    onde_conheceu: '',
     rua: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '', cep: '',
     entregaIgualPrincipal: true,
     entrega_rua: '', entrega_numero: '', entrega_complemento: '',
@@ -104,12 +123,19 @@ export default function PerfilPage() {
         const endEntrega = (cliente.endereco_entrega as Endereco | null) || {} as Endereco;
         const temEntregaDiferente = !!cliente.endereco_entrega;
 
+        setCadastroCompleto(!!cliente.cadastro_completo);
         setForm(f => ({
           ...f,
           nome: cliente.nome || '',
-          telefone: cliente.telefone ? formatarTelefone(cliente.telefone) : '',
+          // Suporte a campo legado 'telefone' e novo 'celular'
+          celular: cliente.celular
+            ? formatarTelefone(cliente.celular)
+            : (cliente.telefone ? formatarTelefone(cliente.telefone) : ''),
+          tem_whatsapp: cliente.tem_whatsapp ?? false,
           cro: cliente.cro || '',
           nome_clinica: cliente.nome_clinica || '',
+          cpf: cliente.cpf ? formatarCpf(cliente.cpf) : '',
+          onde_conheceu: cliente.onde_conheceu || '',
           rua: end.rua || '',
           numero: end.numero || '',
           complemento: end.complemento || '',
@@ -136,11 +162,41 @@ export default function PerfilPage() {
     setForm(f => ({ ...f, [field]: value }));
   }
 
+  const buscarCep = useCallback(async (cep: string, isEntrega = false) => {
+    const digits = cep.replace(/\D/g, '');
+    if (digits.length !== 8) return;
+    isEntrega ? setBuscandoCepEntrega(true) : setBuscandoCep(true);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${digits}/json/`);
+      const data = await res.json();
+      if (!data.erro) {
+        if (isEntrega) {
+          setForm(f => ({
+            ...f,
+            entrega_rua: data.logradouro || f.entrega_rua,
+            entrega_bairro: data.bairro || f.entrega_bairro,
+            entrega_cidade: data.localidade || f.entrega_cidade,
+            entrega_estado: data.uf || f.entrega_estado,
+          }));
+        } else {
+          setForm(f => ({
+            ...f,
+            rua: data.logradouro || f.rua,
+            bairro: data.bairro || f.bairro,
+            cidade: data.localidade || f.cidade,
+            estado: data.uf || f.estado,
+          }));
+        }
+      }
+    } catch { /* ignora erros de rede */ }
+    isEntrega ? setBuscandoCepEntrega(false) : setBuscandoCep(false);
+  }, []);
+
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
     setErro('');
+    setSucesso(false);
 
-    // Validações mínimas
     if (!form.cro.trim()) return setErro('Informe o número do CRO.');
     if (!form.nome_clinica.trim()) return setErro('Informe o nome da clínica ou consultório.');
     if (!form.cep.trim() || !form.rua.trim() || !form.cidade.trim() || !form.estado) {
@@ -175,18 +231,18 @@ export default function PerfilPage() {
 
       const update: Record<string, unknown> = {
         nome: form.nome.trim(),
-        telefone: form.telefone.replace(/\D/g, ''),
+        celular: form.celular.replace(/\D/g, '') || null,
+        tem_whatsapp: form.tem_whatsapp,
+        // Mantém campo legado em sync
+        telefone: form.celular.replace(/\D/g, '') || null,
         cro: form.cro.trim().toUpperCase(),
         nome_clinica: form.nome_clinica.trim(),
+        cpf: form.cpf.trim() ? form.cpf.replace(/\D/g, '') : null,
+        onde_conheceu: form.onde_conheceu.trim() || null,
         endereco: enderecoPrincipal,
+        endereco_entrega: enderecoEntrega,
         cadastro_completo: true,
       };
-
-      if (enderecoEntrega) {
-        update.endereco_entrega = enderecoEntrega;
-      } else {
-        update.endereco_entrega = null;
-      }
 
       const { error: errUpdate } = await sb
         .from('dcad_clientes')
@@ -196,7 +252,12 @@ export default function PerfilPage() {
       if (errUpdate) throw errUpdate;
 
       setSucesso(true);
-      setTimeout(() => router.push('/'), 2000);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Se era o primeiro cadastro, redireciona para home após 2s
+      if (!cadastroCompleto) {
+        setTimeout(() => router.push('/'), 2000);
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setErro('Erro ao salvar: ' + msg);
@@ -283,6 +344,18 @@ export default function PerfilPage() {
       width: '100%',
       boxSizing: 'border-box' as const,
     },
+    inputWithIcon: {
+      backgroundColor: '#FAFAFA',
+      border: '1px solid #E5E5E5',
+      borderRadius: '8px',
+      color: '#1A1A1A',
+      fontSize: '14px',
+      padding: '10px 36px 10px 12px',
+      outline: 'none',
+      transition: 'border-color 0.15s',
+      width: '100%',
+      boxSizing: 'border-box' as const,
+    },
     select: {
       backgroundColor: '#FAFAFA',
       border: '1px solid #E5E5E5',
@@ -350,6 +423,58 @@ export default function PerfilPage() {
       marginBottom: '16px',
     },
     required: { color: '#ef4444', marginLeft: '2px' },
+    optional: { color: '#aaa', marginLeft: '4px', fontSize: '11px', fontWeight: '400' },
+    cepWrapper: { position: 'relative' as const },
+    cepIcon: {
+      position: 'absolute' as const,
+      right: '10px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      color: '#aaa',
+      pointerEvents: 'none' as const,
+    },
+    // Modal LGPD
+    overlay: {
+      position: 'fixed' as const,
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    modalBox: {
+      background: '#fff',
+      borderRadius: '16px 16px 0 0',
+      padding: '24px 20px',
+      maxWidth: '480px',
+      width: '100%',
+      maxHeight: '80vh',
+      overflowY: 'auto' as const,
+    },
+    modalTitle: {
+      fontSize: '16px',
+      fontWeight: '700',
+      color: '#1A1A1A',
+      marginBottom: '12px',
+    },
+    modalText: {
+      fontSize: '13px',
+      color: '#555',
+      lineHeight: '1.6',
+      marginBottom: '20px',
+    },
+    modalBtn: {
+      width: '100%',
+      padding: '12px',
+      backgroundColor: '#E52229',
+      border: 'none',
+      borderRadius: '8px',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
+    },
   };
 
   if (carregando) {
@@ -357,18 +482,6 @@ export default function PerfilPage() {
       <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Loader2 size={24} color="#E52229" style={{ animation: 'spin 1s linear infinite' }} />
         <style>{`@keyframes spin{from{transform:rotate(0)}to{transform:rotate(360deg)}}`}</style>
-      </div>
-    );
-  }
-
-  if (sucesso) {
-    return (
-      <div style={{ ...s.page, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ textAlign: 'center' }}>
-          <CheckCircle size={48} color="#166534" style={{ margin: '0 auto 16px' }} />
-          <p style={{ color: '#166534', fontSize: '18px', fontWeight: '600' }}>Cadastro completo!</p>
-          <p style={{ color: '#999', fontSize: '13px' }}>Redirecionando...</p>
-        </div>
       </div>
     );
   }
@@ -385,14 +498,29 @@ export default function PerfilPage() {
           <ArrowLeft size={18} />
         </button>
         <span style={s.logo}>D<span style={s.dot}>-</span>CAD</span>
-        <span style={{ fontSize: '13px', color: '#999', marginLeft: '4px' }}>/ Completar cadastro</span>
+        <span style={{ fontSize: '13px', color: '#999', marginLeft: '4px' }}>
+          / {cadastroCompleto ? 'Meus Dados' : 'Completar cadastro'}
+        </span>
       </div>
 
       <div style={s.container}>
-        <h1 style={s.heading}>Complete seu cadastro</h1>
+        <h1 style={s.heading}>
+          {cadastroCompleto ? 'Meus Dados' : 'Complete seu cadastro'}
+        </h1>
         <p style={s.subheading}>
-          Precisamos de mais algumas informações para liberar seus pedidos.
+          {cadastroCompleto
+            ? 'Mantenha suas informações atualizadas para receber seus pedidos.'
+            : 'Precisamos de mais algumas informações para liberar seus pedidos.'}
         </p>
+
+        {sucesso && (
+          <div style={s.sucessoBox}>
+            <CheckCircle size={18} style={{ flexShrink: 0 }} />
+            {cadastroCompleto
+              ? 'Dados atualizados com sucesso!'
+              : 'Cadastro completo! Redirecionando...'}
+          </div>
+        )}
 
         {erro && (
           <div style={s.erroBox}>
@@ -421,17 +549,6 @@ export default function PerfilPage() {
               </div>
               <div style={s.grid2}>
                 <div style={s.group}>
-                  <label style={s.label}>WhatsApp<span style={s.required}>*</span></label>
-                  <input
-                    style={s.input}
-                    value={form.telefone}
-                    onChange={e => set('telefone', formatarTelefone(e.target.value))}
-                    placeholder="(11) 99999-9999"
-                    inputMode="tel"
-                    required
-                  />
-                </div>
-                <div style={s.group}>
                   <label style={s.label}>CRO<span style={s.required}>*</span></label>
                   <input
                     style={s.input}
@@ -441,11 +558,21 @@ export default function PerfilPage() {
                     required
                   />
                 </div>
+                <div style={s.group}>
+                  <label style={s.label}>CPF<span style={s.optional}>(opcional)</span></label>
+                  <input
+                    style={s.input}
+                    value={form.cpf}
+                    onChange={e => set('cpf', formatarCpf(e.target.value))}
+                    placeholder="000.000.000-00"
+                    inputMode="numeric"
+                  />
+                </div>
               </div>
             </div>
           </div>
 
-          {/* ── Dados da clínica ── */}
+          {/* ── Clínica ── */}
           <div style={s.section}>
             <div style={s.sectionTitle}>
               <Building2 size={14} /> Clínica / Consultório
@@ -462,6 +589,62 @@ export default function PerfilPage() {
             </div>
           </div>
 
+          {/* ── Contato ── */}
+          <div style={s.section}>
+            <div style={s.sectionTitle}>
+              <Phone size={14} /> Contato
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={s.group}>
+                <label style={s.label}>Celular<span style={s.required}>*</span></label>
+                <input
+                  style={s.input}
+                  value={form.celular}
+                  onChange={e => set('celular', formatarTelefone(e.target.value))}
+                  placeholder="(11) 99999-9999"
+                  inputMode="tel"
+                  required
+                />
+              </div>
+
+              {/* Checkbox WhatsApp */}
+              <label style={s.checkbox}>
+                <input
+                  type="checkbox"
+                  checked={form.tem_whatsapp}
+                  onChange={e => {
+                    if (e.target.checked) {
+                      setLgpdModal(true);
+                    } else {
+                      set('tem_whatsapp', false);
+                    }
+                  }}
+                  style={{ accentColor: '#E52229', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <MessageCircle size={14} color="#25D366" />
+                  <span>Este número tem WhatsApp</span>
+                </div>
+              </label>
+
+              <div style={s.group}>
+                <label style={s.label}>Como nos conheceu<span style={s.optional}>(opcional)</span></label>
+                <select
+                  style={s.select}
+                  value={form.onde_conheceu}
+                  onChange={e => set('onde_conheceu', e.target.value)}
+                >
+                  <option value="">Selecione...</option>
+                  <option value="instagram">Instagram</option>
+                  <option value="indicacao">Indicação</option>
+                  <option value="google">Google</option>
+                  <option value="congresso">Congresso / Evento</option>
+                  <option value="outro">Outro</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
           {/* ── Endereço principal ── */}
           <div style={s.section}>
             <div style={s.sectionTitle}>
@@ -471,14 +654,25 @@ export default function PerfilPage() {
               <div style={s.grid2}>
                 <div style={s.group}>
                   <label style={s.label}>CEP<span style={s.required}>*</span></label>
-                  <input
-                    style={s.input}
-                    value={form.cep}
-                    onChange={e => set('cep', formatarCep(e.target.value))}
-                    placeholder="00000-000"
-                    inputMode="numeric"
-                    required
-                  />
+                  <div style={s.cepWrapper}>
+                    <input
+                      style={s.inputWithIcon}
+                      value={form.cep}
+                      onChange={e => {
+                        const v = formatarCep(e.target.value);
+                        set('cep', v);
+                        buscarCep(v, false);
+                      }}
+                      placeholder="00000-000"
+                      inputMode="numeric"
+                      required
+                    />
+                    <span style={s.cepIcon}>
+                      {buscandoCep
+                        ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                        : <MapPin size={14} />}
+                    </span>
+                  </div>
                 </div>
                 <div style={s.group}>
                   <label style={s.label}>Estado<span style={s.required}>*</span></label>
@@ -572,13 +766,24 @@ export default function PerfilPage() {
                 <div style={s.grid2}>
                   <div style={s.group}>
                     <label style={s.label}>CEP<span style={s.required}>*</span></label>
-                    <input
-                      style={s.input}
-                      value={form.entrega_cep}
-                      onChange={e => set('entrega_cep', formatarCep(e.target.value))}
-                      placeholder="00000-000"
-                      inputMode="numeric"
-                    />
+                    <div style={s.cepWrapper}>
+                      <input
+                        style={s.inputWithIcon}
+                        value={form.entrega_cep}
+                        onChange={e => {
+                          const v = formatarCep(e.target.value);
+                          set('entrega_cep', v);
+                          buscarCep(v, true);
+                        }}
+                        placeholder="00000-000"
+                        inputMode="numeric"
+                      />
+                      <span style={s.cepIcon}>
+                        {buscandoCepEntrega
+                          ? <RefreshCw size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                          : <MapPin size={14} />}
+                      </span>
+                    </div>
                   </div>
                   <div style={s.group}>
                     <label style={s.label}>Estado<span style={s.required}>*</span></label>
@@ -626,14 +831,47 @@ export default function PerfilPage() {
             ) : (
               <>
                 <CheckCircle size={16} />
-                Salvar e liberar acesso
-                <ChevronRight size={15} />
+                {cadastroCompleto ? 'Salvar alterações' : 'Salvar e liberar acesso'}
               </>
             )}
           </button>
 
         </form>
       </div>
+
+      {/* Modal LGPD WhatsApp */}
+      {lgpdModal && (
+        <div style={s.overlay} onClick={() => setLgpdModal(false)}>
+          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
+            <div style={s.modalTitle}>Consentimento para contato via WhatsApp</div>
+            <div style={s.modalText}>
+              Ao marcar esta opção, o <strong>titular dos dados pessoais</strong> (número de celular
+              informado) autoriza a <strong>D-CAD</strong> a enviar mensagens via WhatsApp
+              relacionadas ao atendimento, atualizações de pedidos e comunicações do serviço,
+              conforme a <strong>Lei Geral de Proteção de Dados (LGPD – Lei nº 13.709/2018)</strong>.
+              <br /><br />
+              Você pode revogar este consentimento a qualquer momento acessando seus dados cadastrais.
+            </div>
+            <div style={{ display: 'flex', gap: '10px' }}>
+              <button
+                style={{ ...s.modalBtn, backgroundColor: '#f0f0f0', color: '#555' }}
+                onClick={() => setLgpdModal(false)}
+              >
+                Cancelar
+              </button>
+              <button
+                style={s.modalBtn}
+                onClick={() => {
+                  set('tem_whatsapp', true);
+                  setLgpdModal(false);
+                }}
+              >
+                Autorizar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
