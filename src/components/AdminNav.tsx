@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { Users, LayoutDashboard, LogOut, ShoppingCart, Menu, X } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
+import { DcadLogo } from '@/components/DcadLogo';
 
 const NAV_ITEMS = [
   { href: '/admin/cadastros', label: 'Cadastros',         icon: Users },
@@ -33,13 +34,7 @@ function NavContent({
         borderBottom: '1px solid #1a1a1a',
         marginBottom: 8,
       }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: 7,
-          backgroundColor: '#E52229',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '-0.5px',
-          flexShrink: 0,
-        }}>DC</div>
+        <DcadLogo size={28} variant="white" showText={false} />
         <div>
           <div style={{ fontSize: 13, fontWeight: 700, color: '#e5e7eb' }}>D-CAD</div>
           <div style={{ fontSize: 10, color: '#555', marginTop: -1 }}>Admin</div>

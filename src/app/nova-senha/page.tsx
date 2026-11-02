@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import { DcadLogo } from '@/components/DcadLogo';
 
 function NovaSenhaForm() {
   const [senha, setSenha] = useState('');
@@ -267,18 +268,10 @@ export default function NovaSenha() {
 function Logo() {
   return (
     <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-      <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-        <div style={{
-          width: '40px', height: '40px', borderRadius: '10px',
-          backgroundColor: '#E52229',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '18px', fontWeight: '800', color: 'white',
-        }}>D</div>
-        <span style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A1A', letterSpacing: '-0.5px' }}>
-          D-CAD
-        </span>
+      <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+        <DcadLogo size={40} variant="color" showText={true} />
+        <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>Portal do Cliente</p>
       </div>
-      <p style={{ color: '#6b7280', fontSize: '13px', margin: 0 }}>Portal do Cliente</p>
     </div>
   );
 }

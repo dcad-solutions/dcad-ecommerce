@@ -5,12 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Home, Package, User, LogOut, Menu, X } from 'lucide-react';
-
-const LOGO_SVG = (
-  <svg width="72" height="20" viewBox="0 0 72 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <text x="0" y="16" fontFamily="Geist, Inter, system-ui, sans-serif" fontWeight="800" fontSize="18" fill="#E52229">D-CAD</text>
-  </svg>
-);
+import { DcadLogo } from '@/components/DcadLogo';
 
 const LINKS = [
   { href: '/',        label: 'Início',    icon: Home },
@@ -57,13 +52,7 @@ export default function ClientNav() {
       }}>
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
-          <span style={{
-            fontFamily: 'Geist, Inter, system-ui, sans-serif',
-            fontWeight: 800,
-            fontSize: 20,
-            color: '#E52229',
-            letterSpacing: '-0.01em',
-          }}>D-CAD</span>
+          <DcadLogo size={32} variant="color" showText={true} />
         </Link>
 
         {/* Links centrais — visíveis apenas ≥640px */}
