@@ -1,5 +1,4 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { useWizardNav } from "@/contexts/WizardNavContext";
 import { Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
 import { fetchCatalog } from "@/lib/catalog";
 
@@ -319,7 +318,7 @@ function TutorialRedirect({setScreen}){
 }
 
 export default function App() {
-  const { screen, setScreen, setDentistNome } = useWizardNav();
+  const [screen,setScreen]=useState("auth");
   const [screenVisible,setScreenVisible]=useState(true);
   const [pendingScreen,setPendingScreen]=useState(null);
   const [authTab,setAuthTab]=useState("login");
@@ -327,7 +326,6 @@ export default function App() {
   const [forgotEmail,setForgotEmail]=useState("");
   const [forgotSent,setForgotSent]=useState(false);
   const [dentist,setDentist]=useState(null);
-  useEffect(()=>{ setDentistNome(dentist?.nome??null); },[dentist,setDentistNome]);
   const [profileComplete,setProfileComplete]=useState(false);
   const [profile,setProfile]=useState({docType:"cpf",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
   // Impressoras 3D cadastradas pelo cliente — múltiplas, relacionadas por tipo de serviço
@@ -980,6 +978,32 @@ input,textarea,select{touch-action:manipulation;}
         </div>
       )}
 
+      {/* ── HEADER ── */}
+      <div style={{background:C.dark2,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,zIndex:10}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}>
+          <img src={DCAD_LOGO} alt="D-CAD Dental Digital Solutions" style={{height:28,width:"auto",display:"block"}}/>
+          <span style={{fontWeight:600,fontSize:12,color:C.textSec,marginLeft:2}}>Portal</span>
+          {/* Botão voltar ao dashboard — visível em qualquer tela exceto auth/dashboard/pending */}
+          {dentist&&screen!=="auth"&&screen!=="dashboard"&&screen!=="pending"&&(
+            <button onClick={()=>setScreen("dashboard")}
+              style={{display:"flex",alignItems:"center",gap:5,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",marginLeft:4}}>
+              <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+              Dashboard
+            </button>
+          )}
+        </div>
+        {dentist&&(
+          <div style={{display:"flex",alignItems:"center",gap:8}}>
+            {patient&&<span style={{fontSize:12,color:C.textSec}}>Paciente: <b style={{color:C.text}}>{patient.nome}</b></span>}
+            {discount>0&&<span style={{fontSize:12,fontWeight:700,background:"rgba(34,197,94,0.15)",color:C.green,padding:"3px 9px",borderRadius:16}}>15% desconto</span>}
+            <div style={{width:28,height:28,borderRadius:"50%",background:C.dark3,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red}}>
+              {dentist.nome.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+            </div>
+            <button onClick={resetAll} style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer"}}>Sair</button>
+          </div>
+        )}
+      </div>
+
       {/* ── EDITING BANNER ── */}
       {editingId&&(
         <div style={{background:"rgba(229,34,41,0.10)",borderBottom:"1px solid rgba(229,34,41,0.18)",padding:"7px 20px",display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textSec}}>
@@ -1044,7 +1068,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* ── DESKTOP SIDEBAR ── */}
         {isDesktop&&dentist&&screen!=="auth"&&screen!=="dashboard"&&(patient||specialty||services.length>0)&&(
-          <div style={{width:256,flexShrink:0,borderRight:`1px solid ${C.border}`,minHeight:"calc(100vh - 56px)",padding:"16px 14px",position:"sticky",top:56,overflowY:"auto",maxHeight:"calc(100vh - 56px)"}}>
+          <div style={{width:256,flexShrink:0,borderRight:`1px solid ${C.border}`,minHeight:"calc(100vh - 52px)",padding:"16px 14px",position:"sticky",top:52,overflowY:"auto",maxHeight:"calc(100vh - 52px)"}}>
 
             {/* Section title */}
             <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1.5,marginBottom:12}}>RESUMO DO CASO</div>
