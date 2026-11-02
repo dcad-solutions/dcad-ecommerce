@@ -311,6 +311,12 @@ Serviço opcional.`;
 
 const SPECIALTIES_LIST=["Clínico Geral","Implantodontia","Dentística Restauradora","Endodontia","Periodontia","Ortodontia","Prótese Dentária","Cirurgia e Traumatologia","Odontopediatria","Radiologia","Outro"];
 
+// Componente que redireciona screen="tutorial" de volta ao dashboard
+function TutorialRedirect({setScreen}){
+  React.useEffect(()=>{setScreen("dashboard");},[setScreen]);
+  return null;
+}
+
 export default function App() {
   const [screen,setScreen]=useState("auth");
   const [screenVisible,setScreenVisible]=useState(true);
@@ -369,6 +375,10 @@ export default function App() {
   const [tutorialScrollStep,setTutorialScrollStep]=useState(0);
   const tutorialShownRef=React.useRef(false); // prevents loop: shown only once per session
   function setTutorialNeverShowAndSave(val){setTutorialNeverShow(val);try{if(val)localStorage.setItem("dcad_tutorial_done","1");else localStorage.removeItem("dcad_tutorial_done");}catch{}}
+  // Popup de primeiro acesso
+  const [showFirstAccessPopup,setShowFirstAccessPopup]=useState(false);
+  const [firstAccessNeverShow,setFirstAccessNeverShow]=useState(false);
+  const firstAccessShownRef=React.useRef(false);
   const TUTORIAL_VIDEO_URL=""; // Cole aqui a URL do vídeo (YouTube embed ou MP4)
   // Serviços frequentes (localStorage)
   const [frequentServices,setFrequentServices]=useState(()=>{
@@ -391,14 +401,14 @@ export default function App() {
   // ── Catálogo dinâmico (Supabase) com fallback para CATALOG estático ─────
   const { catalog, loading: catalogLoading } = useCatalog();
 
-  // Mostrar tutorial no primeiro login
+  // Mostrar popup de primeiro acesso (substitui redirect automático para tutorial)
   useEffect(()=>{
     if(screen==="dashboard"&&dentist){
       try{
-        if(!tutorialShownRef.current){
-          const seen=localStorage.getItem("dcad_tutorial_done")==="1";
-          if(!seen){tutorialShownRef.current=true;setTimeout(()=>{setScreen("tutorial");},400);}
-          else{tutorialShownRef.current=true;}
+        if(!firstAccessShownRef.current){
+          firstAccessShownRef.current=true;
+          const seen=localStorage.getItem("dcad_first_access_shown")==="1";
+          if(!seen){setTimeout(()=>{setShowFirstAccessPopup(true);},400);}
         }
       }catch{}
     }
@@ -1792,41 +1802,6 @@ input,textarea,select{touch-action:manipulation;}
               ))}
             </div>
 
-            {/* Sparkline — atividade 30 dias */}
-            {(()=>{
-              // Gera dados de atividade simulados baseados nos pedidos reais
-              const weeks=["Sem 1","Sem 2","Sem 3","Sem 4"];
-              const vals=[mockOrders.length>0?2:0, mockOrders.length>0?1:0, mockOrders.length>0?3:0, services.length>0?services.length:mockOrders.length>0?2:0];
-              const max=Math.max(...vals,1);
-              const W=260,H=40,pad=4;
-              const pts=vals.map((v,i)=>({
-                x:pad+i*(W-2*pad)/3,
-                y:H-pad-(v/max)*(H-2*pad)
-              }));
-              const path=pts.map((p,i)=>i===0?`M${p.x},${p.y}`:`L${p.x},${p.y}`).join(" ");
-              const area=path+` L${pts[pts.length-1].x},${H} L${pts[0].x},${H} Z`;
-              if(vals.every(v=>v===0)) return null;
-              return(
-                <div style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 16px",marginBottom:16}}>
-                  <div style={{fontSize:12,color:C.textSec,fontWeight:700,letterSpacing:.5,marginBottom:8}}>ATIVIDADE — ÚLTIMAS 4 SEMANAS</div>
-                  <svg width="100%" viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{display:"block",height:40}}>
-                    <defs>
-                      <linearGradient id="spark-grad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor={C.red} stopOpacity="0.3"/>
-                        <stop offset="100%" stopColor={C.red} stopOpacity="0.02"/>
-                      </linearGradient>
-                    </defs>
-                    <path d={area} fill="url(#spark-grad)"/>
-                    <path d={path} fill="none" stroke={C.red} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    {pts.map((p,i)=><circle key={i} cx={p.x} cy={p.y} r={3} fill={C.red}/>)}
-                  </svg>
-                  <div style={{display:"flex",justifyContent:"space-between",marginTop:4}}>
-                    {weeks.map((w,i)=><span key={i} style={{fontSize:10,color:C.textSec}}>{w}</span>)}
-                  </div>
-                </div>
-              );
-            })()}
-
             {/* Ações rápidas */}
             <div style={{marginBottom:24}}>
               <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:10}}>ACESSO RÁPIDO</div>
@@ -2046,344 +2021,7 @@ input,textarea,select{touch-action:manipulation;}
             PATIENT SCREEN
         ════════════════════════════════ */}
 
-        {screen==="tutorial"&&(
-          <div style={{maxWidth:680,margin:"0 auto",padding:"0 0 80px",position:"relative"}}>
-
-            {/* ── STICKY HEADER: voltar + progresso ── */}
-            <div style={{position:"sticky",top:0,zIndex:60,background:"rgba(10,10,10,0.97)",backdropFilter:"blur(12px)",WebkitBackdropFilter:"blur(12px)",borderBottom:`1px solid ${C.border2}`,padding:"10px 16px",display:"flex",alignItems:"center",gap:12,marginBottom:0,borderRadius:0}}>
-              <button onClick={()=>{setScreen("dashboard");setTutorialScrollStep(0);}}
-                style={{display:"flex",alignItems:"center",gap:6,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,cursor:"pointer",padding:"6px 12px",borderRadius:8,flexShrink:0,fontFamily:"inherit",minHeight:36}}>
-                ← Voltar
-              </button>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
-                  <span style={{fontSize:12,fontWeight:700,color:C.text}}>Tutorial do Sistema</span>
-                  <span style={{fontSize:11,color:C.textSec}}>{Math.min(tutorialScrollStep+1,8)} / 8</span>
-                </div>
-                <div style={{height:3,background:C.border,borderRadius:2,overflow:"hidden"}}>
-                  <div style={{height:"100%",width:`${((tutorialScrollStep+1)/8)*100}%`,background:C.red,borderRadius:2,transition:"width .3s"}}/>
-                </div>
-              </div>
-            </div>
-
-            {/* ── Header hero ── */}
-            <div style={{background:`linear-gradient(135deg,${C.red}1a 0%,${C.red}0d 100%)`,borderBottom:`1px solid rgba(229,34,41,0.18)`,padding:"28px 24px 24px",marginBottom:0,position:"relative",overflow:"hidden"}}>
-              <div style={{position:"absolute",right:-30,top:-30,width:140,height:140,borderRadius:"50%",background:"rgba(229,34,41,0.06)",pointerEvents:"none"}}/>
-              <div style={{fontSize:11,fontWeight:700,color:C.textSec,letterSpacing:.8,marginBottom:8}}>D-CAD DIGITAL SOLUTIONS</div>
-              <div style={{fontSize:24,fontWeight:900,marginBottom:8,lineHeight:1.2}}>Tutorial do Sistema</div>
-              <div style={{fontSize:13,color:C.textSec,lineHeight:1.7,marginBottom:20}}>Aprenda a solicitar planejamentos digitais e guias cirúrgicos em minutos. Siga o passo a passo abaixo — 8 etapas no total.</div>
-
-              {/* Vídeo ou placeholder */}
-              {TUTORIAL_VIDEO_URL?(
-                <div style={{borderRadius:12,overflow:"hidden",marginBottom:20,background:"#000",position:"relative",paddingBottom:"56.25%"}}>
-                  {TUTORIAL_VIDEO_URL.includes("youtube")||TUTORIAL_VIDEO_URL.includes("youtu.be")
-                    ?<iframe src={TUTORIAL_VIDEO_URL.replace("watch?v=","embed/").replace("youtu.be/","youtube.com/embed/")}
-                        style={{position:"absolute",inset:0,width:"100%",height:"100%",border:"none"}}
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        allowFullScreen title="Tutorial D-CAD"/>
-                    :<video src={TUTORIAL_VIDEO_URL} controls style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover"}}/>
-                  }
-                </div>
-              ):(
-                <div style={{borderRadius:12,border:`1px dashed rgba(229,34,41,0.25)`,padding:"18px",marginBottom:20,display:"flex",alignItems:"center",gap:14,background:"rgba(229,34,41,0.04)"}}>
-                  <div style={{width:44,height:44,borderRadius:12,background:"rgba(229,34,41,0.10)",border:"1px solid rgba(229,34,41,0.20)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:22,flexShrink:0}}>🎬</div>
-                  <div>
-                    <div style={{fontSize:13,fontWeight:600,color:C.textSec,marginBottom:3}}>Vídeo tutorial em breve</div>
-                    <div style={{fontSize:12,color:C.textMut,lineHeight:1.5}}>Estamos produzindo um vídeo guiado do sistema. Por ora, siga o passo a passo abaixo.</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Índice de navegação rápida */}
-              <div style={{background:"rgba(0,0,0,0.2)",borderRadius:10,padding:"12px 14px"}}>
-                <div style={{fontSize:11,fontWeight:700,color:C.textSec,marginBottom:8,letterSpacing:.5}}>NAVEGAR PARA</div>
-                <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 12px"}}>
-                  {["Acesse sua conta","Dados do paciente","Selecione a especialidade","Escolha o serviço","Configure o caso","Revise e finalize","Envie os arquivos","Acompanhe o status"].map((label,i)=>(
-                    <button key={i} onClick={()=>{
-                      const el=document.getElementById(`tut-step-${i}`);
-                      if(el)el.scrollIntoView({behavior:"smooth",block:"start"});
-                    }} style={{background:"none",border:"none",color:C.textSec,fontSize:12,cursor:"pointer",textAlign:"left",padding:"3px 0",fontFamily:"inherit",display:"flex",alignItems:"center",gap:5}}>
-                      <span style={{fontSize:10,fontWeight:700,color:C.textSec,flexShrink:0,width:14}}>{i+1}</span>
-                      <span style={{whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* ── Etapas ── */}
-            {[
-              {
-                n:1, color:C.textSec, phase:"Configuração da conta", ico:"👤",
-                title:"Acesse sua conta",
-                desc:"Faça login com seu e-mail e senha cadastrados. Na primeira vez, clique em 'Criar conta' e preencha seus dados profissionais (CRO, clínica e WhatsApp para contato).",
-                tips:["Use o mesmo e-mail em todos os acessos","Guarde sua senha em local seguro","Em caso de esquecimento, entre em contato via WhatsApp"],
-                svg:(
-                  <svg viewBox="0 0 320 160" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="160" fill="#1a1a1a" rx="10"/>
-                    <rect x="40" y="24" width="240" height="112" fill="#242424" rx="8" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-                    <text x="160" y="48" textAnchor="middle" fill="#E52229" fontSize="11" fontWeight="700" fontFamily="system-ui">D-CAD DIGITAL SOLUTIONS</text>
-                    <rect x="80" y="64" width="160" height="22" fill="#2a2a2a" rx="5" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-                    <text x="160" y="79" textAnchor="middle" fill="#666" fontSize="10" fontFamily="system-ui">E-mail</text>
-                    <rect x="80" y="92" width="160" height="22" fill="#2a2a2a" rx="5" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-                    <text x="160" y="107" textAnchor="middle" fill="#666" fontSize="10" fontFamily="system-ui">Senha</text>
-                    <rect x="80" y="118" width="160" height="22" fill="#E52229" rx="5"/>
-                    <text x="160" y="133" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="system-ui">Entrar</text>
-                  </svg>
-                ),
-              },
-              {
-                n:2, color:C.textSec, phase:"Configuração da conta", ico:"🧑‍⚕️",
-                title:"Informe os dados do paciente",
-                desc:"Após o login, clique em '+ Novo pedido'. Informe o nome completo e a data de nascimento do paciente. Você pode buscar pacientes já cadastrados ou criar um novo.",
-                tips:["Cada pedido é vinculado a um paciente","Pacientes anteriores ficam salvos para reutilização","O nome do paciente aparece no resumo do caso"],
-                svg:(
-                  <svg viewBox="0 0 320 140" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="140" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="30" fill="rgba(229,34,41,0.85)" fontSize="11" fontWeight="700" fontFamily="system-ui">Dados do Paciente</text>
-                    <rect x="16" y="40" width="288" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
-                    <text x="28" y="56" fill="#666" fontSize="10" fontFamily="system-ui">Nome completo do paciente</text>
-                    <rect x="16" y="70" width="136" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
-                    <text x="28" y="86" fill="#666" fontSize="10" fontFamily="system-ui">Data de nascimento</text>
-                    <rect x="168" y="70" width="136" height="24" fill="#2a2a2a" rx="6" stroke="rgba(168,85,247,0.3)" strokeWidth="1"/>
-                    <text x="236" y="86" textAnchor="middle" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Maria das Graças</text>
-                    <rect x="16" y="104" width="288" height="26" fill="rgba(229,34,41,0.85)" rx="6"/>
-                    <text x="160" y="121" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="system-ui">Continuar →</text>
-                  </svg>
-                ),
-              },
-              {
-                n:3, color:C.textSec, phase:"Configuração da conta", ico:"🏥",
-                title:"Selecione a especialidade",
-                desc:"Escolha a especialidade odontológica do serviço que você precisa. As especialidades disponíveis são Implantodontia, Dentística, Prótese, DTM, Estética e outras.",
-                tips:["Cada especialidade tem serviços específicos","Implantodontia v1.0 está completa e disponível","Outras especialidades serão adicionadas em breve"],
-                svg:(
-                  <svg viewBox="0 0 320 190" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="190" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="22" fill="#0D9488" fontSize="10" fontWeight="700" fontFamily="system-ui">Selecione a Especialidade</text>
-                    {[
-                      {x:8, y:30,c:"#E52229",t:"Implanto"},
-                      {x:86,y:30,c:"#6366f1",t:"Dentística"},
-                      {x:164,y:30,c:"#eab308",t:"Prótese"},
-                      {x:242,y:30,c:"#22c55e",t:"Periodontia"},
-                      {x:8, y:108,c:"rgba(229,34,41,0.85)",t:"Endodontia"},
-                      {x:86,y:108,c:"#0D9488",t:"DTM"},
-                      {x:164,y:108,c:"#ea580c",t:"Estética"},
-                      {x:242,y:108,c:"#2563eb",t:"Cirurgia"},
-                    ].map((sp,i)=>(
-                      <g key={i}>
-                        <rect x={sp.x} y={sp.y} width="72" height="70" fill="#242424" rx="8"
-                          stroke={i===0?"rgba(229,34,41,0.6)":"rgba(255,255,255,0.07)"} strokeWidth={i===0?"1.5":"1"}/>
-                        <rect x={sp.x} y={sp.y} width="72" height="3" fill={sp.c} rx="2"/>
-                        <rect x={sp.x+10} y={sp.y+22} width="52" height="4" fill={sp.c} rx="2" opacity=".3"/>
-                        <text x={sp.x+36} y={sp.y+50} textAnchor="middle" fill="#d0d0d0" fontSize="9.5" fontFamily="system-ui" fontWeight="600">{sp.t}</text>
-                      </g>
-                    ))}
-                  </svg>
-                ),
-              },
-              {
-                n:4, color:C.red, phase:"Realizando o pedido", ico:"📋",
-                title:"Escolha o serviço e a modalidade",
-                desc:"Selecione o serviço desejado (ex: Cirurgia Guiada Unitária) e escolha a modalidade: Planejamento + Impressão 3D (D-CAD entrega as peças) ou Somente Planejamento (você recebe os arquivos para imprimir).",
-                tips:["Somente Planejamento requer que você possua uma impressora 3D","O preço muda entre as modalidades","Serviços com ⚠ não oferecem modalidade Somente Planejamento"],
-                svg:(
-                  <svg viewBox="0 0 320 165" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="165" fill="#1a1a1a" rx="10"/>
-                    <rect x="16" y="16" width="288" height="64" fill="#242424" rx="8" stroke="rgba(229,34,41,0.3)" strokeWidth="1.5"/>
-                    <rect x="16" y="16" width="288" height="3" fill="#E52229" rx="2"/>
-                    <text x="32" y="40" fill="#fff" fontSize="12" fontWeight="700" fontFamily="system-ui">Cirurgia Guiada Unitária</text>
-                    <text x="32" y="56" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Guia para 1 implante · A partir de R$ 389</text>
-                    <rect x="28" y="64" width="80" height="10" fill="rgba(34,197,94,0.15)" rx="3" stroke="rgba(34,197,94,0.3)" strokeWidth="0.5"/>
-                    <text x="68" y="72" textAnchor="middle" fill="#22c55e" fontSize="8" fontFamily="system-ui">✓ Exames inclusos</text>
-                    <rect x="16" y="96" width="138" height="58" fill="#242424" rx="8" stroke="rgba(229,34,41,0.4)" strokeWidth="1.5"/>
-                    <text x="85" y="118" textAnchor="middle" fill="#E52229" fontSize="10" fontWeight="700" fontFamily="system-ui">Plan. + Impressao</text>
-                    <text x="85" y="134" textAnchor="middle" fill="#a0a0a0" fontSize="9" fontFamily="system-ui">D-CAD entrega as pecas</text>
-                    <rect x="162" y="96" width="142" height="58" fill="#2a2a2a" rx="8" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-                    <text x="233" y="118" textAnchor="middle" fill="#a0a0a0" fontSize="10" fontWeight="700" fontFamily="system-ui">So Planejamento</text>
-                    <text x="233" y="134" textAnchor="middle" fill="#666" fontSize="9" fontFamily="system-ui">Voce imprime os arquivos</text>
-                  </svg>
-                ),
-              },
-              {
-                n:5, color:C.red, phase:"Realizando o pedido", ico:"⚙️",
-                title:"Configure o caso clínico",
-                desc:"Preencha as informações clínicas: selecione os dentes no odontograma (ou arcadas no protocolo), escolha a marca do implante, o kit e o modelo. Em seguida, defina o prazo de entrega.",
-                tips:["O odontograma aceita até 8 implantes por arcada","A marca do implante filtra automaticamente kits e modelos","Urgente tem acréscimo de 40% sobre o valor base"],
-                svg:(
-                  <svg viewBox="0 0 320 175" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="175" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="24" fill="#E52229" fontSize="11" fontWeight="700" fontFamily="system-ui">Selecione os dentes</text>
-                    <g transform="translate(8,32)">
-                      {[...Array(16)].map((_,i)=>{
-                        const row=i<8?0:1;const col=i%8;
-                        const x=col*19;const y=row*26;
-                        const sel=[2,4,7].includes(i);
-                        return(
-                          <g key={i}>
-                            <rect x={x} y={y} width="17" height="21" fill={sel?"rgba(229,34,41,0.25)":"#2a2a2a"} rx="3"
-                              stroke={sel?"#E52229":"rgba(255,255,255,0.1)"} strokeWidth={sel?"1.5":"1"}/>
-                            <text x={x+8} y={y+14} textAnchor="middle" fill={sel?"#E52229":"#555"} fontSize="7.5" fontFamily="system-ui">
-                              {[18,17,16,15,14,13,12,11,21,22,23,24,25,26,27,28][i]}
-                            </text>
-                          </g>
-                        );
-                      })}
-                    </g>
-                    <text x="16" y="108" fill="#E52229" fontSize="11" fontWeight="700" fontFamily="system-ui">Marca do implante</text>
-                    <rect x="16" y="114" width="288" height="24" fill="#242424" rx="6" stroke="rgba(255,255,255,0.08)" strokeWidth="1"/>
-                    <text x="28" y="130" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Neodent · Grand Morse · Titamax</text>
-                    <rect x="270" y="116" width="26" height="20" fill="#E52229" rx="4"/>
-                    <text x="283" y="130" textAnchor="middle" fill="#fff" fontSize="12">▾</text>
-                  </svg>
-                ),
-              },
-              {
-                n:6, color:C.red, phase:"Realizando o pedido", ico:"📦",
-                title:"Revise o pedido e finalize",
-                desc:"Na tela de Resumo do Caso, confira todos os serviços adicionados, os valores, o prazo e o tipo de frete. Você pode adicionar mais serviços ao mesmo pedido antes de finalizar.",
-                tips:["Você pode editar ou remover serviços antes de pagar","Múltiplos serviços podem ser enviados juntos","O desconto institucional é aplicado automaticamente"],
-                svg:(
-                  <svg viewBox="0 0 320 140" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="140" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="24" fill="#22c55e" fontSize="11" fontWeight="700" fontFamily="system-ui">Resumo do Caso</text>
-                    <rect x="16" y="30" width="288" height="44" fill="#242424" rx="8" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-                    <text x="28" y="48" fill="#fff" fontSize="11" fontWeight="600" fontFamily="system-ui">Cirurgia Guiada Unitária</text>
-                    <text x="28" y="62" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Dente 16 · Neodent · Grand Morse · Normal</text>
-                    <text x="290" y="56" textAnchor="end" fill="#E52229" fontSize="13" fontWeight="900" fontFamily="system-ui">R$ 389</text>
-                    <line x1="16" y1="80" x2="304" y2="80" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-                    <rect x="16" y="86" width="136" height="24" fill="#2a2a2a" rx="6" stroke="rgba(255,255,255,0.1)" strokeWidth="1"/>
-                    <text x="84" y="102" textAnchor="middle" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">+ Adicionar serviço</text>
-                    <rect x="160" y="86" width="144" height="24" fill="#E52229" rx="6"/>
-                    <text x="232" y="102" textAnchor="middle" fill="#fff" fontSize="11" fontWeight="700" fontFamily="system-ui">Finalizar pedido →</text>
-                    <text x="16" y="130" fill="#22c55e" fontSize="10" fontFamily="system-ui">✓ Total: R$ 389,00 · Frete: A calcular</text>
-                  </svg>
-                ),
-              },
-              {
-                n:7, color:C.textSec, phase:"Após o pedido", ico:"📁",
-                title:"Envie os arquivos clínicos",
-                desc:"Após o pagamento, você receberá instruções para enviar os arquivos clínicos: tomografia (DICOM/CBCT), escaneamento intraoral (STL), e outros exames conforme o serviço. O planejamento começa após o recebimento e validação dos arquivos.",
-                tips:["CBCT obrigatório para cirurgia guiada (fatias ≤0.4mm)","Escaneamento intraoral substitui modelos de gesso","Dúvidas sobre arquivos: WhatsApp (98) 98542-5982"],
-                svg:(
-                  <svg viewBox="0 0 320 140" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="140" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="24" fill="#0D9488" fontSize="11" fontWeight="700" fontFamily="system-ui">Arquivos necessários</text>
-                    {[
-                      {ico:"🧠",label:"CBCT / Tomografia",sub:"Formato DICOM · Fatias ≤0.4mm",req:true},
-                      {ico:"🦷",label:"Escaneamento Intraoral",sub:"Formato STL ou OBJ",req:true},
-                      {ico:"📋",label:"Prescrição clínica",sub:"Posição, angulação, emergência",req:false},
-                    ].map((f,i)=>(
-                      <g key={i} transform={`translate(16,${32+i*34})`}>
-                        <rect width="288" height="28" fill="#242424" rx="6" stroke="rgba(255,255,255,0.07)" strokeWidth="1"/>
-                        <text x="14" y="18" fill="#fff" fontSize="14">{f.ico}</text>
-                        <text x="36" y="14" fill="#e0e0e0" fontSize="10" fontWeight="600" fontFamily="system-ui">{f.label}</text>
-                        <text x="36" y="24" fill="#666" fontSize="9" fontFamily="system-ui">{f.sub}</text>
-                        <text x="272" y="18" textAnchor="end" fill={f.req?"#E52229":"#22c55e"} fontSize="9" fontWeight="700" fontFamily="system-ui">{f.req?"Obrigatório":"Opcional"}</text>
-                      </g>
-                    ))}
-                  </svg>
-                ),
-              },
-              {
-                n:8, color:C.textSec, phase:"Após o pedido", ico:"🚀",
-                title:"Acompanhe o planejamento",
-                desc:"Após o envio dos arquivos, nossa equipe inicia o planejamento. Você recebe atualizações por WhatsApp e pode acompanhar o status no dashboard. O prazo começa a contar a partir da validação dos arquivos.",
-                tips:["Tempo médio de planejamento: 48-72h úteis","Aprovação obrigatória antes da impressão","Suporte por WhatsApp em horário comercial"],
-                svg:(
-                  <svg viewBox="0 0 320 140" style={{width:"100%",borderRadius:10,display:"block"}}>
-                    <rect width="320" height="140" fill="#1a1a1a" rx="10"/>
-                    <text x="16" y="24" fill="#6366f1" fontSize="11" fontWeight="700" fontFamily="system-ui">Status do pedido #001</text>
-                    <g transform="translate(16,36)">
-                      {[
-                        {label:"Recebido",done:true,active:false},
-                        {label:"Planejamento",done:false,active:true},
-                        {label:"Impressão",done:false,active:false},
-                        {label:"Enviado",done:false,active:false},
-                        {label:"Entregue",done:false,active:false},
-                      ].map((st,i)=>(
-                        <g key={i}>
-                          <circle cx={i*72} cy="18" r="10"
-                            fill={st.done?"#22c55e":st.active?"#6366f1":"#2a2a2a"}
-                            stroke={st.done?"rgba(34,197,94,0.4)":st.active?"rgba(229,34,41,0.60)":"rgba(255,255,255,0.1)"} strokeWidth="1.5"/>
-                          <text x={i*72} y="23" textAnchor="middle" fill="#fff" fontSize="10" fontWeight="700">{st.done?"✓":i+1}</text>
-                          <text x={i*72} y="42" textAnchor="middle" fill={st.active?"#6366f1":"#555"} fontSize="8" fontFamily="system-ui">{st.label}</text>
-                          {i<4&&<line x1={i*72+11} y1="18" x2={i*72+61} y2="18" stroke={st.done?"#22c55e":"rgba(255,255,255,0.1)"} strokeWidth="1.5" strokeDasharray={st.done?"0":"4 3"}/>}
-                        </g>
-                      ))}
-                    </g>
-                    <rect x="16" y="96" width="288" height="34" fill="#242424" rx="8" stroke="rgba(229,34,41,0.18)" strokeWidth="1"/>
-                    <text x="28" y="110" fill="#6366f1" fontSize="10" fontWeight="700" fontFamily="system-ui">🔵 Em planejamento</text>
-                    <text x="28" y="123" fill="#a0a0a0" fontSize="10" fontFamily="system-ui">Previsão de conclusão: 48h úteis · Cirurgia Guiada Unitária</text>
-                  </svg>
-                ),
-              },
-            ].map((step,idx)=>(
-              <div key={idx} id={`tut-step-${idx}`} style={{marginBottom:24,background:C.dark2,border:`1px solid ${C.border}`,borderRadius:16,overflow:"hidden"}}
-                ref={el=>{
-                  if(!el) return;
-                  const obs=new IntersectionObserver(([e])=>{if(e.isIntersecting)setTutorialScrollStep(idx);},{threshold:.3});
-                  obs.observe(el);
-                }}>
-                {/* Header da etapa */}
-                <div style={{padding:"14px 20px",borderBottom:`1px solid ${C.border}`,display:"flex",alignItems:"center",gap:12}}>
-                  <div style={{width:38,height:38,borderRadius:10,background:step.color+"18",border:`1px solid ${step.color}44`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:19,flexShrink:0}}>
-                    {step.ico}
-                  </div>
-                  <div style={{flex:1,minWidth:0}}>
-                    <div style={{display:"flex",alignItems:"center",gap:6,marginBottom:2}}>
-                      <span style={{fontSize:10,fontWeight:700,color:step.color,letterSpacing:.5,background:step.color+"14",border:`1px solid ${step.color}33`,borderRadius:20,padding:"1px 7px"}}>ETAPA {step.n}</span>
-                      {step.phase&&<span style={{fontSize:10,color:C.textMut}}>{step.phase}</span>}
-                    </div>
-                    <div style={{fontSize:15,fontWeight:800,lineHeight:1.2}}>{step.title}</div>
-                  </div>
-                </div>
-                {/* Ilustração SVG */}
-                <div style={{padding:"16px 20px 0"}}>{step.svg}</div>
-                {/* Descrição */}
-                <div style={{padding:"14px 20px",fontSize:13,color:C.textSec,lineHeight:1.7}}>{step.desc}</div>
-                {/* Dicas */}
-                <div style={{margin:"0 20px 16px",background:step.color+"08",borderLeft:`3px solid ${step.color}`,borderRadius:"0 8px 8px 0",padding:"10px 14px"}}>
-                  <div style={{fontSize:11,fontWeight:700,color:step.color,marginBottom:6,letterSpacing:.3}}>💡 DICAS</div>
-                  {step.tips.map((tip,ti)=>(
-                    <div key={ti} style={{fontSize:12,color:C.textSec,display:"flex",alignItems:"flex-start",gap:6,marginBottom:ti<step.tips.length-1?5:0,lineHeight:1.55}}>
-                      <span style={{color:step.color,flexShrink:0,marginTop:1}}>✓</span>{tip}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-
-            {/* ── Footer ── */}
-            <div style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:16,padding:"20px 24px",marginBottom:16}}>
-              <div style={{display:"flex",alignItems:"center",gap:14,marginBottom:16}}>
-                <div style={{flex:1}}>
-                  <div style={{fontSize:14,fontWeight:700,marginBottom:3}}>Dúvidas? Fale com a D-CAD</div>
-                  <div style={{fontSize:12,color:C.textSec,lineHeight:1.5}}>Suporte por WhatsApp em horário comercial — casos, arquivos e prazos.</div>
-                </div>
-                <a href="https://wa.me/5598985425982" target="_blank" rel="noopener noreferrer"
-                  style={{display:"inline-flex",alignItems:"center",gap:6,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.25)",borderRadius:10,padding:"9px 14px",color:C.green,fontSize:12,fontWeight:700,textDecoration:"none",flexShrink:0}}>
-                  💬 WhatsApp
-                </a>
-              </div>
-              {/* Checkbox no local certo — após ler o tutorial */}
-              <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",padding:"10px 12px",background:"rgba(255,255,255,0.03)",borderRadius:8,border:`1px solid ${C.border}`}}>
-                <input type="checkbox" checked={tutorialNeverShow}
-                  onChange={e=>setTutorialNeverShowAndSave(e.target.checked)}
-                  style={{width:16,height:16,accentColor:C.red,cursor:"pointer",flexShrink:0}}/>
-                <div>
-                  <div style={{fontSize:13,fontWeight:600,color:C.text}}>Não exibir este tutorial automaticamente</div>
-                  <div style={{fontSize:11,color:C.textMut,marginTop:1}}>Você poderá acessar pelo botão "Tutorial do Sistema" no dashboard a qualquer momento.</div>
-                </div>
-              </label>
-            </div>
-
-            <button onClick={()=>setScreen("dashboard")}
-              style={{width:"100%",padding:"13px 0",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer"}}>
-              ← Voltar ao Dashboard
-            </button>
-          </div>
-        )}
+        {screen==="tutorial"&&<TutorialRedirect setScreen={setScreen}/>}
 
         {screen==="patient"&&(
           <div style={{maxWidth:560,margin:"0 auto",paddingTop:isDesktop?32:8}}>
@@ -4060,6 +3698,51 @@ input,textarea,select{touch-action:manipulation;}
           </div>
         </div>
         )}
+
+      {/* ── POPUP PRIMEIRO ACESSO ── */}
+      {showFirstAccessPopup&&(
+        <div style={{position:"fixed",inset:0,zIndex:9999,display:"flex",alignItems:"center",justifyContent:"center",padding:16,background:"rgba(0,0,0,0.75)",backdropFilter:"blur(4px)",WebkitBackdropFilter:"blur(4px)"}}>
+          <div style={{background:"#1A1A1A",border:"1px solid rgba(229,34,41,0.25)",borderRadius:20,padding:28,maxWidth:400,width:"100%",boxShadow:"0 24px 80px rgba(0,0,0,0.6)"}}>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{width:52,height:52,borderRadius:14,background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.25)",display:"inline-flex",alignItems:"center",justifyContent:"center",fontSize:24}}>👋</div>
+            </div>
+            <div style={{fontSize:18,fontWeight:800,color:"#FFFFFF",textAlign:"center",marginBottom:8}}>Bem-vindo ao Portal D-CAD!</div>
+            <div style={{fontSize:13,color:"#8A8A8A",textAlign:"center",lineHeight:1.6,marginBottom:24}}>É a sua primeira vez aqui? Você pode assistir ao tutorial do sistema ou ir direto para o dashboard.</div>
+            <div style={{display:"flex",flexDirection:"column",gap:10,marginBottom:20}}>
+              <button
+                onClick={()=>{
+                  try{if(firstAccessNeverShow)localStorage.setItem("dcad_first_access_shown","1");}catch{}
+                  setShowFirstAccessPopup(false);
+                  setScreen("tutorial");
+                }}
+                style={{width:"100%",padding:"13px 20px",background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.30)",borderRadius:12,color:"#E52229",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                🎓 Ver Tutorial do Sistema
+              </button>
+              <button
+                onClick={()=>{
+                  try{if(firstAccessNeverShow)localStorage.setItem("dcad_first_access_shown","1");}catch{}
+                  setShowFirstAccessPopup(false);
+                }}
+                style={{width:"100%",padding:"13px 20px",background:"#E52229",border:"none",borderRadius:12,color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",fontFamily:"inherit"}}>
+                Ir para o Dashboard →
+              </button>
+            </div>
+            <label style={{display:"flex",alignItems:"center",gap:10,cursor:"pointer",justifyContent:"center"}}>
+              <input
+                type="checkbox"
+                checked={firstAccessNeverShow}
+                onChange={e=>{
+                  const val=e.target.checked;
+                  setFirstAccessNeverShow(val);
+                  try{if(val)localStorage.setItem("dcad_first_access_shown","1");else localStorage.removeItem("dcad_first_access_shown");}catch{}
+                }}
+                style={{width:16,height:16,accentColor:"#E52229",cursor:"pointer"}}
+              />
+              <span style={{fontSize:12,color:"#8A8A8A"}}>Não exibir este aviso novamente</span>
+            </label>
+          </div>
+        </div>
+      )}
 
       </div>
     </div>

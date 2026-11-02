@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { Home, Package, User, LogOut, Menu, X } from 'lucide-react';
+import { Home, Package, User, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
 import { DcadLogo } from '@/components/DcadLogo';
 
 const LINKS = [
@@ -13,11 +13,43 @@ const LINKS = [
   { href: '/perfil',  label: 'Perfil',    icon: User },
 ];
 
+// Hook para tema claro/escuro — persiste em localStorage
+function useTheme() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() => {
+    try {
+      const saved = localStorage.getItem('dcad_theme');
+      if (saved === 'dark' || saved === 'light') return saved;
+    } catch {}
+    return 'light';
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem('dcad_theme', theme); } catch {}
+    document.documentElement.setAttribute('data-dcad-theme', theme);
+  }, [theme]);
+
+  return [theme, setTheme] as const;
+}
+
 export default function ClientNav() {
   const pathname = usePathname();
   const router = useRouter();
   const [nome, setNome] = useState<string | null>(null);
   const [menuAberto, setMenuAberto] = useState(false);
+  const [theme, setTheme] = useTheme();
+
+  const dark = theme === 'dark';
+
+  // Cores baseadas no tema
+  const C = {
+    bg:     dark ? '#0A0A0A' : '#FFFFFF',
+    border: dark ? '#2A2A2A' : '#EBEBEB',
+    text:   dark ? '#FFFFFF' : '#1A1A1A',
+    textSec:dark ? '#8A8A8A' : '#777777',
+    linkHover: dark ? 'rgba(229,34,41,0.15)' : '#FEF2F2',
+    shadow: dark ? '0 1px 0 #2A2A2A' : '0 1px 0 #EBEBEB',
+    drawerBg: dark ? '#111111' : '#FFFFFF',
+  };
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -32,13 +64,16 @@ export default function ClientNav() {
     router.push('/login');
   }
 
-  // ── Desktop nav (horizontal, topo) ───────────────────────────────────────
+  function toggleTheme() {
+    setTheme(t => t === 'light' ? 'dark' : 'light');
+  }
+
   return (
     <>
       {/* Desktop / tablet */}
       <nav style={{
-        backgroundColor: '#fff',
-        borderBottom: '1px solid #EBEBEB',
+        backgroundColor: C.bg,
+        borderBottom: `1px solid ${C.border}`,
         padding: '0 max(20px, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(20px, env(safe-area-inset-right, 0px))',
         display: 'flex',
@@ -48,7 +83,8 @@ export default function ClientNav() {
         position: 'sticky',
         top: 0,
         zIndex: 20,
-        boxShadow: '0 1px 0 #EBEBEB',
+        boxShadow: C.shadow,
+        transition: 'background-color 0.2s, border-color 0.2s',
       }}>
         {/* Logo */}
         <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center' }}>
@@ -78,8 +114,8 @@ export default function ClientNav() {
                   textDecoration: 'none',
                   fontSize: 13,
                   fontWeight: ativa ? 700 : 500,
-                  color: ativa ? '#E52229' : '#555',
-                  backgroundColor: ativa ? '#FEF2F2' : 'transparent',
+                  color: ativa ? '#E52229' : C.textSec,
+                  backgroundColor: ativa ? 'rgba(229,34,41,0.10)' : 'transparent',
                   minHeight: 36,
                   transition: 'background 0.15s, color 0.15s',
                 }}
@@ -91,13 +127,36 @@ export default function ClientNav() {
           })}
         </div>
 
-        {/* Lado direito: nome + sair | hamburger mobile */}
+        {/* Lado direito: toggle + nome + sair | hamburger mobile */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          {/* Toggle tema — visível sempre */}
+          <button
+            onClick={toggleTheme}
+            title={dark ? 'Mudar para tema claro' : 'Mudar para tema escuro'}
+            aria-label={dark ? 'Ativar modo claro' : 'Ativar modo escuro'}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 36,
+              height: 36,
+              border: `1px solid ${C.border}`,
+              borderRadius: 8,
+              background: 'transparent',
+              cursor: 'pointer',
+              color: C.textSec,
+              transition: 'border-color 0.2s, color 0.2s',
+              flexShrink: 0,
+            }}
+          >
+            {dark ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
+
           {/* Nome + botão sair — visível ≥640px */}
           <div className="dcad-nav-right" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {nome && (
-              <span style={{ fontSize: 13, color: '#777', fontWeight: 500 }}>
-                Olá, <strong style={{ color: '#1A1A1A' }}>{nome}</strong>
+              <span style={{ fontSize: 13, color: C.textSec, fontWeight: 500 }}>
+                Olá, <strong style={{ color: C.text }}>{nome}</strong>
               </span>
             )}
             <button
@@ -109,14 +168,15 @@ export default function ClientNav() {
                 gap: 6,
                 padding: '6px 12px',
                 backgroundColor: 'transparent',
-                border: '1px solid #EBEBEB',
+                border: `1px solid ${C.border}`,
                 borderRadius: 8,
                 cursor: 'pointer',
                 fontSize: 13,
-                color: '#777',
+                color: C.textSec,
                 minHeight: 36,
                 minWidth: 44,
                 justifyContent: 'center',
+                transition: 'border-color 0.2s, color 0.2s',
               }}
             >
               <LogOut size={14} />
@@ -135,11 +195,11 @@ export default function ClientNav() {
               justifyContent: 'center',
               width: 44,
               height: 44,
-              border: '1px solid #EBEBEB',
+              border: `1px solid ${C.border}`,
               borderRadius: 8,
               background: 'transparent',
               cursor: 'pointer',
-              color: '#555',
+              color: C.textSec,
             }}
           >
             {menuAberto ? <X size={18} /> : <Menu size={18} />}
@@ -172,9 +232,10 @@ export default function ClientNav() {
             top: 0,
             left: 0,
             right: 0,
-            backgroundColor: '#fff',
+            backgroundColor: C.drawerBg,
             boxShadow: '0 8px 24px rgba(0,0,0,0.12)',
             padding: '8px 0 16px',
+            transition: 'background-color 0.2s',
           }}>
             {LINKS.map(({ href, label, icon: Icon }) => {
               const ativa = pathname === href;
@@ -191,12 +252,12 @@ export default function ClientNav() {
                     textDecoration: 'none',
                     fontSize: 15,
                     fontWeight: ativa ? 700 : 500,
-                    color: ativa ? '#E52229' : '#1A1A1A',
-                    backgroundColor: ativa ? '#FEF2F2' : 'transparent',
+                    color: ativa ? '#E52229' : C.text,
+                    backgroundColor: ativa ? 'rgba(229,34,41,0.10)' : 'transparent',
                     minHeight: 52,
                   }}
                 >
-                  <Icon size={18} color={ativa ? '#E52229' : '#777'} />
+                  <Icon size={18} color={ativa ? '#E52229' : C.textSec} />
                   {label}
                   {ativa && (
                     <span style={{
@@ -210,7 +271,31 @@ export default function ClientNav() {
                 </Link>
               );
             })}
-            <div style={{ borderTop: '1px solid #F0F0F0', margin: '8px 0 0' }}>
+
+            {/* Toggle tema no mobile */}
+            <div style={{ borderTop: `1px solid ${C.border}`, margin: '8px 0 0' }}>
+              <button
+                onClick={toggleTheme}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 20px',
+                  width: '100%',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  color: C.text,
+                  fontWeight: 500,
+                  minHeight: 52,
+                  textAlign: 'left',
+                  fontFamily: 'inherit',
+                }}
+              >
+                {dark ? <Sun size={18} color={C.textSec} /> : <Moon size={18} color={C.textSec} />}
+                {dark ? 'Mudar para modo claro' : 'Mudar para modo escuro'}
+              </button>
               <button
                 onClick={sair}
                 style={{
@@ -227,6 +312,7 @@ export default function ClientNav() {
                   fontWeight: 600,
                   minHeight: 52,
                   textAlign: 'left',
+                  fontFamily: 'inherit',
                 }}
               >
                 <LogOut size={18} color="#E52229" />
