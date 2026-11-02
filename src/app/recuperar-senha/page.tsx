@@ -31,7 +31,7 @@ export default function RecuperarSenha() {
 
   const estiloBase: React.CSSProperties = {
     minHeight: '100vh',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#FAFAFA',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -48,24 +48,25 @@ export default function RecuperarSenha() {
             <div style={{ textAlign: 'center', marginBottom: '20px' }}>
               <div style={{
                 width: '56px', height: '56px', borderRadius: '50%',
-                backgroundColor: '#052e16', border: '1px solid #166534',
+                backgroundColor: '#F0FDF4', border: '1px solid #86EFAC',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 16px',
                 fontSize: '24px',
+                color: '#16A34A',
               }}>✓</div>
-              <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', margin: '0 0 8px' }}>
+              <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1A1A1A', margin: '0 0 8px' }}>
                 E-mail enviado!
               </h1>
               <p style={{ fontSize: '13px', color: '#6b7280', margin: 0, lineHeight: '1.6' }}>
-                Enviamos um link de recuperação para <strong style={{ color: '#d1d5db' }}>{email}</strong>.
+                Enviamos um link de recuperação para <strong style={{ color: '#1A1A1A' }}>{email}</strong>.
                 Verifique sua caixa de entrada e clique no link para criar uma nova senha.
               </p>
             </div>
-            <p style={{ fontSize: '12px', color: '#4b5563', textAlign: 'center', margin: '16px 0 0' }}>
+            <p style={{ fontSize: '12px', color: '#9CA3AF', textAlign: 'center', margin: '16px 0 0' }}>
               Não recebeu?{' '}
               <button
                 onClick={() => { setEnviado(false); }}
-                style={{ background: 'none', border: 'none', color: '#3b82f6', cursor: 'pointer', fontSize: '12px', padding: 0 }}
+                style={{ background: 'none', border: 'none', color: '#E52229', cursor: 'pointer', fontSize: '12px', padding: 0, fontWeight: '500' }}
               >
                 Reenviar
               </button>
@@ -81,10 +82,19 @@ export default function RecuperarSenha() {
 
   return (
     <div style={estiloBase}>
+      <style>{`
+        .auth-input:focus {
+          border-color: #E52229 !important;
+          box-shadow: 0 0 0 3px rgba(229, 34, 41, 0.12) !important;
+        }
+        .auth-btn-primary:hover:not(:disabled) {
+          background-color: #C81E24 !important;
+        }
+      `}</style>
       <div style={{ width: '100%', maxWidth: '400px' }}>
         <Logo />
         <div style={cardStyle}>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', margin: '0 0 4px' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1A1A1A', margin: '0 0 4px' }}>
             Recuperar senha
           </h1>
           <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 28px', lineHeight: '1.5' }}>
@@ -93,9 +103,9 @@ export default function RecuperarSenha() {
 
           {erro && (
             <div style={{
-              backgroundColor: '#1f0909', border: '1px solid #3b1212',
+              backgroundColor: '#FEF2F2', border: '1px solid #FECACA',
               borderRadius: '8px', padding: '12px 14px', marginBottom: '20px',
-              fontSize: '13px', color: '#f87171',
+              fontSize: '13px', color: '#DC2626',
             }}>
               {erro}
             </div>
@@ -103,10 +113,11 @@ export default function RecuperarSenha() {
 
           <form onSubmit={enviar} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#d1d5db', marginBottom: '6px' }}>
+              <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
                 E-mail
               </label>
               <input
+                className="auth-input"
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
@@ -115,24 +126,29 @@ export default function RecuperarSenha() {
                 placeholder="seu@email.com"
                 style={{
                   width: '100%', boxSizing: 'border-box',
-                  padding: '10px 14px',
-                  backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a',
-                  borderRadius: '8px', color: '#fff',
+                  padding: '12px 14px',
+                  backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5',
+                  borderRadius: '8px', color: '#1A1A1A',
                   fontSize: '14px', outline: 'none',
+                  transition: 'border-color 0.15s, box-shadow 0.15s',
+                  minHeight: '44px',
                 }}
               />
             </div>
 
             <button
+              className="auth-btn-primary"
               type="submit"
               disabled={busy}
               style={{
-                width: '100%', padding: '11px',
-                backgroundColor: busy ? '#1d3a6e' : '#2563eb',
+                width: '100%', padding: '12px',
+                backgroundColor: busy ? '#F87171' : '#E52229',
                 border: 'none', borderRadius: '8px',
                 color: '#fff', fontSize: '14px', fontWeight: '600',
                 cursor: busy ? 'not-allowed' : 'pointer',
                 marginTop: '4px',
+                transition: 'background-color 0.2s',
+                minHeight: '44px',
               }}
             >
               {busy ? 'Enviando...' : 'Enviar link de recuperação'}
@@ -148,8 +164,8 @@ export default function RecuperarSenha() {
           </a>
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#4b5563' }}>
-          © 2025 D-CAD Dental Digital Solutions
+        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#9CA3AF' }}>
+          © 2026 D-CAD Dental Digital Solutions
         </p>
       </div>
     </div>
@@ -162,11 +178,11 @@ function Logo() {
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
         <div style={{
           width: '40px', height: '40px', borderRadius: '10px',
-          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+          backgroundColor: '#E52229',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '18px', fontWeight: '800', color: 'white',
         }}>D</div>
-        <span style={{ fontSize: '22px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>
+        <span style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A1A', letterSpacing: '-0.5px' }}>
           D-CAD
         </span>
       </div>
@@ -176,8 +192,9 @@ function Logo() {
 }
 
 const cardStyle: React.CSSProperties = {
-  backgroundColor: '#111111',
-  border: '1px solid #222',
+  backgroundColor: '#FFFFFF',
+  border: '1px solid #E5E5E5',
   borderRadius: '16px',
   padding: '32px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
 };

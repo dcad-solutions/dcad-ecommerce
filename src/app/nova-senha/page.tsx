@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Eye, EyeOff } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 
@@ -15,6 +15,7 @@ function NovaSenhaForm() {
   const [busy, setBusy] = useState(false);
   const [sessaoOk, setSessaoOk] = useState(false);
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // O Supabase envia type=recovery na URL após trocar o código no callback
   useEffect(() => {
@@ -54,12 +55,12 @@ function NovaSenhaForm() {
 
     setSucesso(true);
     // Redireciona para home após 2s (já está logado)
-    setTimeout(() => { window.location.href = '/'; }, 2000);
+    setTimeout(() => { router.push('/'); }, 2000);
   }
 
   const estiloBase: React.CSSProperties = {
     minHeight: '100vh',
-    backgroundColor: '#0a0a0a',
+    backgroundColor: '#FAFAFA',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -76,11 +77,12 @@ function NovaSenhaForm() {
             <div style={{ textAlign: 'center' }}>
               <div style={{
                 width: '56px', height: '56px', borderRadius: '50%',
-                backgroundColor: '#052e16', border: '1px solid #166534',
+                backgroundColor: '#F0FDF4', border: '1px solid #86EFAC',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 margin: '0 auto 16px', fontSize: '24px',
+                color: '#16A34A',
               }}>✓</div>
-              <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', margin: '0 0 8px' }}>
+              <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1A1A1A', margin: '0 0 8px' }}>
                 Senha atualizada!
               </h1>
               <p style={{ fontSize: '13px', color: '#6b7280', margin: 0 }}>
@@ -95,10 +97,19 @@ function NovaSenhaForm() {
 
   return (
     <div style={estiloBase}>
+      <style>{`
+        .auth-input:focus {
+          border-color: #E52229 !important;
+          box-shadow: 0 0 0 3px rgba(229, 34, 41, 0.12) !important;
+        }
+        .auth-btn-primary:hover:not(:disabled) {
+          background-color: #C81E24 !important;
+        }
+      `}</style>
       <div style={{ width: '100%', maxWidth: '400px' }}>
         <Logo />
         <div style={cardStyle}>
-          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#fff', margin: '0 0 4px' }}>
+          <h1 style={{ fontSize: '20px', fontWeight: '600', color: '#1A1A1A', margin: '0 0 4px' }}>
             Criar nova senha
           </h1>
           <p style={{ fontSize: '13px', color: '#6b7280', margin: '0 0 28px' }}>
@@ -107,16 +118,16 @@ function NovaSenhaForm() {
 
           {erro && (
             <div style={{
-              backgroundColor: '#1f0909', border: '1px solid #3b1212',
+              backgroundColor: '#FEF2F2', border: '1px solid #FECACA',
               borderRadius: '8px', padding: '12px 14px', marginBottom: '20px',
-              fontSize: '13px', color: '#f87171',
+              fontSize: '13px', color: '#DC2626',
             }}>
               {erro}
               {!sessaoOk && (
                 <div style={{ marginTop: '10px' }}>
                   <a href="/recuperar-senha" style={{
                     display: 'inline-block', padding: '7px 14px',
-                    backgroundColor: '#2563eb', color: '#fff',
+                    backgroundColor: '#E52229', color: '#fff',
                     borderRadius: '6px', fontSize: '12px',
                     fontWeight: '600', textDecoration: 'none',
                   }}>
@@ -130,11 +141,12 @@ function NovaSenhaForm() {
           {sessaoOk && (
             <form onSubmit={salvar} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#d1d5db', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
                   Nova senha
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
+                    className="auth-input"
                     type={mostrarSenha ? 'text' : 'password'}
                     value={senha}
                     onChange={e => setSenha(e.target.value)}
@@ -143,20 +155,23 @@ function NovaSenhaForm() {
                     placeholder="Mínimo 8 caracteres"
                     style={{
                       width: '100%', boxSizing: 'border-box',
-                      padding: '10px 44px 10px 14px',
-                      backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a',
-                      borderRadius: '8px', color: '#fff',
+                      padding: '12px 44px 12px 14px',
+                      backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5',
+                      borderRadius: '8px', color: '#1A1A1A',
                       fontSize: '14px', outline: 'none',
+                      transition: 'border-color 0.15s, box-shadow 0.15s',
+                      minHeight: '44px',
                     }}
                   />
                   <button
                     type="button"
+                    aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
                     onClick={() => setMostrarSenha(!mostrarSenha)}
                     style={{
                       position: 'absolute', right: '12px', top: '50%',
                       transform: 'translateY(-50%)',
                       background: 'none', border: 'none',
-                      cursor: 'pointer', color: '#6b7280', padding: 0,
+                      cursor: 'pointer', color: '#9CA3AF', padding: 0,
                       display: 'flex',
                     }}
                   >
@@ -166,11 +181,12 @@ function NovaSenhaForm() {
               </div>
 
               <div>
-                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#d1d5db', marginBottom: '6px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: '500', color: '#374151', marginBottom: '6px' }}>
                   Confirmar nova senha
                 </label>
                 <div style={{ position: 'relative' }}>
                   <input
+                    className="auth-input"
                     type={mostrarConfirmar ? 'text' : 'password'}
                     value={confirmar}
                     onChange={e => setConfirmar(e.target.value)}
@@ -179,20 +195,23 @@ function NovaSenhaForm() {
                     placeholder="••••••••"
                     style={{
                       width: '100%', boxSizing: 'border-box',
-                      padding: '10px 44px 10px 14px',
-                      backgroundColor: '#1a1a1a', border: '1px solid #2a2a2a',
-                      borderRadius: '8px', color: '#fff',
+                      padding: '12px 44px 12px 14px',
+                      backgroundColor: '#FAFAFA', border: '1px solid #E5E5E5',
+                      borderRadius: '8px', color: '#1A1A1A',
                       fontSize: '14px', outline: 'none',
+                      transition: 'border-color 0.15s, box-shadow 0.15s',
+                      minHeight: '44px',
                     }}
                   />
                   <button
                     type="button"
+                    aria-label={mostrarConfirmar ? 'Ocultar confirmação de senha' : 'Mostrar confirmação de senha'}
                     onClick={() => setMostrarConfirmar(!mostrarConfirmar)}
                     style={{
                       position: 'absolute', right: '12px', top: '50%',
                       transform: 'translateY(-50%)',
                       background: 'none', border: 'none',
-                      cursor: 'pointer', color: '#6b7280', padding: 0,
+                      cursor: 'pointer', color: '#9CA3AF', padding: 0,
                       display: 'flex',
                     }}
                   >
@@ -202,15 +221,18 @@ function NovaSenhaForm() {
               </div>
 
               <button
+                className="auth-btn-primary"
                 type="submit"
                 disabled={busy}
                 style={{
-                  width: '100%', padding: '11px',
-                  backgroundColor: busy ? '#1d3a6e' : '#2563eb',
+                  width: '100%', padding: '12px',
+                  backgroundColor: busy ? '#F87171' : '#E52229',
                   border: 'none', borderRadius: '8px',
                   color: '#fff', fontSize: '14px', fontWeight: '600',
                   cursor: busy ? 'not-allowed' : 'pointer',
                   marginTop: '4px',
+                  transition: 'background-color 0.2s',
+                  minHeight: '44px',
                 }}
               >
                 {busy ? 'Salvando...' : 'Salvar nova senha'}
@@ -219,8 +241,8 @@ function NovaSenhaForm() {
           )}
         </div>
 
-        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#4b5563' }}>
-          © 2025 D-CAD Dental Digital Solutions
+        <p style={{ textAlign: 'center', marginTop: '24px', fontSize: '12px', color: '#9CA3AF' }}>
+          © 2026 D-CAD Dental Digital Solutions
         </p>
       </div>
     </div>
@@ -231,10 +253,10 @@ export default function NovaSenha() {
   return (
     <Suspense fallback={
       <div style={{
-        minHeight: '100vh', backgroundColor: '#0a0a0a',
+        minHeight: '100vh', backgroundColor: '#FAFAFA',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ color: '#6b7280', fontSize: '14px' }}>Carregando...</div>
+        <div style={{ color: '#9CA3AF', fontSize: '14px' }}>Carregando...</div>
       </div>
     }>
       <NovaSenhaForm />
@@ -248,11 +270,11 @@ function Logo() {
       <div style={{ display: 'inline-flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
         <div style={{
           width: '40px', height: '40px', borderRadius: '10px',
-          background: 'linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%)',
+          backgroundColor: '#E52229',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '18px', fontWeight: '800', color: 'white',
         }}>D</div>
-        <span style={{ fontSize: '22px', fontWeight: '700', color: '#fff', letterSpacing: '-0.5px' }}>
+        <span style={{ fontSize: '22px', fontWeight: '700', color: '#1A1A1A', letterSpacing: '-0.5px' }}>
           D-CAD
         </span>
       </div>
@@ -262,8 +284,9 @@ function Logo() {
 }
 
 const cardStyle: React.CSSProperties = {
-  backgroundColor: '#111111',
-  border: '1px solid #222',
+  backgroundColor: '#FFFFFF',
+  border: '1px solid #E5E5E5',
   borderRadius: '16px',
   padding: '32px',
+  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
 };
