@@ -4,8 +4,9 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
-import { Home, Package, User, LogOut, Menu, X, Sun, Moon } from 'lucide-react';
+import { Home, Package, User, LogOut, Menu, X, Sun, Moon, ChevronLeft } from 'lucide-react';
 import { DcadLogo } from '@/components/DcadLogo';
+import { useWizardNav } from '@/contexts/WizardNavContext';
 
 const LINKS = [
   { href: '/',        label: 'Início',    icon: Home },
@@ -38,6 +39,9 @@ export default function ClientNav() {
   const [menuAberto, setMenuAberto] = useState(false);
   const [theme, setTheme] = useTheme();
 
+  // Contexto do Wizard — fornece screen atual e nome do dentista quando o Wizard está ativo
+  const { screen, setScreen, dentistNome } = useWizardNav();
+
   const dark = theme === 'dark';
 
   // Cores baseadas no tema
@@ -51,10 +55,16 @@ export default function ClientNav() {
     drawerBg: dark ? '#111111' : '#FFFFFF',
   };
 
+  // Nome exibido: prioriza nome do dentista vindo do Wizard; fallback para consulta Supabase
+  const nomeExibido = dentistNome ?? nome;
+
+  // Mostrar botão "← Dashboard" quando o Wizard está em tela interna (não auth/dashboard/pending)
+  const mostrarDashboard = screen !== '' && screen !== 'auth' && screen !== 'dashboard' && screen !== 'pending';
+
   useEffect(() => {
     const sb = supabaseBrowser();
     sb.from('dcad_clientes').select('nome').maybeSingle().then(({ data }) => {
-      if (data?.nome) setNome(data.nome.split(' ')[0]);
+      if (data?.nome) setNome(data.nome);
     });
   }, []);
 
@@ -91,40 +101,65 @@ export default function ClientNav() {
           <DcadLogo size={32} variant="color" showText={true} />
         </Link>
 
-        {/* Links centrais — visíveis apenas ≥640px */}
+        {/* Centro: botão ← Dashboard (quando Wizard está em tela interna) OU links de nav */}
         <div style={{
           display: 'flex',
           gap: 4,
           position: 'absolute',
           left: '50%',
           transform: 'translateX(-50%)',
+          alignItems: 'center',
         }} className="dcad-nav-links">
-          {LINKS.map(({ href, label, icon: Icon }) => {
-            const ativa = pathname === href;
-            return (
-              <Link
-                key={href}
-                href={href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 6,
-                  padding: '6px 14px',
-                  borderRadius: 8,
-                  textDecoration: 'none',
-                  fontSize: 13,
-                  fontWeight: ativa ? 700 : 500,
-                  color: ativa ? '#E52229' : C.textSec,
-                  backgroundColor: ativa ? 'rgba(229,34,41,0.10)' : 'transparent',
-                  minHeight: 36,
-                  transition: 'background 0.15s, color 0.15s',
-                }}
-              >
-                <Icon size={15} />
-                {label}
-              </Link>
-            );
-          })}
+          {mostrarDashboard ? (
+            <button
+              onClick={() => setScreen('dashboard')}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                padding: '6px 14px',
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                background: 'transparent',
+                cursor: 'pointer',
+                fontSize: 13,
+                fontWeight: 500,
+                color: C.textSec,
+                minHeight: 36,
+                transition: 'background 0.15s, color 0.15s',
+              }}
+            >
+              <ChevronLeft size={15} />
+              Dashboard
+            </button>
+          ) : (
+            LINKS.map(({ href, label, icon: Icon }) => {
+              const ativa = pathname === href;
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '6px 14px',
+                    borderRadius: 8,
+                    textDecoration: 'none',
+                    fontSize: 13,
+                    fontWeight: ativa ? 700 : 500,
+                    color: ativa ? '#E52229' : C.textSec,
+                    backgroundColor: ativa ? 'rgba(229,34,41,0.10)' : 'transparent',
+                    minHeight: 36,
+                    transition: 'background 0.15s, color 0.15s',
+                  }}
+                >
+                  <Icon size={15} />
+                  {label}
+                </Link>
+              );
+            })
+          )}
         </div>
 
         {/* Lado direito: toggle + nome + sair | hamburger mobile */}
@@ -154,9 +189,9 @@ export default function ClientNav() {
 
           {/* Nome + botão sair — visível ≥640px */}
           <div className="dcad-nav-right" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            {nome && (
+            {nomeExibido && (
               <span style={{ fontSize: 13, color: C.textSec, fontWeight: 500 }}>
-                Olá, <strong style={{ color: C.text }}>{nome}</strong>
+                Olá, <strong style={{ color: C.text }}>{nomeExibido}</strong>
               </span>
             )}
             <button
@@ -237,6 +272,32 @@ export default function ClientNav() {
             padding: '8px 0 16px',
             transition: 'background-color 0.2s',
           }}>
+            {/* Botão ← Dashboard no mobile quando Wizard está em tela interna */}
+            {mostrarDashboard && (
+              <button
+                onClick={() => { setScreen('dashboard'); setMenuAberto(false); }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  padding: '14px 20px',
+                  width: '100%',
+                  background: 'rgba(229,34,41,0.08)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontSize: 15,
+                  color: '#E52229',
+                  fontWeight: 600,
+                  minHeight: 52,
+                  textAlign: 'left',
+                  fontFamily: 'inherit',
+                  borderBottom: `1px solid ${C.border}`,
+                }}
+              >
+                <ChevronLeft size={18} color="#E52229" />
+                Voltar ao Dashboard
+              </button>
+            )}
             {LINKS.map(({ href, label, icon: Icon }) => {
               const ativa = pathname === href;
               return (
