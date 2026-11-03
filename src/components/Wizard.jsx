@@ -336,7 +336,7 @@ export default function App() {
   const [authBusy,setAuthBusy]=useState(false);
   const [authError,setAuthError]=useState("");
   const [loginForm,setLoginForm]=useState({email:"",senha:""});
-  const [regForm,setRegForm]=useState({tipo:"dentista",nome:"",cro:"",especialidade:"",clinica:"",whatsapp:"",email:"",senha:"",confirmaSenha:"",docType:"cnpj",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
+  const [regForm,setRegForm]=useState({tipo:"dentista",nome:"",cro:"",especialidade:"",clinica:"",whatsapp:"",aceitaWhatsapp:false,email:"",senha:"",confirmaSenha:"",docType:"cnpj",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
   const [patient,setPatient]=useState(null);
   const [patForm,setPatForm]=useState({nome:"",nasc:""});
   const [patSearch,setPatSearch]=useState("");
@@ -1230,9 +1230,9 @@ input,textarea,select{touch-action:manipulation;}
         ════════════════════════════════ */}
         {screen==="auth"&&(
           <div style={{maxWidth:460,margin:"0 auto",paddingTop:isDesktop?40:24}}>
-            <div style={{textAlign:"center",marginBottom:28}}>
+            <div style={{display:"flex",flexDirection:"column",alignItems:"center",marginBottom:28}}>
               <img src={DCAD_LOGO} alt="D-CAD" style={{height:48,marginBottom:14,filter:"brightness(0) invert(1)"}} />
-              <div style={{fontSize:22,fontWeight:800,marginBottom:4}}>D-CAD Portal</div>
+              <div style={{fontSize:22,fontWeight:800,marginBottom:4}}>PORTAL DO CLIENTE</div>
               <div style={{fontSize:13,color:C.textSec}}>Acesso exclusivo para dentistas cadastrados</div>
             </div>
 
@@ -1374,6 +1374,12 @@ input,textarea,select{touch-action:manipulation;}
                 </div>
                 <Field label="Nome da clínica / instituição" value={regForm.clinica} onChange={v=>setRegForm(f=>({...f,clinica:v}))} placeholder="Clínica XYZ Odontologia"/>
                 <Field label="WhatsApp *" value={regForm.whatsapp} onChange={v=>setRegForm(f=>({...f,whatsapp:v}))} placeholder="(98) 99999-9999"/>
+                <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0 12px",cursor:"pointer"}} onClick={()=>setRegForm(f=>({...f,aceitaWhatsapp:!f.aceitaWhatsapp}))}>
+                  <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${regForm.aceitaWhatsapp?"#22c55e":C.border}`,background:regForm.aceitaWhatsapp?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
+                    {regForm.aceitaWhatsapp&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                  </div>
+                  <span style={{fontSize:12,color:C.textSec,lineHeight:1.4}}>Aceito receber comunicações e atualizações de pedidos via WhatsApp</span>
+                </div>
                 <Field label="E-mail *" type="email" value={regForm.email} onChange={v=>setRegForm(f=>({...f,email:v}))} placeholder="seu@email.com"/>
                 <Field label="Senha *" type="password" value={regForm.senha} onChange={v=>setRegForm(f=>({...f,senha:v}))} placeholder="Mínimo 8 caracteres"/>
                 <Field label="Confirmar senha *" type="password" value={regForm.confirmaSenha} onChange={v=>setRegForm(f=>({...f,confirmaSenha:v}))} placeholder="Repita a senha"/>
@@ -1517,6 +1523,7 @@ input,textarea,select{touch-action:manipulation;}
                     endereco_entrega:JSON.stringify(endEntrega),
                     cadastro_completo:needsApproval,
                     ativo:!needsApproval,
+                    aceita_whatsapp:regForm.aceitaWhatsapp,
                   },{onConflict:"email"});
                   setAuthBusy(false);
                   setDentist({nome:regForm.nome,cro:regForm.cro,clinica:regForm.clinica,email:regForm.email,accountType:regForm.tipo,accountStatus:needsApproval?"pending":"active"});

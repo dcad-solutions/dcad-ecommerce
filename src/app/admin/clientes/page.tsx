@@ -12,6 +12,7 @@ interface Cliente {
   nome: string;
   email: string;
   telefone?: string;
+  aceita_whatsapp?: boolean;
   tipo_cliente: 'dentista_clinica' | 'radiologia' | 'cursos';
   nome_clinica?: string;
   cnpj?: string;
@@ -287,7 +288,7 @@ export default function AdminClientes() {
                   </div>
                   <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
                     {cliente.email}
-                    {cliente.telefone && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.telefone}</span>}
+                    {cliente.telefone && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.telefone}{cliente.aceita_whatsapp && <span title="Aceita WhatsApp" style={{ marginLeft: '4px', color: '#22c55e' }}>✓ WA</span>}</span>}
                     {cliente.nome_clinica && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.nome_clinica}</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' as const }}>
