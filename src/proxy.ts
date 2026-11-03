@@ -25,21 +25,17 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await sb.auth.getUser();
   const { pathname } = request.nextUrl;
 
-  // Rotas públicas: login, cadastro, callback de email, API pública de cadastro
-  const rotasPublicas = ['/login', '/cadastro', '/auth/callback', '/api/cadastro', '/recuperar-senha', '/nova-senha', '/acesso-negado'];
-  const ehPublica = rotasPublicas.some(r => pathname.startsWith(r));
+  // Rotas públicas: / (Wizard gerencia auth internamente), login, cadastro, callback, etc.
+  const rotasPublicas = ['/', '/login', '/cadastro', '/auth/callback', '/api/cadastro', '/recuperar-senha', '/nova-senha', '/acesso-negado'];
+  const ehPublica = rotasPublicas.some(r => pathname === r || (r !== '/' && pathname.startsWith(r)));
 
   if (ehPublica) {
-    // Se já está logado e tenta acessar login/cadastro, redireciona para home
-    if (user && (pathname.startsWith('/login') || pathname.startsWith('/cadastro'))) {
-      return NextResponse.redirect(new URL('/', request.url));
-    }
     return response;
   }
 
-  // Todo o resto exige login
+  // Rotas protegidas (/pedidos, /perfil, etc.) exigem login
   if (!user) {
-    return NextResponse.redirect(new URL('/login', request.url));
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
   // Rotas /admin exigem is_admin = true
