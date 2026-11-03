@@ -3,8 +3,10 @@
 import { usePathname } from 'next/navigation';
 import ClientNav from './ClientNav';
 
-// Rotas públicas onde a nav NÃO deve aparecer
+// Rotas onde a nav NÃO deve aparecer
+// '/' é o Wizard — ele tem seu próprio header interno e gerencia auth internamente
 const ROTAS_PUBLICAS = [
+  '/',
   '/login',
   '/cadastro',
   '/recuperar-senha',

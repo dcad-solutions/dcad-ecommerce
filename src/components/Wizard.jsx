@@ -981,8 +981,8 @@ input,textarea,select{touch-action:manipulation;}
         </div>
       )}
 
-      {/* ── HEADER ── */}
-      <div style={{background:C.dark2,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,zIndex:10}}>
+      {/* ── HEADER ── oculto na tela de auth (login/cadastro) pois ela tem seu próprio logo */}
+      {screen!=="auth"&&(<div style={{background:C.dark2,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,zIndex:10}}>
         <div style={{display:"flex",alignItems:"center",gap:8}}>
           <img src={DCAD_LOGO} alt="D-CAD Dental Digital Solutions" style={{height:28,width:"auto",display:"block"}}/>
           <span style={{fontWeight:600,fontSize:12,color:C.textSec,marginLeft:2}}>Portal</span>
@@ -1005,7 +1005,7 @@ input,textarea,select{touch-action:manipulation;}
             <button onClick={resetAll} style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer"}}>Sair</button>
           </div>
         )}
-      </div>
+      </div>)}
 
       {/* ── EDITING BANNER ── */}
       {editingId&&(
