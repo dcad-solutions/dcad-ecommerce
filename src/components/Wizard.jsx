@@ -356,6 +356,7 @@ export default function App() {
   const [service,setService]=useState(null);
   const [showRules,setShowRules]=useState(false);
   const [showWhatsappPopup,setShowWhatsappPopup]=useState(false);
+  const [whatsappPopupStep,setWhatsappPopupStep]=useState("main"); // "main" | "recusa"
   const [showPreplanConfirm,setShowPreplanConfirm]=useState(false);
   const [showProtoWarning,setShowProtoWarning]=useState(false);
   const [videoModal,setVideoModal]=useState(null);
@@ -921,60 +922,106 @@ input,textarea,select{touch-action:manipulation;}
 
       {/* ── WHATSAPP CONSENT POPUP ── */}
       {showWhatsappPopup&&(
-        <div onClick={()=>setShowWhatsappPopup(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",zIndex:80,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:"1px solid rgba(34,197,94,0.35)",borderRadius:14,padding:24,maxWidth:500,width:"100%",maxHeight:"90vh",overflowY:"auto"}}>
-            {/* Cabeçalho */}
-            <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
-              <div style={{width:48,height:48,borderRadius:24,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#22c55e"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.306A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke="#22c55e" strokeWidth="1.5" fill="none"/></svg>
+        <div style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",zIndex:80,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:`1px solid ${whatsappPopupStep==="recusa"?"rgba(239,68,68,0.35)":"rgba(34,197,94,0.35)"}`,borderRadius:14,padding:24,maxWidth:500,width:"100%",maxHeight:"92vh",overflowY:"auto",transition:"border-color .3s"}}>
+
+            {/* ── TELA PRINCIPAL: benefícios + termo ── */}
+            {whatsappPopupStep==="main"&&(<>
+              {/* Ícone + título */}
+              <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                <div style={{width:52,height:52,borderRadius:26,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#22c55e"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.306A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke="#22c55e" strokeWidth="1.5" fill="none"/></svg>
+                </div>
               </div>
-            </div>
-            <div style={{fontSize:16,fontWeight:800,marginBottom:4,textAlign:"center"}}>Termo de Autorização de Comunicação</div>
-            <div style={{fontSize:12,color:C.textSec,textAlign:"center",marginBottom:16}}>via WhatsApp — Versão 1.0</div>
+              <div style={{fontSize:17,fontWeight:800,marginBottom:3,textAlign:"center"}}>Fique sempre por dentro!</div>
+              <div style={{fontSize:13,color:C.textSec,textAlign:"center",marginBottom:16,lineHeight:1.5}}>Autorize o WhatsApp e aproveite todos os benefícios exclusivos da D-CAD</div>
 
-            {/* Corpo do termo */}
-            <div style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16,fontSize:12,color:C.text,lineHeight:1.75}}>
-              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>CONTROLADORA DOS DADOS</div>
-              <p style={{margin:"0 0 10px",color:C.textSec}}>D-CAD Dental Digital Solutions — CNPJ a ser confirmado — São Luís/MA — contato: <span style={{color:C.text}}>dcadsolutions@gmail.com</span></p>
+              {/* Bloco de benefícios em destaque */}
+              <div style={{background:"linear-gradient(135deg,rgba(34,197,94,0.1) 0%,rgba(34,197,94,0.04) 100%)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:12,padding:"14px 16px",marginBottom:14}}>
+                <div style={{fontSize:11,fontWeight:700,color:"#22c55e",letterSpacing:1,marginBottom:10}}>O QUE VOCÊ RECEBE</div>
+                {[
+                  {icon:"📋",title:"Status em tempo real",desc:"Atualizações automáticas do seu pedido — receba quando entra em produção, quando está pronto e quando sai para entrega"},
+                  {icon:"🚀",title:"Novidades e lançamentos",desc:"Seja o primeiro a saber sobre novos serviços, tecnologias e recursos disponíveis na D-CAD"},
+                  {icon:"💰",title:"Promoções exclusivas",desc:"Ofertas e condições especiais enviadas diretamente para você antes de qualquer divulgação"},
+                  {icon:"📚",title:"Conteúdo educativo",desc:"Dicas clínicas, tutoriais de odontologia digital e materiais técnicos para aprimorar seus resultados"},
+                ].map((b,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:10,marginBottom:i<3?10:0}}>
+                    <span style={{fontSize:18,lineHeight:1,flexShrink:0,marginTop:1}}>{b.icon}</span>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:"#fff",marginBottom:2}}>{b.title}</div>
+                      <div style={{fontSize:11,color:C.textSec,lineHeight:1.5}}>{b.desc}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>FINALIDADE DO TRATAMENTO</div>
-              <p style={{margin:"0 0 6px",color:C.textSec}}>Ao autorizar, o titular consente que a D-CAD utilize o número de celular informado exclusivamente para:</p>
-              <ul style={{margin:"0 0 10px",paddingLeft:16,color:C.textSec}}>
-                <li>Confirmações e atualizações de status das ordens de serviço contratadas;</li>
-                <li>Avisos de entrega e prazos de produção;</li>
-                <li>Novidades, lançamentos e promoções dos serviços D-CAD;</li>
-                <li>Comunicados institucionais e informativos técnicos da área odontológica digital.</li>
-              </ul>
+              {/* Termo LGPD colapsado */}
+              <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12,fontSize:11,color:C.textSec,lineHeight:1.7}}>
+                <div style={{fontWeight:700,color:C.text,marginBottom:6,fontSize:11,letterSpacing:.5}}>TERMO DE AUTORIZAÇÃO — LGPD (v1.0)</div>
+                <p style={{margin:"0 0 6px"}}><b style={{color:C.text}}>Controladora:</b> D-CAD Dental Digital Solutions — São Luís/MA — dcadsolutions@gmail.com</p>
+                <p style={{margin:"0 0 6px"}}><b style={{color:C.text}}>Base legal:</b> consentimento livre, informado e inequívoco (LGPD Art. 7º I e Art. 8º; CDC Art. 6º III; Marco Civil da Internet Lei 12.965/2014).</p>
+                <p style={{margin:"0 0 6px"}}><b style={{color:C.text}}>Dados utilizados:</b> número de celular — exclusivamente para as comunicações descritas acima, por plataformas operadas pela D-CAD. Não compartilhado com terceiros.</p>
+                <p style={{margin:"0"}}><b style={{color:C.text}}>Revogação:</b> a qualquer momento, sem ônus, via dcadsolutions@gmail.com (LGPD Art. 8º §5º). Ao aceitar, data/hora e versão do termo serão registradas como prova do consentimento.</p>
+              </div>
 
-              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>BASE LEGAL — LGPD</div>
-              <p style={{margin:"0 0 10px",color:C.textSec}}>O tratamento dos dados fundamenta-se no <b style={{color:C.text}}>consentimento livre, informado e inequívoco</b> do titular, nos termos do <b style={{color:C.text}}>Art. 7º, inciso I, e Art. 8º da Lei 13.709/2018</b> (Lei Geral de Proteção de Dados — LGPD), em consonância com o <b style={{color:C.text}}>Art. 6º, III, do Código de Defesa do Consumidor</b> (Lei 8.078/1990) e com o <b style={{color:C.text}}>Marco Civil da Internet</b> (Lei 12.965/2014).</p>
+              {/* Botões */}
+              <div style={{display:"flex",gap:10}}>
+                <button type="button"
+                  onClick={()=>setWhatsappPopupStep("recusa")}
+                  style={{flex:1,padding:"11px 0",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,color:C.textSec,fontSize:13,cursor:"pointer"}}>
+                  Recusar
+                </button>
+                <button type="button"
+                  onClick={()=>{setShowWhatsappPopup(false);setWhatsappPopupStep("main");setRegForm(f=>({...f,aceitaWhatsapp:true,temWhatsapp:true}));}}
+                  style={{flex:2,padding:"11px 0",background:"rgba(34,197,94,0.18)",border:"1px solid rgba(34,197,94,0.55)",borderRadius:10,color:"#22c55e",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                  ✓ Autorizar comunicações
+                </button>
+              </div>
+            </>)}
 
-              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>DIREITOS DO TITULAR</div>
-              <ul style={{margin:"0 0 10px",paddingLeft:16,color:C.textSec}}>
-                <li><b style={{color:C.text}}>Revogação do consentimento</b> a qualquer momento, sem ônus (Art. 8º, §5º, LGPD);</li>
-                <li>Acesso, correção e exclusão dos dados mediante solicitação;</li>
-                <li>Portabilidade e informação sobre compartilhamento.</li>
-              </ul>
-              <p style={{margin:"0 0 10px",color:C.textSec}}>Para exercer esses direitos, envie e-mail para <span style={{color:C.text}}>dcadsolutions@gmail.com</span> ou entre em contato pelo WhatsApp da D-CAD.</p>
+            {/* ── TELA DE CONFIRMAÇÃO DE RECUSA ── */}
+            {whatsappPopupStep==="recusa"&&(<>
+              <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>
+                <div style={{width:52,height:52,borderRadius:26,background:"rgba(239,68,68,0.1)",border:"1px solid rgba(239,68,68,0.3)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24}}>😕</div>
+              </div>
+              <div style={{fontSize:16,fontWeight:800,marginBottom:4,textAlign:"center"}}>Tem certeza?</div>
+              <div style={{fontSize:13,color:C.textSec,textAlign:"center",marginBottom:16,lineHeight:1.5}}>Ao recusar, você <b style={{color:"#f87171"}}>não receberá</b> pelo WhatsApp:</div>
 
-              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>COMPARTILHAMENTO</div>
-              <p style={{margin:"0",color:C.textSec}}>Os dados <b style={{color:C.text}}>não serão compartilhados com terceiros</b> para fins comerciais. O número poderá ser utilizado apenas nas comunicações descritas acima, por meio das plataformas operadas pela própria D-CAD.</p>
-            </div>
+              {/* O que o cliente perde */}
+              <div style={{background:"rgba(239,68,68,0.06)",border:"1px solid rgba(239,68,68,0.2)",borderRadius:12,padding:"12px 16px",marginBottom:16}}>
+                {[
+                  "📋 Atualizações automáticas do status dos seus pedidos (produção, pronto, entregue)",
+                  "🚀 Avisos sobre novos serviços e lançamentos da D-CAD",
+                  "💰 Promoções e condições especiais exclusivas para clientes",
+                  "📚 Materiais educativos e dicas de odontologia digital",
+                  "⚡ Comunicados urgentes sobre seus casos em andamento",
+                ].map((item,i)=>(
+                  <div key={i} style={{display:"flex",alignItems:"flex-start",gap:8,marginBottom:i<4?8:0,fontSize:12,color:C.textSec,lineHeight:1.5}}>
+                    <span style={{flexShrink:0}}>{item.split(" ")[0]}</span>
+                    <span>{item.split(" ").slice(1).join(" ")}</span>
+                  </div>
+                ))}
+              </div>
 
-            {/* Aviso de registro */}
-            <div style={{fontSize:11,color:C.textSec,textAlign:"center",marginBottom:16,lineHeight:1.5}}>
-              Ao aceitar, sua manifestação de vontade será registrada com data, hora e versão do termo (Art. 8º, LGPD). Este registro constitui prova do consentimento.
-            </div>
+              <div style={{fontSize:12,color:C.textSec,textAlign:"center",marginBottom:16,lineHeight:1.6,padding:"0 4px"}}>
+                Você pode alterar essa preferência a qualquer momento entrando em contato com a D-CAD.
+              </div>
 
-            {/* Botões */}
-            <div style={{display:"flex",gap:10}}>
-              <button type="button" onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:false}));}} style={{flex:1,padding:"11px 0",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,color:C.textSec,fontSize:13,cursor:"pointer"}}>
-                Recusar
-              </button>
-              <button type="button" onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:true,temWhatsapp:true}));}} style={{flex:2,padding:"11px 0",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.5)",borderRadius:10,color:"#22c55e",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-                ✓ Li e autorizo o envio de mensagens
-              </button>
-            </div>
+              {/* Botões */}
+              <div style={{display:"flex",flexDirection:"column",gap:8}}>
+                <button type="button"
+                  onClick={()=>{setShowWhatsappPopup(false);setWhatsappPopupStep("main");setRegForm(f=>({...f,aceitaWhatsapp:true,temWhatsapp:true}));}}
+                  style={{width:"100%",padding:"13px 0",background:"rgba(34,197,94,0.18)",border:"1px solid rgba(34,197,94,0.55)",borderRadius:10,color:"#22c55e",fontSize:14,fontWeight:700,cursor:"pointer"}}>
+                  ✓ Mudei de ideia — autorizar comunicações
+                </button>
+                <button type="button"
+                  onClick={()=>{setShowWhatsappPopup(false);setWhatsappPopupStep("main");setRegForm(f=>({...f,aceitaWhatsapp:false}));}}
+                  style={{width:"100%",padding:"11px 0",background:"transparent",border:`1px solid ${C.border}`,borderRadius:10,color:C.textSec,fontSize:12,cursor:"pointer"}}>
+                  Confirmar recusa — não quero receber comunicações
+                </button>
+              </div>
+            </>)}
+
           </div>
         </div>
       )}
