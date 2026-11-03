@@ -355,6 +355,7 @@ export default function App() {
   const [showDisclaimer,setShowDisclaimer]=useState(false);
   const [service,setService]=useState(null);
   const [showRules,setShowRules]=useState(false);
+  const [showWhatsappPopup,setShowWhatsappPopup]=useState(false);
   const [showPreplanConfirm,setShowPreplanConfirm]=useState(false);
   const [showProtoWarning,setShowProtoWarning]=useState(false);
   const [videoModal,setVideoModal]=useState(null);
@@ -918,6 +919,35 @@ input,textarea,select{touch-action:manipulation;}
         </div>
       )}
 
+      {/* ── WHATSAPP CONSENT POPUP ── */}
+      {showWhatsappPopup&&(
+        <div onClick={()=>setShowWhatsappPopup(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.85)",zIndex:80,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:"1px solid rgba(34,197,94,0.4)",borderRadius:14,padding:24,maxWidth:460,width:"100%"}}>
+            <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
+              <div style={{width:48,height:48,borderRadius:24,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#22c55e"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.306A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke="#22c55e" strokeWidth="1.5" fill="none"/></svg>
+            </div>
+            </div>
+            <div style={{fontSize:15,fontWeight:800,marginBottom:8,textAlign:"center"}}>Comunicação via WhatsApp</div>
+            <div style={{background:"rgba(34,197,94,0.06)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:10,padding:"12px 14px",marginBottom:14,fontSize:13,color:"#86efac",lineHeight:1.7}}>
+              Ao aceitar, a D-CAD poderá enviar para o número informado:<br/>
+              <b style={{color:"#fff"}}>confirmações de pedido · status de produção · avisos de entrega · comunicados da equipe</b>
+            </div>
+            <div style={{fontSize:12,color:C.textSec,lineHeight:1.6,marginBottom:20}}>
+              Você pode solicitar a exclusão do seu número a qualquer momento entrando em contato com a D-CAD. Seus dados não serão compartilhados com terceiros.
+            </div>
+            <div style={{display:"flex",gap:10}}>
+              <button onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:false}));}} style={{flex:1,padding:"11px 0",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,color:C.textSec,fontSize:13,cursor:"pointer"}}>
+                Não aceitar
+              </button>
+              <button onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:true}));}} style={{flex:2,padding:"11px 0",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.4)",borderRadius:10,color:"#22c55e",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                ✓ Aceitar comunicações
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── MODALS ── */}
       {(showRules||videoModal)&&(
         <div onClick={()=>{setShowRules(false);setVideoModal(null);}} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.82)",zIndex:50,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
@@ -1374,7 +1404,7 @@ input,textarea,select{touch-action:manipulation;}
                 </div>
                 <Field label="Nome da clínica / instituição" value={regForm.clinica} onChange={v=>setRegForm(f=>({...f,clinica:v}))} placeholder="Clínica XYZ Odontologia"/>
                 <Field label="WhatsApp *" value={regForm.whatsapp} onChange={v=>setRegForm(f=>({...f,whatsapp:v}))} placeholder="(98) 99999-9999"/>
-                <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0 12px",cursor:"pointer"}} onClick={()=>setRegForm(f=>({...f,aceitaWhatsapp:!f.aceitaWhatsapp}))}>
+                <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0 12px",cursor:"pointer"}} onClick={()=>{ if(!regForm.aceitaWhatsapp){setShowWhatsappPopup(true);}else{setRegForm(f=>({...f,aceitaWhatsapp:false}));} }}>
                   <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${regForm.aceitaWhatsapp?"#22c55e":C.border}`,background:regForm.aceitaWhatsapp?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
                     {regForm.aceitaWhatsapp&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
                   </div>
