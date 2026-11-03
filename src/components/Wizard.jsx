@@ -336,7 +336,7 @@ export default function App() {
   const [authBusy,setAuthBusy]=useState(false);
   const [authError,setAuthError]=useState("");
   const [loginForm,setLoginForm]=useState({email:"",senha:""});
-  const [regForm,setRegForm]=useState({tipo:"dentista",nome:"",cro:"",especialidade:"",clinica:"",whatsapp:"",aceitaWhatsapp:false,email:"",senha:"",confirmaSenha:"",docType:"cnpj",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
+  const [regForm,setRegForm]=useState({tipo:"dentista",nome:"",cro:"",especialidade:"",clinica:"",celular:"",temWhatsapp:false,aceitaWhatsapp:false,email:"",senha:"",confirmaSenha:"",docType:"cnpj",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
   const [patient,setPatient]=useState(null);
   const [patForm,setPatForm]=useState({nome:"",nasc:""});
   const [patSearch,setPatSearch]=useState("");
@@ -921,27 +921,58 @@ input,textarea,select{touch-action:manipulation;}
 
       {/* ── WHATSAPP CONSENT POPUP ── */}
       {showWhatsappPopup&&(
-        <div onClick={()=>setShowWhatsappPopup(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.85)",zIndex:80,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:"1px solid rgba(34,197,94,0.4)",borderRadius:14,padding:24,maxWidth:460,width:"100%"}}>
+        <div onClick={()=>setShowWhatsappPopup(false)} style={{position:"absolute",inset:0,background:"rgba(0,0,0,0.88)",zIndex:80,display:"flex",alignItems:"center",justifyContent:"center",padding:20,minHeight:"100vh"}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:C.dark2,border:"1px solid rgba(34,197,94,0.35)",borderRadius:14,padding:24,maxWidth:500,width:"100%",maxHeight:"90vh",overflowY:"auto"}}>
+            {/* Cabeçalho */}
             <div style={{display:"flex",justifyContent:"center",marginBottom:12}}>
               <div style={{width:48,height:48,borderRadius:24,background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",display:"flex",alignItems:"center",justifyContent:"center"}}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z" fill="#22c55e"/><path d="M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2 22l4.978-1.306A9.955 9.955 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z" stroke="#22c55e" strokeWidth="1.5" fill="none"/></svg>
+              </div>
             </div>
+            <div style={{fontSize:16,fontWeight:800,marginBottom:4,textAlign:"center"}}>Termo de Autorização de Comunicação</div>
+            <div style={{fontSize:12,color:C.textSec,textAlign:"center",marginBottom:16}}>via WhatsApp — Versão 1.0</div>
+
+            {/* Corpo do termo */}
+            <div style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${C.border}`,borderRadius:10,padding:"14px 16px",marginBottom:16,fontSize:12,color:C.text,lineHeight:1.75}}>
+              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>CONTROLADORA DOS DADOS</div>
+              <p style={{margin:"0 0 10px",color:C.textSec}}>D-CAD Dental Digital Solutions — CNPJ a ser confirmado — São Luís/MA — contato: <span style={{color:C.text}}>dcadsolutions@gmail.com</span></p>
+
+              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>FINALIDADE DO TRATAMENTO</div>
+              <p style={{margin:"0 0 6px",color:C.textSec}}>Ao autorizar, o titular consente que a D-CAD utilize o número de celular informado exclusivamente para:</p>
+              <ul style={{margin:"0 0 10px",paddingLeft:16,color:C.textSec}}>
+                <li>Confirmações e atualizações de status das ordens de serviço contratadas;</li>
+                <li>Avisos de entrega e prazos de produção;</li>
+                <li>Novidades, lançamentos e promoções dos serviços D-CAD;</li>
+                <li>Comunicados institucionais e informativos técnicos da área odontológica digital.</li>
+              </ul>
+
+              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>BASE LEGAL — LGPD</div>
+              <p style={{margin:"0 0 10px",color:C.textSec}}>O tratamento dos dados fundamenta-se no <b style={{color:C.text}}>consentimento livre, informado e inequívoco</b> do titular, nos termos do <b style={{color:C.text}}>Art. 7º, inciso I, e Art. 8º da Lei 13.709/2018</b> (Lei Geral de Proteção de Dados — LGPD), em consonância com o <b style={{color:C.text}}>Art. 6º, III, do Código de Defesa do Consumidor</b> (Lei 8.078/1990) e com o <b style={{color:C.text}}>Marco Civil da Internet</b> (Lei 12.965/2014).</p>
+
+              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>DIREITOS DO TITULAR</div>
+              <ul style={{margin:"0 0 10px",paddingLeft:16,color:C.textSec}}>
+                <li><b style={{color:C.text}}>Revogação do consentimento</b> a qualquer momento, sem ônus (Art. 8º, §5º, LGPD);</li>
+                <li>Acesso, correção e exclusão dos dados mediante solicitação;</li>
+                <li>Portabilidade e informação sobre compartilhamento.</li>
+              </ul>
+              <p style={{margin:"0 0 10px",color:C.textSec}}>Para exercer esses direitos, envie e-mail para <span style={{color:C.text}}>dcadsolutions@gmail.com</span> ou entre em contato pelo WhatsApp da D-CAD.</p>
+
+              <div style={{fontWeight:700,color:"#fff",marginBottom:8,fontSize:13}}>COMPARTILHAMENTO</div>
+              <p style={{margin:"0",color:C.textSec}}>Os dados <b style={{color:C.text}}>não serão compartilhados com terceiros</b> para fins comerciais. O número poderá ser utilizado apenas nas comunicações descritas acima, por meio das plataformas operadas pela própria D-CAD.</p>
             </div>
-            <div style={{fontSize:15,fontWeight:800,marginBottom:8,textAlign:"center"}}>Comunicação via WhatsApp</div>
-            <div style={{background:"rgba(34,197,94,0.06)",border:"1px solid rgba(34,197,94,0.2)",borderRadius:10,padding:"12px 14px",marginBottom:14,fontSize:13,color:"#86efac",lineHeight:1.7}}>
-              Ao aceitar, a D-CAD poderá enviar para o número informado:<br/>
-              <b style={{color:"#fff"}}>confirmações de pedido · status de produção · avisos de entrega · comunicados da equipe</b>
+
+            {/* Aviso de registro */}
+            <div style={{fontSize:11,color:C.textSec,textAlign:"center",marginBottom:16,lineHeight:1.5}}>
+              Ao aceitar, sua manifestação de vontade será registrada com data, hora e versão do termo (Art. 8º, LGPD). Este registro constitui prova do consentimento.
             </div>
-            <div style={{fontSize:12,color:C.textSec,lineHeight:1.6,marginBottom:20}}>
-              Você pode solicitar a exclusão do seu número a qualquer momento entrando em contato com a D-CAD. Seus dados não serão compartilhados com terceiros.
-            </div>
+
+            {/* Botões */}
             <div style={{display:"flex",gap:10}}>
-              <button onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:false}));}} style={{flex:1,padding:"11px 0",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,color:C.textSec,fontSize:13,cursor:"pointer"}}>
-                Não aceitar
+              <button type="button" onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:false}));}} style={{flex:1,padding:"11px 0",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,color:C.textSec,fontSize:13,cursor:"pointer"}}>
+                Recusar
               </button>
-              <button onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:true}));}} style={{flex:2,padding:"11px 0",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.4)",borderRadius:10,color:"#22c55e",fontSize:13,fontWeight:700,cursor:"pointer"}}>
-                ✓ Aceitar comunicações
+              <button type="button" onClick={()=>{setShowWhatsappPopup(false);setRegForm(f=>({...f,aceitaWhatsapp:true,temWhatsapp:true}));}} style={{flex:2,padding:"11px 0",background:"rgba(34,197,94,0.15)",border:"1px solid rgba(34,197,94,0.5)",borderRadius:10,color:"#22c55e",fontSize:13,fontWeight:700,cursor:"pointer"}}>
+                ✓ Li e autorizo o envio de mensagens
               </button>
             </div>
           </div>
@@ -1403,12 +1434,35 @@ input,textarea,select{touch-action:manipulation;}
                   </select>
                 </div>
                 <Field label="Nome da clínica / instituição" value={regForm.clinica} onChange={v=>setRegForm(f=>({...f,clinica:v}))} placeholder="Clínica XYZ Odontologia"/>
-                <Field label="WhatsApp *" value={regForm.whatsapp} onChange={v=>setRegForm(f=>({...f,whatsapp:v}))} placeholder="(98) 99999-9999"/>
-                <div style={{display:"flex",alignItems:"center",gap:10,margin:"4px 0 12px",cursor:"pointer"}} onClick={()=>{ if(!regForm.aceitaWhatsapp){setShowWhatsappPopup(true);}else{setRegForm(f=>({...f,aceitaWhatsapp:false}));} }}>
-                  <div style={{width:20,height:20,borderRadius:5,border:`2px solid ${regForm.aceitaWhatsapp?"#22c55e":C.border}`,background:regForm.aceitaWhatsapp?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,transition:"all .2s"}}>
-                    {regForm.aceitaWhatsapp&&<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                <Field label="Celular *" value={regForm.celular} onChange={v=>setRegForm(f=>({...f,celular:v}))} placeholder="(98) 99999-9999"/>
+                {/* Pergunta WhatsApp */}
+                <div style={{marginBottom:14}}>
+                  <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:.5,marginBottom:8}}>ESTE NÚMERO POSSUI WHATSAPP?</div>
+                  <div style={{display:"flex",gap:8}}>
+                    {[["sim","Sim"],["nao","Não"]].map(([v,l])=>(
+                      <button key={v} type="button"
+                        onClick={()=>{
+                          const isSim=v==="sim";
+                          setRegForm(f=>({...f,temWhatsapp:isSim,aceitaWhatsapp:isSim?f.aceitaWhatsapp:false}));
+                          if(isSim&&!regForm.aceitaWhatsapp) setShowWhatsappPopup(true);
+                        }}
+                        style={{flex:1,padding:"9px 0",border:`1.5px solid ${(v==="sim"?regForm.temWhatsapp:!regForm.temWhatsapp)&&regForm.celular?"#22c55e":C.border}`,borderRadius:8,background:(v==="sim"?regForm.temWhatsapp:!regForm.temWhatsapp)&&regForm.celular?"rgba(34,197,94,0.08)":C.dark2,color:(v==="sim"?regForm.temWhatsapp:!regForm.temWhatsapp)&&regForm.celular?"#22c55e":C.textSec,fontWeight:(v==="sim"?regForm.temWhatsapp:!regForm.temWhatsapp)&&regForm.celular?700:400,fontSize:13,cursor:"pointer",transition:"all .2s"}}>
+                        {l}
+                      </button>
+                    ))}
                   </div>
-                  <span style={{fontSize:12,color:C.textSec,lineHeight:1.4}}>Aceito receber comunicações e atualizações de pedidos via WhatsApp</span>
+                  {regForm.temWhatsapp&&(
+                    <div style={{marginTop:10,display:"flex",alignItems:"flex-start",gap:10,cursor:"pointer",padding:"10px 12px",background:"rgba(34,197,94,0.04)",border:`1px solid ${regForm.aceitaWhatsapp?"rgba(34,197,94,0.35)":C.border}`,borderRadius:8,transition:"all .2s"}}
+                      onClick={()=>{ if(!regForm.aceitaWhatsapp){setShowWhatsappPopup(true);}else{setRegForm(f=>({...f,aceitaWhatsapp:false}));} }}>
+                      <div style={{width:18,height:18,borderRadius:4,border:`2px solid ${regForm.aceitaWhatsapp?"#22c55e":C.border}`,background:regForm.aceitaWhatsapp?"#22c55e":"transparent",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,marginTop:1,transition:"all .2s"}}>
+                        {regForm.aceitaWhatsapp&&<svg width="11" height="11" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>}
+                      </div>
+                      <span style={{fontSize:11,color:regForm.aceitaWhatsapp?"#86efac":C.textSec,lineHeight:1.5}}>
+                        Autorizo a D-CAD a incluir este número na lista de comunicações via WhatsApp, nos termos da LGPD (Lei 13.709/2018). {!regForm.aceitaWhatsapp&&<span style={{color:C.red,fontWeight:600}}>Clique para ver e aceitar o termo.</span>}
+                        {regForm.aceitaWhatsapp&&<span style={{color:"#22c55e",fontWeight:600}}>✓ Termo aceito.</span>}
+                      </span>
+                    </div>
+                  )}
                 </div>
                 <Field label="E-mail *" type="email" value={regForm.email} onChange={v=>setRegForm(f=>({...f,email:v}))} placeholder="seu@email.com"/>
                 <Field label="Senha *" type="password" value={regForm.senha} onChange={v=>setRegForm(f=>({...f,senha:v}))} placeholder="Mínimo 8 caracteres"/>
@@ -1544,7 +1598,8 @@ input,textarea,select{touch-action:manipulation;}
                   const endEntrega=regForm.entregaIgual?enderecoObj:{rua:regForm.entRua,numero:regForm.entNumero,bairro:regForm.entBairro,complemento:regForm.entComplemento,cidade:regForm.entCidade,estado:regForm.entEstado,cep:regForm.entCep};
                   await sb.from("dcad_clientes").upsert({
                     email:regForm.email.trim().toLowerCase(),
-                    nome:regForm.nome,telefone:regForm.whatsapp,
+                    nome:regForm.nome,
+                    celular:regForm.celular,
                     tipo_cliente:regForm.tipo,cro:regForm.cro,
                     nome_clinica:regForm.clinica||null,
                     cnpj:regForm.cnpj||null,cpf:regForm.cpf||null,
@@ -1553,7 +1608,10 @@ input,textarea,select{touch-action:manipulation;}
                     endereco_entrega:JSON.stringify(endEntrega),
                     cadastro_completo:needsApproval,
                     ativo:!needsApproval,
+                    tem_whatsapp:regForm.temWhatsapp,
                     aceita_whatsapp:regForm.aceitaWhatsapp,
+                    aceita_whatsapp_em:regForm.aceitaWhatsapp?new Date().toISOString():null,
+                    aceita_whatsapp_versao:regForm.aceitaWhatsapp?"v1.0":null,
                   },{onConflict:"email"});
                   setAuthBusy(false);
                   setDentist({nome:regForm.nome,cro:regForm.cro,clinica:regForm.clinica,email:regForm.email,accountType:regForm.tipo,accountStatus:needsApproval?"pending":"active"});

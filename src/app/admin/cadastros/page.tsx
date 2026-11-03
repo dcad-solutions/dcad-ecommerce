@@ -110,13 +110,15 @@ interface Cliente {
   email: string;
   telefone?: string;
   celular?: string;
+  tem_whatsapp?: boolean;
+  aceita_whatsapp?: boolean;
+  aceita_whatsapp_em?: string;
   tipo_cliente: 'dentista_clinica' | 'radiologia' | 'cursos';
   nome_clinica?: string;
   cnpj?: string;
   cpf?: string;
   cro?: string;
   tipo_pessoa?: string;
-  aceita_whatsapp?: boolean;
   ativo: boolean;
   cadastro_completo: boolean;
   aprovado_em?: string;
@@ -604,7 +606,16 @@ function ClientesContent() {
                   </div>
                   <div style={{ fontSize: '12px', color: '#6b7280', marginTop: '2px' }}>
                     {cliente.email}
-                    {(cliente.telefone || cliente.celular) && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.telefone || cliente.celular}{cliente.aceita_whatsapp && <span title="Aceita WhatsApp" style={{ marginLeft: '4px', color: '#22c55e' }}>✓ WA</span>}</span>}
+                    {(cliente.celular || cliente.telefone) && (
+                      <span style={{ marginLeft: '8px', color: '#4b5563' }}>
+                        · {cliente.celular || cliente.telefone}
+                        {cliente.tem_whatsapp && (
+                          <span title={cliente.aceita_whatsapp ? `WhatsApp autorizado em ${cliente.aceita_whatsapp_em ? new Date(cliente.aceita_whatsapp_em).toLocaleDateString('pt-BR') : '—'} (v1.0)` : 'Possui WhatsApp (sem autorização)'} style={{ marginLeft: '4px', color: cliente.aceita_whatsapp ? '#22c55e' : '#f59e0b' }}>
+                            {cliente.aceita_whatsapp ? '✓ WA' : '⚠ WA'}
+                          </span>
+                        )}
+                      </span>
+                    )}
                     {cliente.nome_clinica && <span style={{ marginLeft: '8px', color: '#4b5563' }}>· {cliente.nome_clinica}</span>}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '6px', flexWrap: 'wrap' as const }}>
