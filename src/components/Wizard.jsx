@@ -398,7 +398,7 @@ export default function App() {
   const [editingOriginal,setEditingOriginal]=useState(null); // original service snapshot for cancel
   const [showPass,setShowPass]=useState(false);
   // ── Perfil / avatar ──
-  const [avatarUrl,setAvatarUrl]=useState(null);
+  const [avatarUrl,setAvatarUrl]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");if(s){var d=JSON.parse(s);return d.avatar_url||null;}return null;}catch{return null;}});
   const [showProfileModal,setShowProfileModal]=useState(false);
   const [profileForm,setProfileForm]=useState({nome:"",croNum:"",croUf:"",especialidade:"",clinica:"",celular:""});
   const [profileSaved,setProfileSaved]=useState(false);
@@ -650,6 +650,30 @@ export default function App() {
       else{sessionStorage.removeItem("dcad_session");}
     }catch{}
   },[dentist]);
+
+  // Ao restaurar sessão do sessionStorage, buscar dados frescos do banco
+  const sessionRestoredRef=React.useRef(false);
+  React.useEffect(function(){
+    if(!dentist||!dentist.email||sessionRestoredRef.current)return;
+    sessionRestoredRef.current=true;
+    // Só busca dados frescos se veio do sessionStorage (sem trigger de login)
+    var fromStorage=false;try{var s=sessionStorage.getItem("dcad_session");fromStorage=!!s&&!dentist._freshLoad;}catch{}
+    if(!fromStorage)return;
+    (async function(){
+      try{
+        const sb=supabaseBrowser();
+        const{data:cliente}=await sb.from("dcad_clientes").select("*").eq("email",dentist.email).maybeSingle();
+        if(cliente){
+          setDentist(function(d){return{...d,nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",_freshLoad:true};});
+          if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
+          setProfileComplete(!!cliente.cadastro_completo);
+          var croPartes=(cliente.cro||"").split("-");var croUfR=croPartes.length>1?croPartes[0]:"";var croNumR=croPartes.length>1?croPartes.slice(1).join("-"):croPartes[0];
+          setProfileForm({nome:cliente.nome,croNum:croNumR,croUf:croUfR,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
+        }
+      }catch{}
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[!!dentist]);
 
   React.useEffect(function(){
     if(!dentist)return;
@@ -1150,6 +1174,7 @@ input,textarea,select{touch-action:manipulation;}
                         if(!upErr){
                           const {data:{publicUrl}}=sb.storage.from("avatars").getPublicUrl(fileName);
                           setAvatarUrl(publicUrl);
+                          setDentist(function(d){return{...d,avatar_url:publicUrl};});
                           await sb.from("dcad_clientes").update({avatar_url:publicUrl}).eq("email",dentist.email);
                           setToast("📸 Foto capturada e salva!");
                         } else {
@@ -1184,6 +1209,7 @@ input,textarea,select{touch-action:manipulation;}
                           if(!upErr){
                             const {data:{publicUrl}}=sb.storage.from("avatars").getPublicUrl(fileName);
                             setAvatarUrl(publicUrl);
+                            setDentist(function(d){return{...d,avatar_url:publicUrl};});
                             await sb.from("dcad_clientes").update({avatar_url:publicUrl}).eq("email",dentist.email);
                             setToast("📸 Foto atualizada e salva!");
                           } else {
@@ -1208,6 +1234,7 @@ input,textarea,select{touch-action:manipulation;}
                   </button>
                   {avatarUrl&&<button onClick={async()=>{
                     setAvatarUrl(null);
+                    setDentist(function(d){return{...d,avatar_url:""};});
                     try{const sb=(await import("../lib/supabase")).supabase;await sb.from("dcad_clientes").update({avatar_url:null}).eq("email",dentist.email);}catch{}
                     setToast("Foto removida.");
                   }} style={{background:"none",border:`1px solid rgba(229,34,41,0.3)`,color:C.red,padding:"7px 14px",borderRadius:10,fontSize:12,cursor:"pointer"}}>Remover</button>}
@@ -1275,17 +1302,20 @@ input,textarea,select{touch-action:manipulation;}
                 setProfileSaved(false);
                 try{
                   var croFull=profileForm.croUf+"-"+profileForm.croNum.trim();
-                  const sb=(await import("../lib/supabase")).supabase;
-                  await sb.from("dcad_clientes").update({
+                  const sb=supabaseBrowser();
+                  const {error:saveErr}=await sb.from("dcad_clientes").update({
                     nome:profileForm.nome.trim(),
                     cro:croFull,
                     especialidade:profileForm.especialidade||null,
                     nome_clinica:profileForm.clinica.trim()||null,
                     celular:profileForm.celular.trim()||null,
                   }).eq("email",dentist.email);
-                  setDentist(function(d){return{...d,nome:profileForm.nome.trim(),cro:croFull,especialidade:profileForm.especialidade||"",clinica:profileForm.clinica.trim(),celular:profileForm.celular.trim()};});
-                  setProfileSaved(true);
-                }catch{setToast("Erro ao salvar. Tente novamente.");}
+                  if(saveErr){setToast("Erro ao salvar: "+saveErr.message);}
+                  else{
+                    setDentist(function(d){return{...d,nome:profileForm.nome.trim(),cro:croFull,especialidade:profileForm.especialidade||"",clinica:profileForm.clinica.trim(),celular:profileForm.celular.trim()};});
+                    setProfileSaved(true);
+                  }
+                }catch(e){setToast("Erro ao salvar: "+(e.message||"tente novamente"));}
                 setProfileSaving(false);
               }} style={{...btnStyle(C.red),width:"100%",marginTop:12,padding:"12px",fontSize:14,opacity:(profileSaving||!profileForm.nome.trim()||!profileForm.croNum.trim()||!profileForm.croUf)?0.6:1}}>
                 {profileSaving?"Salvando...":"Salvar alterações"}
@@ -1643,7 +1673,7 @@ input,textarea,select{touch-action:manipulation;}
                       setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente,accountStatus:"pending",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
                       setScreen("pending");return;
                     }
-                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
+                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",_freshLoad:true});
                     setProfileComplete(!!cliente.cadastro_completo);
                     if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
                     var croPartes2=(cliente.cro||"").split("-");var croUf2=croPartes2.length>1?croPartes2[0]:"";var croNum2=croPartes2.length>1?croPartes2.slice(1).join("-"):croPartes2[0];setProfileForm({nome:cliente.nome,croNum:croNum2,croUf:croUf2,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
