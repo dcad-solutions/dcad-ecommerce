@@ -669,6 +669,18 @@ export default function App() {
           setProfileComplete(!!cliente.cadastro_completo);
           var croPartes=(cliente.cro||"").split("-");var croUfR=croPartes.length>1?croPartes[0]:"";var croNumR=croPartes.length>1?croPartes.slice(1).join("-"):croPartes[0];
           setProfileForm({nome:cliente.nome,croNum:croNumR,croUf:croUfR,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
+          // Restaurar dados de faturamento/entrega do banco
+          var end=cliente.endereco||{};var endEnt=cliente.endereco_entrega||{};
+          var isSameAddr=JSON.stringify(end)===JSON.stringify(endEnt);
+          setProfile(function(p){return{...p,
+            docType:cliente.tipo_pessoa==="juridica"?"cnpj":"cpf",
+            cpf:cliente.cpf||"",
+            cnpj:cliente.cnpj||"",
+            razaoSocial:cliente.nome_fantasia||"",
+            rua:end.rua||"",numero:end.numero||"",bairro:end.bairro||"",complemento:end.complemento||"",cidade:end.cidade||"",estado:end.estado||"",cep:end.cep||"",
+            entregaIgual:isSameAddr,
+            entRua:endEnt.rua||"",entNumero:endEnt.numero||"",entBairro:endEnt.bairro||"",entComplemento:endEnt.complemento||"",entCidade:endEnt.cidade||"",entEstado:endEnt.estado||"",entCep:endEnt.cep||"",
+          };});
         }
       }catch{}
     })();
@@ -1677,6 +1689,10 @@ input,textarea,select{touch-action:manipulation;}
                     setProfileComplete(!!cliente.cadastro_completo);
                     if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
                     var croPartes2=(cliente.cro||"").split("-");var croUf2=croPartes2.length>1?croPartes2[0]:"";var croNum2=croPartes2.length>1?croPartes2.slice(1).join("-"):croPartes2[0];setProfileForm({nome:cliente.nome,croNum:croNum2,croUf:croUf2,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
+                    // Restaurar dados de faturamento/entrega
+                    var endL=cliente.endereco||{};var endEntL=cliente.endereco_entrega||{};
+                    var sameAddrL=JSON.stringify(endL)===JSON.stringify(endEntL);
+                    setProfile(function(p){return{...p,docType:cliente.tipo_pessoa==="juridica"?"cnpj":"cpf",cpf:cliente.cpf||"",cnpj:cliente.cnpj||"",razaoSocial:cliente.nome_fantasia||"",rua:endL.rua||"",numero:endL.numero||"",bairro:endL.bairro||"",complemento:endL.complemento||"",cidade:endL.cidade||"",estado:endL.estado||"",cep:endL.cep||"",entregaIgual:sameAddrL,entRua:endEntL.rua||"",entNumero:endEntL.numero||"",entBairro:endEntL.bairro||"",entComplemento:endEntL.complemento||"",entCidade:endEntL.cidade||"",entEstado:endEntL.estado||"",entCep:endEntL.cep||""};});
                     setScreen("dashboard");
                   } else {
                     setDentist({nome:data.user.email,cro:"",clinica:"",email:data.user.email,whatsapp:"",accountType:"dentista",accountStatus:"active"});
@@ -1933,8 +1949,8 @@ input,textarea,select{touch-action:manipulation;}
                   const {data,error}=await sb.auth.signUp({email:regForm.email.trim().toLowerCase(),password:regForm.senha});
                   if(error){setAuthBusy(false);setAuthError(error.message.includes("already registered")?"Este e-mail já está cadastrado. Faça login.":error.message);return;}
                   // Inserir dados complementares na tabela dcad_clientes
-                  const enderecoObj={rua:regForm.rua,numero:regForm.numero,bairro:regForm.bairro,complemento:regForm.complemento,cidade:regForm.cidade,estado:regForm.estado,cep:regForm.cep};
-                  const endEntrega=regForm.entregaIgual?enderecoObj:{rua:regForm.entRua,numero:regForm.entNumero,bairro:regForm.entBairro,complemento:regForm.entComplemento,cidade:regForm.entCidade,estado:regForm.entEstado,cep:regForm.entCep};
+                  const enderecoObj={rua:regForm.rua,numero:regForm.numero,bairro:regForm.bairro,complemento:regForm.complemento||"",cidade:regForm.cidade,estado:regForm.estado,cep:regForm.cep};
+                  const endEntrega=regForm.entregaIgual?enderecoObj:{rua:regForm.entRua,numero:regForm.entNumero,bairro:regForm.entBairro,complemento:regForm.entComplemento||"",cidade:regForm.entCidade,estado:regForm.entEstado,cep:regForm.entCep};
                   await sb.from("dcad_clientes").upsert({
                     email:regForm.email.trim().toLowerCase(),
                     nome:regForm.nome,
@@ -1943,9 +1959,10 @@ input,textarea,select{touch-action:manipulation;}
                     especialidade:regForm.especialidade||null,
                     nome_clinica:regForm.clinica||null,
                     cnpj:regForm.cnpj||null,cpf:regForm.cpf||null,
-                    razao_social:regForm.razaoSocial||null,
-                    endereco:JSON.stringify(enderecoObj),
-                    endereco_entrega:JSON.stringify(endEntrega),
+                    nome_fantasia:regForm.razaoSocial||null,
+                    tipo_pessoa:regForm.docType==="cnpj"?"juridica":"fisica",
+                    endereco:enderecoObj,
+                    endereco_entrega:endEntrega,
                     cadastro_completo:needsApproval,
                     ativo:!needsApproval,
                     tem_whatsapp:regForm.temWhatsapp,
@@ -2164,12 +2181,27 @@ input,textarea,select{touch-action:manipulation;}
               ))}
             </div>
 
-            <Btn onClick={()=>{
+            <Btn onClick={async()=>{
               const doc=profile.docType==="cpf"?profile.cpf:profile.cnpj;
               const razao=profile.docType==="cnpj"&&!profile.razaoSocial;
               const addr=!profile.rua||!profile.numero||!profile.bairro||!profile.cidade||!profile.estado||!profile.cep;
               const ent=!profile.entregaIgual&&(!profile.entRua||!profile.entNumero||!profile.entCidade||!profile.entEstado||!profile.entCep);
               if(!doc||razao||addr||ent){setToast("Preencha todos os campos obrigatórios.");return;}
+              const endFat={rua:profile.rua,numero:profile.numero,bairro:profile.bairro,complemento:profile.complemento||"",cidade:profile.cidade,estado:profile.estado,cep:profile.cep};
+              const endEnt=profile.entregaIgual?endFat:{rua:profile.entRua,numero:profile.entNumero,bairro:profile.entBairro,complemento:profile.entComplemento||"",cidade:profile.entCidade,estado:profile.entEstado,cep:profile.entCep};
+              try{
+                const sb=supabaseBrowser();
+                const updateData={
+                  tipo_pessoa:profile.docType==="cnpj"?"juridica":"fisica",
+                  cpf:profile.docType==="cpf"?profile.cpf:null,
+                  cnpj:profile.docType==="cnpj"?profile.cnpj:null,
+                  nome_fantasia:profile.docType==="cnpj"?(profile.razaoSocial||null):null,
+                  endereco:endFat,
+                  endereco_entrega:endEnt,
+                };
+                const{error:saveErr}=await sb.from("dcad_clientes").update(updateData).eq("email",dentist.email);
+                if(saveErr){setToast("Erro ao salvar: "+saveErr.message);return;}
+              }catch(e){setToast("Erro ao salvar dados.");return;}
               setProfileComplete(true);
               setScreen("dashboard");
             }}>Salvar cadastro e continuar →</Btn>
