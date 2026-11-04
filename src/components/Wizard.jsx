@@ -398,7 +398,8 @@ export default function App() {
   // ── Perfil / avatar ──
   const [avatarUrl,setAvatarUrl]=useState(null);
   const [showProfileModal,setShowProfileModal]=useState(false);
-  const [profileForm,setProfileForm]=useState({nome:"",cro:"",especialidade:"",clinica:"",celular:""});
+  const [profileForm,setProfileForm]=useState({nome:"",croNum:"",croUf:"",especialidade:"",clinica:"",celular:""});
+  const [profileSaved,setProfileSaved]=useState(false);
   const [profileSaving,setProfileSaving]=useState(false);
   const [showWebcam,setShowWebcam]=useState(false);
   const webcamVideoRef=React.useRef(null);
@@ -1179,19 +1180,38 @@ input,textarea,select{touch-action:manipulation;}
             <div style={{padding:"20px 20px"}}>
               <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:1.2,marginBottom:12}}>DADOS PESSOAIS</div>
               <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                <div>
+                  <label style={{fontSize:12,color:C.textSec,marginBottom:4,display:"block"}}>Nome completo *</label>
+                  <input value={profileForm.nome} onChange={function(e){setProfileForm(function(p){return{...p,nome:e.target.value};});}}
+                    placeholder="Dr. Nome Sobrenome"
+                    style={{width:"100%",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+                </div>
+                <div>
+                  <label style={{fontSize:12,color:C.textSec,marginBottom:4,display:"block"}}>CRO *</label>
+                  <div style={{display:"flex",gap:8}}>
+                    <div style={{flex:"0 0 90px"}}>
+                      <select value={profileForm.croUf} onChange={function(e){setProfileForm(function(p){return{...p,croUf:e.target.value};});}}
+                        style={{width:"100%",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 10px",color:profileForm.croUf?C.text:C.textSec,fontSize:14,outline:"none",boxSizing:"border-box",appearance:"none",textAlign:"center"}}>
+                        <option value="">UF</option>
+                        {["AC","AL","AM","AP","BA","CE","DF","ES","GO","MA","MG","MS","MT","PA","PB","PE","PI","PR","RJ","RN","RO","RR","RS","SC","SE","SP","TO"].map(function(uf){return <option key={uf} value={uf}>{uf}</option>;})}
+                      </select>
+                    </div>
+                    <input value={profileForm.croNum} onChange={function(e){setProfileForm(function(p){return{...p,croNum:e.target.value};});}}
+                      placeholder="Número"
+                      style={{flex:1,background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                </div>
                 {[
-                  {label:"Nome completo *",key:"nome",placeholder:"Dr. Nome Sobrenome"},
-                  {label:"CRO *",key:"cro",placeholder:"CRO-XX 00000"},
                   {label:"Telefone / Celular",key:"celular",placeholder:"(00) 00000-0000"},
                   {label:"Nome da clínica",key:"clinica",placeholder:"Clínica Dental"},
-                ].map(f=>(
+                ].map(function(f){return(
                   <div key={f.key}>
                     <label style={{fontSize:12,color:C.textSec,marginBottom:4,display:"block"}}>{f.label}</label>
-                    <input value={profileForm[f.key]} onChange={e=>setProfileForm(p=>({...p,[f.key]:e.target.value}))}
+                    <input value={profileForm[f.key]} onChange={function(e){setProfileForm(function(p){return{...p,[f.key]:e.target.value};});}}
                       placeholder={f.placeholder}
                       style={{width:"100%",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"}}/>
                   </div>
-                ))}
+                );})}
                 <div>
                   <label style={{fontSize:12,color:C.textSec,marginBottom:4,display:"block"}}>Especialidade</label>
                   <select value={profileForm.especialidade} onChange={e=>setProfileForm(p=>({...p,especialidade:e.target.value}))}
@@ -1202,29 +1222,38 @@ input,textarea,select{touch-action:manipulation;}
                 </div>
               </div>
 
+              {/* Mensagem de sucesso inline */}
+              {profileSaved&&(
+                <div style={{marginTop:14,background:"rgba(34,197,94,0.1)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:10,padding:"10px 14px",display:"flex",alignItems:"center",gap:8}}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span style={{color:"#22c55e",fontSize:13,fontWeight:600}}>Alterações salvas com sucesso!</span>
+                </div>
+              )}
+
               {/* Botão salvar */}
-              <button disabled={profileSaving||!profileForm.nome.trim()||!profileForm.cro.trim()} onClick={async()=>{
+              <button disabled={profileSaving||!profileForm.nome.trim()||!profileForm.croNum.trim()||!profileForm.croUf} onClick={async function(){
                 setProfileSaving(true);
+                setProfileSaved(false);
                 try{
+                  var croFull=profileForm.croUf+"-"+profileForm.croNum.trim();
                   const sb=(await import("../lib/supabase")).supabase;
                   await sb.from("dcad_clientes").update({
                     nome:profileForm.nome.trim(),
-                    cro:profileForm.cro.trim(),
+                    cro:croFull,
                     especialidade:profileForm.especialidade||null,
                     nome_clinica:profileForm.clinica.trim()||null,
                     celular:profileForm.celular.trim()||null,
                   }).eq("email",dentist.email);
-                  setDentist(d=>({...d,nome:profileForm.nome.trim(),cro:profileForm.cro.trim(),especialidade:profileForm.especialidade||"",clinica:profileForm.clinica.trim(),celular:profileForm.celular.trim()}));
-                  setToast("✅ Dados atualizados com sucesso!");
-                  setShowProfileModal(false);
+                  setDentist(function(d){return{...d,nome:profileForm.nome.trim(),cro:croFull,especialidade:profileForm.especialidade||"",clinica:profileForm.clinica.trim(),celular:profileForm.celular.trim()};});
+                  setProfileSaved(true);
                 }catch{setToast("Erro ao salvar. Tente novamente.");}
                 setProfileSaving(false);
-              }} style={{...btnStyle(C.red),width:"100%",marginTop:16,padding:"12px",fontSize:14,opacity:(profileSaving||!profileForm.nome.trim()||!profileForm.cro.trim())?0.6:1}}>
+              }} style={{...btnStyle(C.red),width:"100%",marginTop:12,padding:"12px",fontSize:14,opacity:(profileSaving||!profileForm.nome.trim()||!profileForm.croNum.trim()||!profileForm.croUf)?0.6:1}}>
                 {profileSaving?"Salvando...":"Salvar alterações"}
               </button>
 
               {/* Link para dados de faturamento */}
-              <button onClick={()=>{setShowProfileModal(false);setScreen("profile");}}
+              <button onClick={function(){setShowProfileModal(false);setScreen("profile");}}
                 style={{width:"100%",marginTop:8,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"10px",borderRadius:10,cursor:"pointer"}}>
                 Dados de faturamento e entrega →
               </button>
@@ -1288,7 +1317,7 @@ input,textarea,select{touch-action:manipulation;}
             <div style={{width:32,height:32,borderRadius:"50%",background:avatarUrl?"transparent":C.dark3,border:`2px solid ${C.red}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red,padding:0,overflow:"hidden",flexShrink:0}}>
               {avatarUrl?<img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:dentist.nome.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase()}
             </div>
-            <button onClick={function(){setProfileForm({nome:dentist.nome,cro:dentist.cro||"",especialidade:dentist.especialidade||"",clinica:dentist.clinica||"",celular:dentist.celular||""});setShowProfileModal(true);}}
+            <button onClick={function(){var croPartes=(dentist.cro||"").split("-");var croUf=croPartes.length>1?croPartes[0]:"";var croNum=croPartes.length>1?croPartes.slice(1).join("-"):croPartes[0];setProfileForm({nome:dentist.nome,croNum:croNum,croUf:croUf,especialidade:dentist.especialidade||"",clinica:dentist.clinica||"",celular:dentist.celular||""});setProfileSaved(false);setShowProfileModal(true);}}
               style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600}}>PERFIL</button>
             <button onClick={resetAll} style={{background:"rgba(229,34,41,0.1)",border:`1px solid ${C.red}`,color:C.red,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Sair</button>
           </div>
@@ -1566,7 +1595,7 @@ input,textarea,select{touch-action:manipulation;}
                     setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
                     setProfileComplete(!!cliente.cadastro_completo);
                     if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
-                    setProfileForm({nome:cliente.nome,cro:cliente.cro||"",especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
+                    var croPartes2=(cliente.cro||"").split("-");var croUf2=croPartes2.length>1?croPartes2[0]:"";var croNum2=croPartes2.length>1?croPartes2.slice(1).join("-"):croPartes2[0];setProfileForm({nome:cliente.nome,croNum:croNum2,croUf:croUf2,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
                     setScreen("dashboard");
                   } else {
                     setDentist({nome:data.user.email,cro:"",clinica:"",email:data.user.email,whatsapp:"",accountType:"dentista",accountStatus:"active"});
