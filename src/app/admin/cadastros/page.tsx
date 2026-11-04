@@ -104,6 +104,16 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 type TipoCliente = 'dentista_clinica' | 'radiologia' | 'cursos' | 'todos';
 type StatusFiltro = 'todos' | 'ativo' | 'pendente' | 'incompleto' | 'bloqueado';
 
+interface EnderecoJSON {
+  rua?: string;
+  numero?: string;
+  complemento?: string;
+  bairro?: string;
+  cidade?: string;
+  estado?: string;
+  cep?: string;
+}
+
 interface Cliente {
   id: string;
   nome: string;
@@ -124,6 +134,8 @@ interface Cliente {
   aprovado_em?: string;
   criado_em: string;
   origem?: 'portal' | 'manual';
+  endereco?: EnderecoJSON;
+  endereco_entrega?: EnderecoJSON;
 }
 
 const TIPO_LABEL: Record<string, string> = {
@@ -172,6 +184,20 @@ function StatusBadge({ cliente }: { cliente: Cliente }) {
       <XCircle size={10} /> Bloqueado
     </span>
   );
+}
+
+function formatarEndereco(end?: EnderecoJSON): string {
+  if (!end) return '—';
+  const partes: string[] = [];
+  if (end.rua) {
+    partes.push(end.numero ? `${end.rua}, ${end.numero}` : end.rua);
+  }
+  if (end.complemento) partes.push(end.complemento);
+  if (end.bairro) partes.push(end.bairro);
+  if (end.cidade && end.estado) partes.push(`${end.cidade}/${end.estado}`);
+  else if (end.cidade) partes.push(end.cidade);
+  if (end.cep) partes.push(end.cep);
+  return partes.length > 0 ? partes.join(' · ') : '—';
 }
 
 const CAMPOS_MODAL_CLIENTE = [
@@ -273,7 +299,7 @@ function ModalNovoCliente({ onClose, onSalvo }: { onClose: () => void; onSalvo: 
 
 // ─── MODAL EDITAR CLIENTE ──────────────────────────────────────────────────
 
-function ModalEditarCliente({ cliente, onClose, onSalvo }: { cliente: Cliente; onClose: () => void; onSalvo: () => void }) {
+function ModalEditarCliente({ cliente, onClose, onSalvo, onAprovar }: { cliente: Cliente; onClose: () => void; onSalvo: () => void; onAprovar?: (id: string) => void }) {
   const [form, setForm] = useState<Record<string, string>>({
     nome: cliente.nome || '',
     email: cliente.email || '',
@@ -288,7 +314,12 @@ function ModalEditarCliente({ cliente, onClose, onSalvo }: { cliente: Cliente; o
     cadastro_completo: String(cliente.cadastro_completo),
   });
   const [busy, setBusy] = useState(false);
+  const [aprovando, setAprovando] = useState(false);
   const [erro, setErro] = useState('');
+
+  const isPendente = !cliente.ativo && (cliente.tipo_cliente === 'radiologia' || cliente.tipo_cliente === 'cursos');
+  const endFaturamento = formatarEndereco(cliente.endereco);
+  const endEntrega = formatarEndereco(cliente.endereco_entrega);
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -432,6 +463,49 @@ function ModalEditarCliente({ cliente, onClose, onSalvo }: { cliente: Cliente; o
             </div>
           </div>
 
+          {/* Seção: Endereços (read-only) */}
+          {(cliente.endereco || cliente.endereco_entrega) && (
+            <>
+              <div style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '4px', marginBottom: '2px', marginTop: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Endereços cadastrados</span>
+              </div>
+              <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div>
+                  <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Faturamento</div>
+                  <div style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.5 }}>{endFaturamento}</div>
+                </div>
+                {cliente.endereco_entrega && (
+                  <div style={{ borderTop: '1px solid #1e1e1e', paddingTop: '10px' }}>
+                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Entrega</div>
+                    <div style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.5 }}>{endEntrega}</div>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+
+          {/* Aprovação de clientes pendentes */}
+          {isPendente && onAprovar && (
+            <div style={{ backgroundColor: 'rgba(251,191,36,0.07)', border: '1px solid rgba(251,191,36,0.2)', borderRadius: '8px', padding: '12px 14px' }}>
+              <div style={{ fontSize: '12px', color: '#fbbf24', fontWeight: '600', marginBottom: '6px' }}>⏳ Aguardando aprovação</div>
+              <div style={{ fontSize: '12px', color: '#6b7280', marginBottom: '10px' }}>
+                Este cliente ({TIPO_LABEL[cliente.tipo_cliente]}) precisa de aprovação manual para acessar o portal.
+              </div>
+              <button
+                type="button"
+                disabled={aprovando}
+                onClick={async () => {
+                  setAprovando(true);
+                  await onAprovar(cliente.id);
+                  setAprovando(false);
+                  onClose();
+                }}
+                style={{ padding: '8px 16px', backgroundColor: aprovando ? '#1a4d2e' : '#16a34a', border: 'none', borderRadius: '7px', color: '#fff', fontSize: '13px', fontWeight: '600', cursor: aprovando ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle size={14} />{aprovando ? 'Aprovando...' : 'Aprovar e liberar acesso'}
+              </button>
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '10px', marginTop: '4px' }}>
             <button type="button" onClick={onClose} style={{ flex: 1, padding: '9px', backgroundColor: 'transparent', border: '1px solid #2a2a2a', borderRadius: '7px', color: '#9ca3af', fontSize: '13px', cursor: 'pointer' }}>
               Cancelar
@@ -518,7 +592,7 @@ function ClientesContent() {
   return (
     <>
       {modalAberto && <ModalNovoCliente onClose={() => setModalAberto(false)} onSalvo={() => { setModalAberto(false); carregar(); }} />}
-      {clienteEditando && <ModalEditarCliente cliente={clienteEditando} onClose={() => setClienteEditando(null)} onSalvo={() => { setClienteEditando(null); carregar(); }} />}
+      {clienteEditando && <ModalEditarCliente cliente={clienteEditando} onClose={() => setClienteEditando(null)} onSalvo={() => { setClienteEditando(null); carregar(); }} onAprovar={async (id) => { await alterarStatus(id, true); }} />}
 
       {/* Ações e métricas */}
       <div className="cad-header-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
