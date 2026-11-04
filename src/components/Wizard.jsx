@@ -329,7 +329,7 @@ export default function App() {
   const [dentist,setDentist]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");return s?JSON.parse(s):null;}catch{return null;}});
   const inactivityTimerRef=React.useRef(null);
   const [inactivityWarning,setInactivityWarning]=useState(false);
-  const [profileComplete,setProfileComplete]=useState(false);
+  const [profileComplete,setProfileComplete]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");if(s){var d=JSON.parse(s);return!!d.cadastro_completo;}return false;}catch{return false;}});
   const [profile,setProfile]=useState({docType:"cpf",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
   // Impressoras 3D cadastradas pelo cliente — múltiplas, relacionadas por tipo de serviço
   const [printers,setPrinters]=useState([]); // [{id,apelido,marca,modelo,resina_marca,resina_modelo,camada,exposicao,serviceTypes[]}]
@@ -665,7 +665,7 @@ export default function App() {
         const sb=supabaseBrowser();
         const{data:cliente}=await sb.from("dcad_clientes").select("*").eq("email",dentist.email).maybeSingle();
         if(cliente){
-          setDentist(function(d){return{...d,nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",_freshLoad:true};});
+          setDentist(function(d){return{...d,nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",cadastro_completo:!!cliente.cadastro_completo,_freshLoad:true};});
           if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
           setProfileComplete(!!cliente.cadastro_completo);
           var croPartes=(cliente.cro||"").split("-");var croUfR=croPartes.length>1?croPartes[0]:"";var croNumR=croPartes.length>1?croPartes.slice(1).join("-"):croPartes[0];
@@ -1686,7 +1686,7 @@ input,textarea,select{touch-action:manipulation;}
                       setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente,accountStatus:"pending",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
                       setScreen("pending");return;
                     }
-                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",_freshLoad:true});
+                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",cadastro_completo:!!cliente.cadastro_completo,_freshLoad:true});
                     setProfileComplete(!!cliente.cadastro_completo);
                     if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
                     var croPartes2=(cliente.cro||"").split("-");var croUf2=croPartes2.length>1?croPartes2[0]:"";var croNum2=croPartes2.length>1?croPartes2.slice(1).join("-"):croPartes2[0];setProfileForm({nome:cliente.nome,croNum:croNum2,croUf:croUf2,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
@@ -2221,6 +2221,7 @@ input,textarea,select{touch-action:manipulation;}
                 if(saveErr){setToast("Erro ao salvar: "+saveErr.message);return;}
               }catch(e){setToast("Erro ao salvar dados.");return;}
               setProfileComplete(true);
+              setDentist(function(d){return d?{...d,cadastro_completo:true}:d;});
               setScreen("dashboard");
             }}>Salvar cadastro e continuar →</Btn>
             {dentist&&screen==="profile"&&services.length>0&&(
