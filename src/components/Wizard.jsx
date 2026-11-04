@@ -343,6 +343,7 @@ export default function App() {
   const [patForm,setPatForm]=useState({nome:"",nasc:""});
   const [patSearch,setPatSearch]=useState("");
   const [cepLoading,setCepLoading]=useState(null);
+  const [cepTouched,setCepTouched]=useState({});
   const [isDesktop,setIsDesktop]=useState(false);
   const [isTablet,setIsTablet]=useState(false); // 640-1023px
   const [savedPatients,setSavedPatients]=useState([
@@ -1857,16 +1858,20 @@ input,textarea,select{touch-action:manipulation;}
                       {/* Endereço de cobrança */}
                       <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:10,marginTop:4}}>ENDEREÇO DE COBRANÇA</div>
                       <div style={{marginBottom:12}}>
-                        <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche os campos automaticamente</span></label>
-                        <div style={{display:"flex",gap:8}}>
-                          <input value={regForm.cep} onChange={e=>setRegForm(f=>({...f,cep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                            style={{flex:1,background:C.dark2,border:`1px solid ${regForm.cep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-                          <button onClick={()=>buscarCEP(regForm.cep,(d)=>setRegForm(f=>({...f,rua:d.logradouro||f.rua,bairro:d.bairro||f.bairro,cidade:d.localidade||f.cidade,estado:d.uf||f.estado})),"reg_billing")}
-                            disabled={cepLoading==="reg_billing"}
-                            style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="reg_billing"?0.6:1,whiteSpace:"nowrap"}}>
-                            {cepLoading==="reg_billing"?"...":"Buscar"}
-                          </button>
-                        </div>
+                        <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Preenchimento automático ao digitar</span></label>
+                        <input value={regForm.cep}
+                          onChange={e=>{
+                            const v=e.target.value;
+                            setRegForm(f=>({...f,cep:v}));
+                            setCepTouched(t=>({...t,reg_billing:true}));
+                            if(v.replace(/\D/g,"").length===8){
+                              buscarCEP(v,(d)=>setRegForm(f=>({...f,rua:d.logradouro||f.rua,bairro:d.bairro||f.bairro,cidade:d.localidade||f.cidade,estado:d.uf||f.estado})),"reg_billing");
+                            }
+                          }}
+                          placeholder="00000-000" maxLength={9}
+                          style={{width:"100%",background:C.dark2,border:`1px solid ${regForm.cep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                        {cepLoading==="reg_billing"&&<div style={{fontSize:12,color:C.textSec,marginTop:4}}>Buscando CEP...</div>}
+                        {cepTouched.reg_billing&&regForm.cep.replace(/\D/g,"").length<8&&regForm.cep.length>0&&<div style={{fontSize:12,color:"#F59E0B",marginTop:4}}>⚠ CEP incompleto — digite todos os 8 números</div>}
                       </div>
                       <div style={{display:"grid",gridTemplateColumns:"1fr 80px",gap:8}}>
                         <Field label="Rua / Avenida *" value={regForm.rua} onChange={v=>setRegForm(f=>({...f,rua:v}))} placeholder="Preenchido automaticamente"/>
@@ -1898,16 +1903,20 @@ input,textarea,select{touch-action:manipulation;}
                       {!regForm.entregaIgual&&(
                         <div>
                           <div style={{marginBottom:12}}>
-                            <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche automaticamente</span></label>
-                            <div style={{display:"flex",gap:8}}>
-                              <input value={regForm.entCep} onChange={e=>setRegForm(f=>({...f,entCep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                                style={{flex:1,background:C.dark2,border:`1px solid ${regForm.entCep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-                              <button onClick={()=>buscarCEP(regForm.entCep,(d)=>setRegForm(f=>({...f,entRua:d.logradouro||f.entRua,entBairro:d.bairro||f.entBairro,entCidade:d.localidade||f.entCidade,entEstado:d.uf||f.entEstado})),"reg_delivery")}
-                                disabled={cepLoading==="reg_delivery"}
-                                style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="reg_delivery"?0.6:1,whiteSpace:"nowrap"}}>
-                                {cepLoading==="reg_delivery"?"...":"Buscar"}
-                              </button>
-                            </div>
+                            <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Preenchimento automático ao digitar</span></label>
+                            <input value={regForm.entCep}
+                              onChange={e=>{
+                                const v=e.target.value;
+                                setRegForm(f=>({...f,entCep:v}));
+                                setCepTouched(t=>({...t,reg_delivery:true}));
+                                if(v.replace(/\D/g,"").length===8){
+                                  buscarCEP(v,(d)=>setRegForm(f=>({...f,entRua:d.logradouro||f.entRua,entBairro:d.bairro||f.entBairro,entCidade:d.localidade||f.entCidade,entEstado:d.uf||f.entEstado})),"reg_delivery");
+                                }
+                              }}
+                              placeholder="00000-000" maxLength={9}
+                              style={{width:"100%",background:C.dark2,border:`1px solid ${regForm.entCep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                            {cepLoading==="reg_delivery"&&<div style={{fontSize:12,color:C.textSec,marginTop:4}}>Buscando CEP...</div>}
+                            {cepTouched.reg_delivery&&regForm.entCep.replace(/\D/g,"").length<8&&regForm.entCep.length>0&&<div style={{fontSize:12,color:"#F59E0B",marginTop:4}}>⚠ CEP incompleto — digite todos os 8 números</div>}
                           </div>
                           <div style={{display:"grid",gridTemplateColumns:"1fr 80px",gap:8}}>
                             <Field label="Rua *" value={regForm.entRua} onChange={v=>setRegForm(f=>({...f,entRua:v}))} placeholder="Preenchido automaticamente"/>
@@ -2070,16 +2079,20 @@ input,textarea,select{touch-action:manipulation;}
             <div style={{padding:"12px 14px",background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:12,marginBottom:14}}>
               <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:12}}>ENDEREÇO DE COBRANÇA</div>
               <div style={{marginBottom:12}}>
-                <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche os campos automaticamente</span></label>
-                <div style={{display:"flex",gap:8}}>
-                  <input value={profile.cep} onChange={e=>setProfile(p=>({...p,cep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                    style={{flex:1,background:C.dark2,border:`1px solid ${profile.cep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-                  <button onClick={()=>buscarCEP(profile.cep,(d)=>setProfile(p=>({...p,rua:d.logradouro||p.rua,bairro:d.bairro||p.bairro,cidade:d.localidade||p.cidade,estado:d.uf||p.estado})),"prof_billing")}
-                    disabled={cepLoading==="prof_billing"}
-                    style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="prof_billing"?0.6:1,whiteSpace:"nowrap"}}>
-                    {cepLoading==="prof_billing"?"...":"Buscar"}
-                  </button>
-                </div>
+                <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Preenchimento automático ao digitar</span></label>
+                <input value={profile.cep}
+                  onChange={e=>{
+                    const v=e.target.value;
+                    setProfile(p=>({...p,cep:v}));
+                    setCepTouched(t=>({...t,prof_billing:true}));
+                    if(v.replace(/\D/g,"").length===8){
+                      buscarCEP(v,(d)=>setProfile(p=>({...p,rua:d.logradouro||p.rua,bairro:d.bairro||p.bairro,cidade:d.localidade||p.cidade,estado:d.uf||p.estado})),"prof_billing");
+                    }
+                  }}
+                  placeholder="00000-000" maxLength={9}
+                  style={{width:"100%",background:C.dark2,border:`1px solid ${profile.cep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                {cepLoading==="prof_billing"&&<div style={{fontSize:12,color:C.textSec,marginTop:4}}>Buscando CEP...</div>}
+                {cepTouched.prof_billing&&profile.cep.replace(/\D/g,"").length<8&&profile.cep.length>0&&<div style={{fontSize:12,color:"#F59E0B",marginTop:4}}>⚠ CEP incompleto — digite todos os 8 números</div>}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"1fr 80px",gap:8,marginBottom:0}}>
                 <Field label="Rua / Avenida *" value={profile.rua} onChange={v=>setProfile(p=>({...p,rua:v}))} placeholder="Preenchido automaticamente"/>
@@ -2113,16 +2126,20 @@ input,textarea,select{touch-action:manipulation;}
               {!profile.entregaIgual&&(
                 <div>
                   <div style={{marginBottom:12}}>
-                    <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Buscar preenche automaticamente</span></label>
-                    <div style={{display:"flex",gap:8}}>
-                      <input value={profile.entCep} onChange={e=>setProfile(p=>({...p,entCep:e.target.value}))} placeholder="00000-000" maxLength={9}
-                        style={{flex:1,background:C.dark2,border:`1px solid ${profile.entCep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
-                      <button onClick={()=>buscarCEP(profile.entCep,(d)=>setProfile(p=>({...p,entRua:d.logradouro||p.entRua,entBairro:d.bairro||p.entBairro,entCidade:d.localidade||p.entCidade,entEstado:d.uf||p.entEstado})),"prof_delivery")}
-                        disabled={cepLoading==="prof_delivery"}
-                        style={{padding:"0 14px",background:C.red,border:"none",borderRadius:12,color:"#fff",fontSize:13,fontWeight:700,cursor:"pointer",flexShrink:0,opacity:cepLoading==="prof_delivery"?0.6:1,whiteSpace:"nowrap"}}>
-                        {cepLoading==="prof_delivery"?"...":"Buscar"}
-                      </button>
-                    </div>
+                    <label style={{fontSize:13,fontWeight:700,color:C.textSec,display:"block",marginBottom:5,letterSpacing:.5}}>CEP * <span style={{fontSize:12,color:C.textSec,fontWeight:400}}>— Preenchimento automático ao digitar</span></label>
+                    <input value={profile.entCep}
+                      onChange={e=>{
+                        const v=e.target.value;
+                        setProfile(p=>({...p,entCep:v}));
+                        setCepTouched(t=>({...t,prof_delivery:true}));
+                        if(v.replace(/\D/g,"").length===8){
+                          buscarCEP(v,(d)=>setProfile(p=>({...p,entRua:d.logradouro||p.entRua,entBairro:d.bairro||p.entBairro,entCidade:d.localidade||p.entCidade,entEstado:d.uf||p.entEstado})),"prof_delivery");
+                        }
+                      }}
+                      placeholder="00000-000" maxLength={9}
+                      style={{width:"100%",background:C.dark2,border:`1px solid ${profile.entCep?"rgba(229,34,41,0.35)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+                    {cepLoading==="prof_delivery"&&<div style={{fontSize:12,color:C.textSec,marginTop:4}}>Buscando CEP...</div>}
+                    {cepTouched.prof_delivery&&profile.entCep.replace(/\D/g,"").length<8&&profile.entCep.length>0&&<div style={{fontSize:12,color:"#F59E0B",marginTop:4}}>⚠ CEP incompleto — digite todos os 8 números</div>}
                   </div>
                   <div style={{display:"grid",gridTemplateColumns:"1fr 80px",gap:8}}>
                     <Field label="Rua / Avenida *" value={profile.entRua} onChange={v=>setProfile(p=>({...p,entRua:v}))} placeholder="Preenchido automaticamente"/>
@@ -2146,7 +2163,7 @@ input,textarea,select{touch-action:manipulation;}
             </div>
 
             {/* ── Impressoras 3D ────────────────────────────────── */}
-            <div style={{padding:"14px 16px",background:"rgba(13,148,136,0.06)",border:"1px solid rgba(13,148,136,0.25)",borderRadius:12,marginBottom:20}}>
+            {false&&<div style={{padding:"14px 16px",background:"rgba(13,148,136,0.06)",border:"1px solid rgba(13,148,136,0.25)",borderRadius:12,marginBottom:20}}>
               <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:12}}>
                 <div>
                   <div style={{fontSize:13,fontWeight:700,color:"#0D9488",letterSpacing:1}}>IMPRESSORAS 3D CADASTRADAS</div>
@@ -2179,7 +2196,7 @@ input,textarea,select{touch-action:manipulation;}
                   </div>
                 </div>
               ))}
-            </div>
+            </div>}
 
             <Btn onClick={async()=>{
               const doc=profile.docType==="cpf"?profile.cpf:profile.cnpj;
