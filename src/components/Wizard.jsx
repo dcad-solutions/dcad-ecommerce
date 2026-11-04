@@ -395,6 +395,14 @@ export default function App() {
   const [editingId,setEditingId]=useState(null); // id of service being edited
   const [editingOriginal,setEditingOriginal]=useState(null); // original service snapshot for cancel
   const [showPass,setShowPass]=useState(false);
+  // ── Perfil / avatar ──
+  const [avatarUrl,setAvatarUrl]=useState(null);
+  const [showProfileModal,setShowProfileModal]=useState(false);
+  const [profileForm,setProfileForm]=useState({nome:"",cro:"",especialidade:"",clinica:"",celular:""});
+  const [profileSaving,setProfileSaving]=useState(false);
+  const [showWebcam,setShowWebcam]=useState(false);
+  const webcamVideoRef=React.useRef(null);
+  const webcamStreamRef=React.useRef(null);
   const [lastConfig,setLastConfig]=useState({}); // {[specialtyId]: {brand,kit,model}} // {service, timer} // carts awaiting payment
   const [mockOrders]=useState([
     {id:"001",patient:"Maria das Graças",service:"Cirurgia Guiada Unitária",specialty:"Implantodontia",total:388.98,status:"planning",date:"20/06/2026",filesSubmitted:false},
@@ -612,6 +620,11 @@ export default function App() {
   }
   function resetAll(){
     setDentist(null);setPatient(null);setServices([]);addNew();setScreen("auth");
+  }
+  function closeProfileModal(){
+    if(webcamStreamRef.current){webcamStreamRef.current.getTracks().forEach(function(t){t.stop();});webcamStreamRef.current=null;}
+    setShowWebcam(false);
+    setShowProfileModal(false);
   }
 
   const isProto=!!service?.usesArch;
@@ -1055,6 +1068,171 @@ input,textarea,select{touch-action:manipulation;}
         </div>
       )}
 
+      {/* ── MODAL DE PERFIL ── */}
+      {showProfileModal&&dentist&&(
+        <div onClick={e=>{if(e.target===e.currentTarget){closeProfileModal();}}} style={{position:"fixed",inset:0,zIndex:300,background:"rgba(0,0,0,0.75)",display:"flex",alignItems:"center",justifyContent:"center",padding:"16px"}}>
+          <div style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:20,width:"100%",maxWidth:480,maxHeight:"90vh",overflowY:"auto",boxShadow:"0 24px 64px rgba(0,0,0,0.6)"}}>
+            {/* Header do modal */}
+            <div style={{padding:"20px 20px 0",display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+              <div>
+                <h2 style={{margin:0,fontSize:18,fontWeight:700,color:C.text}}>Meu Perfil</h2>
+                <p style={{margin:"2px 0 0",fontSize:12,color:C.textSec}}>{dentist.email}</p>
+              </div>
+              <button onClick={closeProfileModal}
+                style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:18,width:32,height:32,borderRadius:8,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1}}>✕</button>
+            </div>
+
+            {/* Avatar / Foto */}
+            <div style={{padding:"20px 20px 0",display:"flex",flexDirection:"column",alignItems:"center",gap:12}}>
+              <div style={{width:80,height:80,borderRadius:"50%",border:`3px solid ${C.red}`,overflow:"hidden",display:"flex",alignItems:"center",justifyContent:"center",background:C.dark3,fontSize:28,fontWeight:700,color:C.red,flexShrink:0}}>
+                {avatarUrl?<img src={avatarUrl} alt="foto de perfil" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:dentist.nome.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+              </div>
+              {/* Webcam preview */}
+              {showWebcam&&(
+                <div style={{display:"flex",flexDirection:"column",alignItems:"center",gap:10,width:"100%"}}>
+                  <video ref={webcamVideoRef} autoPlay playsInline muted style={{width:"100%",maxWidth:320,borderRadius:12,border:`1px solid ${C.border}`,background:"#000"}}/>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={async()=>{
+                      const video=webcamVideoRef.current;
+                      if(!video)return;
+                      const canvas=document.createElement("canvas");
+                      canvas.width=video.videoWidth;canvas.height=video.videoHeight;
+                      canvas.getContext("2d").drawImage(video,0,0);
+                      canvas.toBlob(async(blob)=>{
+                        if(!blob)return;
+                        const sb=window._sb||(await import("../lib/supabase").then(m=>m.supabase));
+                        const ext="jpg";
+                        const fileName=`avatar_${dentist.email.replace(/[^a-z0-9]/gi,"_")}_${Date.now()}.${ext}`;
+                        const {data:up,error:upErr}=await sb.storage.from("avatars").upload(fileName,blob,{contentType:"image/jpeg",upsert:true});
+                        if(!upErr){
+                          const {data:{publicUrl}}=sb.storage.from("avatars").getPublicUrl(fileName);
+                          setAvatarUrl(publicUrl);
+                          await sb.from("dcad_clientes").update({avatar_url:publicUrl}).eq("email",dentist.email);
+                          setToast("📸 Foto capturada e salva!");
+                        } else {
+                          // Fallback: usar dataURL localmente
+                          setAvatarUrl(canvas.toDataURL("image/jpeg",0.85));
+                          setToast("Foto capturada!");
+                        }
+                        if(webcamStreamRef.current){webcamStreamRef.current.getTracks().forEach(function(t){t.stop();});webcamStreamRef.current=null;}
+                        setShowWebcam(false);
+                      },"image/jpeg",0.85);
+                    }} style={{...btnStyle(C.red),padding:"8px 18px",fontSize:13}}>📸 Capturar foto</button>
+                    <button onClick={()=>{if(webcamStreamRef.current){webcamStreamRef.current.getTracks().forEach(function(t){t.stop();});webcamStreamRef.current=null;}setShowWebcam(false);}}
+                      style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,padding:"8px 14px",borderRadius:10,fontSize:13,cursor:"pointer"}}>Cancelar</button>
+                  </div>
+                </div>
+              )}
+              {!showWebcam&&(
+                <div style={{display:"flex",gap:8,flexWrap:"wrap",justifyContent:"center"}}>
+                  {/* Upload de arquivo */}
+                  <label style={{display:"flex",alignItems:"center",gap:6,background:C.dark3,border:`1px solid ${C.border}`,color:C.textSec,padding:"7px 14px",borderRadius:10,fontSize:12,cursor:"pointer",fontWeight:600}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                    Carregar foto
+                    <input type="file" accept="image/*" style={{display:"none"}} onChange={async e=>{
+                      const file=e.target.files?.[0];if(!file)return;
+                      const reader=new FileReader();
+                      reader.onload=async ev=>{
+                        const dataUrl=ev.target.result;
+                        // Tentar upload Supabase Storage
+                        try{
+                          const sb=(await import("../lib/supabase")).supabase;
+                          const ext=file.name.split(".").pop()||"jpg";
+                          const fileName=`avatar_${dentist.email.replace(/[^a-z0-9]/gi,"_")}_${Date.now()}.${ext}`;
+                          const {error:upErr}=await sb.storage.from("avatars").upload(fileName,file,{contentType:file.type,upsert:true});
+                          if(!upErr){
+                            const {data:{publicUrl}}=sb.storage.from("avatars").getPublicUrl(fileName);
+                            setAvatarUrl(publicUrl);
+                            await sb.from("dcad_clientes").update({avatar_url:publicUrl}).eq("email",dentist.email);
+                            setToast("📸 Foto atualizada!");
+                          } else {
+                            setAvatarUrl(dataUrl);
+                            setToast("Foto carregada!");
+                          }
+                        }catch{setAvatarUrl(dataUrl);setToast("Foto carregada!");}
+                      };
+                      reader.readAsDataURL(file);
+                    }}/>
+                  </label>
+                  {/* Webcam / câmera */}
+                  <button onClick={async()=>{
+                    try{
+                      const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"},audio:false});
+                      webcamStreamRef.current=stream;
+                      setShowWebcam(true);
+                      setTimeout(()=>{if(webcamVideoRef.current)webcamVideoRef.current.srcObject=stream;},100);
+                    }catch{setToast("Câmera não disponível neste dispositivo/browser.");}
+                  }} style={{display:"flex",alignItems:"center",gap:6,background:C.dark3,border:`1px solid ${C.border}`,color:C.textSec,padding:"7px 14px",borderRadius:10,fontSize:12,cursor:"pointer",fontWeight:600}}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                    {typeof window!=="undefined"&&/Mobi|Android/i.test(navigator.userAgent)?"Câmera":"Webcam"}
+                  </button>
+                  {avatarUrl&&<button onClick={async()=>{
+                    setAvatarUrl(null);
+                    try{const sb=(await import("../lib/supabase")).supabase;await sb.from("dcad_clientes").update({avatar_url:null}).eq("email",dentist.email);}catch{}
+                    setToast("Foto removida.");
+                  }} style={{background:"none",border:`1px solid rgba(229,34,41,0.3)`,color:C.red,padding:"7px 14px",borderRadius:10,fontSize:12,cursor:"pointer"}}>Remover</button>}
+                </div>
+              )}
+            </div>
+
+            {/* Dados pessoais */}
+            <div style={{padding:"20px 20px"}}>
+              <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:1.2,marginBottom:12}}>DADOS PESSOAIS</div>
+              <div style={{display:"flex",flexDirection:"column",gap:10}}>
+                {[
+                  {label:"Nome completo *",key:"nome",placeholder:"Dr. Nome Sobrenome"},
+                  {label:"CRO *",key:"cro",placeholder:"CRO-XX 00000"},
+                  {label:"Telefone / Celular",key:"celular",placeholder:"(00) 00000-0000"},
+                  {label:"Nome da clínica",key:"clinica",placeholder:"Clínica Dental"},
+                ].map(f=>(
+                  <div key={f.key}>
+                    <label style={{fontSize:12,color:C.textSec,marginBottom:4,display:"block"}}>{f.label}</label>
+                    <input value={profileForm[f.key]} onChange={e=>setProfileForm(p=>({...p,[f.key]:e.target.value}))}
+                      placeholder={f.placeholder}
+                      style={{width:"100%",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",color:C.text,fontSize:14,outline:"none",boxSizing:"border-box"}}/>
+                  </div>
+                ))}
+                <div>
+                  <label style={{fontSize:12,color:C.textSec,marginBottom:4,display:"block"}}>Especialidade</label>
+                  <select value={profileForm.especialidade} onChange={e=>setProfileForm(p=>({...p,especialidade:e.target.value}))}
+                    style={{width:"100%",background:C.dark3,border:`1px solid ${C.border}`,borderRadius:10,padding:"10px 12px",color:profileForm.especialidade?C.text:C.textSec,fontSize:14,outline:"none",boxSizing:"border-box",appearance:"none"}}>
+                    <option value="">Selecionar especialidade</option>
+                    {SPECIALTIES_LIST.map(s=><option key={s} value={s}>{s}</option>)}
+                  </select>
+                </div>
+              </div>
+
+              {/* Botão salvar */}
+              <button disabled={profileSaving||!profileForm.nome.trim()||!profileForm.cro.trim()} onClick={async()=>{
+                setProfileSaving(true);
+                try{
+                  const sb=(await import("../lib/supabase")).supabase;
+                  await sb.from("dcad_clientes").update({
+                    nome:profileForm.nome.trim(),
+                    cro:profileForm.cro.trim(),
+                    especialidade:profileForm.especialidade||null,
+                    nome_clinica:profileForm.clinica.trim()||null,
+                    celular:profileForm.celular.trim()||null,
+                  }).eq("email",dentist.email);
+                  setDentist(d=>({...d,nome:profileForm.nome.trim(),cro:profileForm.cro.trim(),especialidade:profileForm.especialidade||"",clinica:profileForm.clinica.trim(),celular:profileForm.celular.trim()}));
+                  setToast("✅ Dados atualizados com sucesso!");
+                  setShowProfileModal(false);
+                }catch{setToast("Erro ao salvar. Tente novamente.");}
+                setProfileSaving(false);
+              }} style={{...btnStyle(C.red),width:"100%",marginTop:16,padding:"12px",fontSize:14,opacity:(profileSaving||!profileForm.nome.trim()||!profileForm.cro.trim())?0.6:1}}>
+                {profileSaving?"Salvando...":"Salvar alterações"}
+              </button>
+
+              {/* Link para dados de faturamento */}
+              <button onClick={()=>{setShowProfileModal(false);setScreen("profile");}}
+                style={{width:"100%",marginTop:8,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"10px",borderRadius:10,cursor:"pointer"}}>
+                Dados de faturamento e entrega →
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── TOAST ── */}
       {/* ── WHATSAPP FLOATING HELP BUTTON ── */}
       {dentist&&screen!=="auth"&&screen!=="dashboard"&&(
@@ -1107,9 +1285,10 @@ input,textarea,select{touch-action:manipulation;}
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {patient&&<span style={{fontSize:12,color:C.textSec}}>Paciente: <b style={{color:C.text}}>{patient.nome}</b></span>}
             {discount>0&&<span style={{fontSize:12,fontWeight:700,background:"rgba(34,197,94,0.15)",color:C.green,padding:"3px 9px",borderRadius:16}}>15% desconto</span>}
-            <div style={{width:28,height:28,borderRadius:"50%",background:C.dark3,border:`1px solid ${C.border}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red}}>
-              {dentist.nome.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
-            </div>
+            <button onClick={()=>{setProfileForm({nome:dentist.nome,cro:dentist.cro||"",especialidade:dentist.especialidade||"",clinica:dentist.clinica||"",celular:dentist.celular||""});setShowProfileModal(true);}} title="Meu Perfil"
+              style={{width:32,height:32,borderRadius:"50%",background:avatarUrl?"transparent":C.dark3,border:`2px solid ${C.red}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red,cursor:"pointer",padding:0,overflow:"hidden",flexShrink:0}}>
+              {avatarUrl?<img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:dentist.nome.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
+            </button>
             <button onClick={resetAll} style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer"}}>Sair</button>
           </div>
         )}
@@ -1380,11 +1559,13 @@ input,textarea,select{touch-action:manipulation;}
                   if(cliente){
                     const needsAdminApproval=["clinica","cursos"].includes(cliente.tipo_cliente);
                     if(needsAdminApproval&&!cliente.ativo){
-                      setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente,accountStatus:"pending"});
+                      setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente,accountStatus:"pending",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
                       setScreen("pending");return;
                     }
-                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active"});
+                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
                     setProfileComplete(!!cliente.cadastro_completo);
+                    if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
+                    setProfileForm({nome:cliente.nome,cro:cliente.cro||"",especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
                     setScreen("dashboard");
                   } else {
                     setDentist({nome:data.user.email,cro:"",clinica:"",email:data.user.email,whatsapp:"",accountType:"dentista",accountStatus:"active"});
