@@ -151,12 +151,14 @@ const TIPO_ICON: Record<string, React.ElementType> = {
 };
 
 function StatusBadge({ cliente }: { cliente: Cliente }) {
-  // INCOMPLETO: dentista_clinica que ainda não completou o perfil
-  const isIncompleto = cliente.tipo_cliente === 'dentista_clinica' && !cliente.ativo && !cliente.cadastro_completo;
-  // PENDENTE: radiologia ou cursos aguardando aprovação
+  // Para dentista_clinica: status baseado em cadastro_completo (ativo automático ao completar)
+  const isDentista = cliente.tipo_cliente === 'dentista_clinica';
+  // INCOMPLETO: dentista que ainda não completou o perfil (endereço/dados de faturamento)
+  const isIncompleto = isDentista && !cliente.cadastro_completo;
+  // PENDENTE: radiologia ou cursos aguardando aprovação manual
   const isPendente = !cliente.ativo && (cliente.tipo_cliente === 'radiologia' || cliente.tipo_cliente === 'cursos');
-  // BLOQUEADO: dentista com cadastro completo mas bloqueado pelo admin
-  const isBloqueado = !cliente.ativo && cliente.tipo_cliente === 'dentista_clinica' && cliente.cadastro_completo;
+  // BLOQUEADO: dentista com cadastro completo mas bloqueado manualmente pelo admin
+  const isBloqueado = !cliente.ativo && isDentista && cliente.cadastro_completo;
 
   if (cliente.ativo) return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 8px', backgroundColor: '#052e16', border: '1px solid #166534', borderRadius: '20px', fontSize: '11px', fontWeight: '600', color: '#4ade80' }}>
@@ -318,8 +320,10 @@ function ModalEditarCliente({ cliente, onClose, onSalvo, onAprovar }: { cliente:
   const [erro, setErro] = useState('');
 
   const isPendente = !cliente.ativo && (cliente.tipo_cliente === 'radiologia' || cliente.tipo_cliente === 'cursos');
-  const endFaturamento = formatarEndereco(cliente.endereco);
-  const endEntrega = formatarEndereco(cliente.endereco_entrega);
+
+  // Verifica se endereço de entrega é igual ao de faturamento
+  const entregaIgualPrincipal = cliente.endereco && cliente.endereco_entrega &&
+    JSON.stringify(cliente.endereco) === JSON.stringify(cliente.endereco_entrega);
 
   async function salvar(e: React.FormEvent) {
     e.preventDefault();
@@ -463,24 +467,60 @@ function ModalEditarCliente({ cliente, onClose, onSalvo, onAprovar }: { cliente:
             </div>
           </div>
 
-          {/* Seção: Endereços (read-only) */}
-          {(cliente.endereco || cliente.endereco_entrega) && (
+          {/* Seção: Endereço Principal (read-only, campos separados) */}
+          {cliente.endereco && (
             <>
               <div style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '4px', marginBottom: '2px', marginTop: '4px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Endereços cadastrados</span>
+                <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Endereço Principal (Faturamento)</span>
               </div>
-              <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '8px', padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Faturamento</div>
-                  <div style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.5 }}>{endFaturamento}</div>
-                </div>
-                {cliente.endereco_entrega && (
-                  <div style={{ borderTop: '1px solid #1e1e1e', paddingTop: '10px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: '600', color: '#6b7280', marginBottom: '4px', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Entrega</div>
-                    <div style={{ fontSize: '13px', color: '#d1d5db', lineHeight: 1.5 }}>{endEntrega}</div>
+              <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '8px', padding: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                {[
+                  { label: 'Rua / Avenida', value: cliente.endereco.rua },
+                  { label: 'Número', value: cliente.endereco.numero },
+                  { label: 'Complemento', value: cliente.endereco.complemento },
+                  { label: 'Bairro', value: cliente.endereco.bairro },
+                  { label: 'Cidade', value: cliente.endereco.cidade },
+                  { label: 'Estado', value: cliente.endereco.estado },
+                  { label: 'CEP', value: cliente.endereco.cep },
+                ].map(({ label, value }) => value ? (
+                  <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                    <span style={{ fontSize: '10px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+                    <span style={{ fontSize: '13px', color: '#d1d5db' }}>{value}</span>
                   </div>
-                )}
+                ) : null)}
               </div>
+            </>
+          )}
+
+          {/* Seção: Endereço de Entrega */}
+          {cliente.endereco_entrega && (
+            <>
+              <div style={{ borderBottom: '1px solid #1a1a1a', paddingBottom: '4px', marginBottom: '2px', marginTop: '4px' }}>
+                <span style={{ fontSize: '11px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Endereço de Entrega</span>
+              </div>
+              {entregaIgualPrincipal ? (
+                <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '8px', padding: '12px 14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <CheckCircle size={14} color="#4b5563" />
+                  <span style={{ fontSize: '12px', color: '#6b7280', fontStyle: 'italic' }}>Mesmo endereço do principal (faturamento)</span>
+                </div>
+              ) : (
+                <div style={{ backgroundColor: '#0d0d0d', border: '1px solid #1e1e1e', borderRadius: '8px', padding: '14px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                  {[
+                    { label: 'Rua / Avenida', value: cliente.endereco_entrega.rua },
+                    { label: 'Número', value: cliente.endereco_entrega.numero },
+                    { label: 'Complemento', value: cliente.endereco_entrega.complemento },
+                    { label: 'Bairro', value: cliente.endereco_entrega.bairro },
+                    { label: 'Cidade', value: cliente.endereco_entrega.cidade },
+                    { label: 'Estado', value: cliente.endereco_entrega.estado },
+                    { label: 'CEP', value: cliente.endereco_entrega.cep },
+                  ].map(({ label, value }) => value ? (
+                    <div key={label} style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: '600', color: '#4b5563', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{label}</span>
+                      <span style={{ fontSize: '13px', color: '#d1d5db' }}>{value}</span>
+                    </div>
+                  ) : null)}
+                </div>
+              )}
             </>
           )}
 
@@ -566,7 +606,8 @@ function ClientesContent() {
       c.email.toLowerCase().includes(busca.toLowerCase()) ||
       (c.nome_clinica || '').toLowerCase().includes(busca.toLowerCase());
     const matchTipo = filtroTipo === 'todos' || c.tipo_cliente === filtroTipo;
-    const isIncompleto = c.tipo_cliente === 'dentista_clinica' && !c.ativo && !c.cadastro_completo;
+    // Para dentista: incompleto = !cadastro_completo (independe de ativo)
+    const isIncompleto = c.tipo_cliente === 'dentista_clinica' && !c.cadastro_completo;
     const isPendente = !c.ativo && (c.tipo_cliente === 'radiologia' || c.tipo_cliente === 'cursos');
     const isBloqueado = !c.ativo && c.tipo_cliente === 'dentista_clinica' && c.cadastro_completo;
     const matchStatus = filtroStatus === 'todos' ||
@@ -581,7 +622,7 @@ function ClientesContent() {
     total: clientes.length,
     ativos: clientes.filter(c => c.ativo).length,
     pendentes: clientes.filter(c => !c.ativo && (c.tipo_cliente === 'radiologia' || c.tipo_cliente === 'cursos')).length,
-    incompletos: clientes.filter(c => c.tipo_cliente === 'dentista_clinica' && !c.ativo && !c.cadastro_completo).length,
+    incompletos: clientes.filter(c => c.tipo_cliente === 'dentista_clinica' && !c.cadastro_completo).length,
     bloqueados: clientes.filter(c => !c.ativo && c.tipo_cliente === 'dentista_clinica' && c.cadastro_completo).length,
   };
 

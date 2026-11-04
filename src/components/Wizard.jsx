@@ -2225,12 +2225,14 @@ input,textarea,select{touch-action:manipulation;}
                   endereco:endFat,
                   endereco_entrega:endEnt,
                   cadastro_completo:true,
+                  // Dentistas são ativados automaticamente ao completar o cadastro
+                  ativo:true,
                 };
                 const{error:saveErr}=await sb.from("dcad_clientes").update(updateData).eq("email",dentist.email);
                 if(saveErr){setToast("Erro ao salvar: "+saveErr.message);return;}
               }catch(e){setToast("Erro ao salvar dados.");return;}
               setProfileComplete(true);
-              setDentist(function(d){return d?{...d,cadastro_completo:true}:d;});
+              setDentist(function(d){return d?{...d,cadastro_completo:true,ativo:true}:d;});
               setScreen("dashboard");
             }}>{profileComplete?"Salvar alterações →":"Salvar cadastro e continuar →"}</Btn>
             {dentist&&screen==="profile"&&services.length>0&&(
