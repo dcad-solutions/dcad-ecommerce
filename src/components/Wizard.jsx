@@ -319,18 +319,18 @@ function TutorialRedirect({setScreen}){
 }
 
 export default function App() {
-  const [screen,setScreen]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");return s?"dashboard":"auth";}catch{return "auth";}});
+  const [screen,setScreen]=useState(function(){try{var s=localStorage.getItem("dcad_session");return s?"dashboard":"auth";}catch{return "auth";}});
   const [screenVisible,setScreenVisible]=useState(true);
   const [pendingScreen,setPendingScreen]=useState(null);
   const [authTab,setAuthTab]=useState("login");
   const [forgotPw,setForgotPw]=useState(false);
   const [forgotEmail,setForgotEmail]=useState("");
   const [forgotSent,setForgotSent]=useState(false);
-  const [dentist,setDentist]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");return s?JSON.parse(s):null;}catch{return null;}});
+  const [dentist,setDentist]=useState(function(){try{var s=localStorage.getItem("dcad_session");return s?JSON.parse(s):null;}catch{return null;}});
   const inactivityTimerRef=React.useRef(null);
   const [inactivityWarning,setInactivityWarning]=useState(false);
-  const [profileComplete,setProfileComplete]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");if(s){var d=JSON.parse(s);return!!d.cadastro_completo;}return false;}catch{return false;}});
-  const [profile,setProfile]=useState({docType:"cpf",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
+  const [profileComplete,setProfileComplete]=useState(function(){try{var s=localStorage.getItem("dcad_session");if(s){var d=JSON.parse(s);return!!d.cadastro_completo;}return false;}catch{return false;}});
+  const [profile,setProfile]=useState(function(){try{var s=localStorage.getItem("dcad_profile");if(s)return JSON.parse(s);}catch{}return{docType:"cpf",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""};});
   // Impressoras 3D cadastradas pelo cliente — múltiplas, relacionadas por tipo de serviço
   const [printers,setPrinters]=useState([]); // [{id,apelido,marca,modelo,resina_marca,resina_modelo,camada,exposicao,serviceTypes[]}]
   const [printerModal,setPrinterModal]=useState(null); // null | 'new' | {printer object being edited}
@@ -399,7 +399,7 @@ export default function App() {
   const [editingOriginal,setEditingOriginal]=useState(null); // original service snapshot for cancel
   const [showPass,setShowPass]=useState(false);
   // ── Perfil / avatar ──
-  const [avatarUrl,setAvatarUrl]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");if(s){var d=JSON.parse(s);return d.avatar_url||null;}return null;}catch{return null;}});
+  const [avatarUrl,setAvatarUrl]=useState(function(){try{var s=localStorage.getItem("dcad_session");if(s){var d=JSON.parse(s);return d.avatar_url||null;}return null;}catch{return null;}});
   const [showProfileModal,setShowProfileModal]=useState(false);
   const [profileForm,setProfileForm]=useState({nome:"",croNum:"",croUf:"",especialidade:"",clinica:"",celular:""});
   const [profileSaved,setProfileSaved]=useState(false);
@@ -623,10 +623,12 @@ export default function App() {
     setSpecialty(null);setService(null);setScreen("dashboard");
   }
   function resetAll(){
-    try{sessionStorage.removeItem("dcad_session");}catch{}
+    try{localStorage.removeItem("dcad_session");localStorage.removeItem("dcad_profile");}catch{}
     if(inactivityTimerRef.current)clearTimeout(inactivityTimerRef.current);
     setInactivityWarning(false);
     setDentist(null);setPatient(null);setServices([]);addNew();setScreen("auth");
+    setProfile({docType:"cpf",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
+    setProfileComplete(false);
   }
 
   // ── Inatividade: logout automático após 5min sem interação ──
@@ -644,21 +646,26 @@ export default function App() {
     },INACTIVITY_WARN);
   }
 
-  // Persistir sessão no sessionStorage
+  // Persistir sessão no localStorage
   React.useEffect(function(){
     try{
-      if(dentist){sessionStorage.setItem("dcad_session",JSON.stringify(dentist));}
-      else{sessionStorage.removeItem("dcad_session");}
+      if(dentist){localStorage.setItem("dcad_session",JSON.stringify(dentist));}
+      else{localStorage.removeItem("dcad_session");localStorage.removeItem("dcad_profile");}
     }catch{}
   },[dentist]);
 
-  // Ao restaurar sessão do sessionStorage, buscar dados frescos do banco
+  // Persistir dados de faturamento/entrega no localStorage
+  React.useEffect(function(){
+    try{if(dentist&&(profile.rua||profile.cep||profile.cpf||profile.cnpj))localStorage.setItem("dcad_profile",JSON.stringify(profile));}catch{}
+  },[profile,dentist]);
+
+  // Ao restaurar sessão do localStorage, buscar dados frescos do banco
   const sessionRestoredRef=React.useRef(false);
   React.useEffect(function(){
     if(!dentist||!dentist.email||sessionRestoredRef.current)return;
     sessionRestoredRef.current=true;
-    // Só busca dados frescos se veio do sessionStorage (sem trigger de login)
-    var fromStorage=false;try{var s=sessionStorage.getItem("dcad_session");fromStorage=!!s&&!dentist._freshLoad;}catch{}
+    // Só busca dados frescos se veio do localStorage (sem trigger de login)
+    var fromStorage=false;try{var s=localStorage.getItem("dcad_session");fromStorage=!!s&&!dentist._freshLoad;}catch{}
     if(!fromStorage)return;
     (async function(){
       try{
