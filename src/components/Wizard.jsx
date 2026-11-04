@@ -1111,9 +1111,7 @@ input,textarea,select{touch-action:manipulation;}
                           await sb.from("dcad_clientes").update({avatar_url:publicUrl}).eq("email",dentist.email);
                           setToast("📸 Foto capturada e salva!");
                         } else {
-                          // Fallback: usar dataURL localmente
-                          setAvatarUrl(canvas.toDataURL("image/jpeg",0.85));
-                          setToast("Foto capturada!");
+                          setToast("Erro ao salvar foto: "+upErr.message);
                         }
                         if(webcamStreamRef.current){webcamStreamRef.current.getTracks().forEach(function(t){t.stop();});webcamStreamRef.current=null;}
                         setShowWebcam(false);
@@ -1135,7 +1133,7 @@ input,textarea,select{touch-action:manipulation;}
                       const reader=new FileReader();
                       reader.onload=async ev=>{
                         const dataUrl=ev.target.result;
-                        // Tentar upload Supabase Storage
+                        // Upload Supabase Storage
                         try{
                           const sb=(await import("../lib/supabase")).supabase;
                           const ext=file.name.split(".").pop()||"jpg";
@@ -1145,12 +1143,11 @@ input,textarea,select{touch-action:manipulation;}
                             const {data:{publicUrl}}=sb.storage.from("avatars").getPublicUrl(fileName);
                             setAvatarUrl(publicUrl);
                             await sb.from("dcad_clientes").update({avatar_url:publicUrl}).eq("email",dentist.email);
-                            setToast("📸 Foto atualizada!");
+                            setToast("📸 Foto atualizada e salva!");
                           } else {
-                            setAvatarUrl(dataUrl);
-                            setToast("Foto carregada!");
+                            setToast("Erro ao salvar foto: "+upErr.message);
                           }
-                        }catch{setAvatarUrl(dataUrl);setToast("Foto carregada!");}
+                        }catch(err){setToast("Erro ao salvar foto: "+(err.message||"tente novamente"));}
                       };
                       reader.readAsDataURL(file);
                     }}/>
