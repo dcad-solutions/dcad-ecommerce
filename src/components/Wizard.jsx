@@ -319,14 +319,16 @@ function TutorialRedirect({setScreen}){
 }
 
 export default function App() {
-  const [screen,setScreen]=useState("auth");
+  const [screen,setScreen]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");return s?"dashboard":"auth";}catch{return "auth";}});
   const [screenVisible,setScreenVisible]=useState(true);
   const [pendingScreen,setPendingScreen]=useState(null);
   const [authTab,setAuthTab]=useState("login");
   const [forgotPw,setForgotPw]=useState(false);
   const [forgotEmail,setForgotEmail]=useState("");
   const [forgotSent,setForgotSent]=useState(false);
-  const [dentist,setDentist]=useState(null);
+  const [dentist,setDentist]=useState(function(){try{var s=sessionStorage.getItem("dcad_session");return s?JSON.parse(s):null;}catch{return null;}});
+  const inactivityTimerRef=React.useRef(null);
+  const [inactivityWarning,setInactivityWarning]=useState(false);
   const [profileComplete,setProfileComplete]=useState(false);
   const [profile,setProfile]=useState({docType:"cpf",cpf:"",cnpj:"",razaoSocial:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:"",entregaIgual:true,entRua:"",entNumero:"",entBairro:"",entComplemento:"",entCidade:"",entEstado:"",entCep:""});
   // Impressoras 3D cadastradas pelo cliente — múltiplas, relacionadas por tipo de serviço
@@ -620,8 +622,48 @@ export default function App() {
     setSpecialty(null);setService(null);setScreen("dashboard");
   }
   function resetAll(){
+    try{sessionStorage.removeItem("dcad_session");}catch{}
+    if(inactivityTimerRef.current)clearTimeout(inactivityTimerRef.current);
+    setInactivityWarning(false);
     setDentist(null);setPatient(null);setServices([]);addNew();setScreen("auth");
   }
+
+  // ── Inatividade: logout automático após 5min sem interação ──
+  const INACTIVITY_LIMIT=5*60*1000; // 5 min
+  const INACTIVITY_WARN=4*60*1000;  // aviso 1min antes
+
+  function resetInactivityTimer(){
+    if(inactivityTimerRef.current)clearTimeout(inactivityTimerRef.current);
+    setInactivityWarning(false);
+    inactivityTimerRef.current=setTimeout(function(){
+      setInactivityWarning(true);
+      inactivityTimerRef.current=setTimeout(function(){
+        resetAll();
+      },INACTIVITY_LIMIT-INACTIVITY_WARN);
+    },INACTIVITY_WARN);
+  }
+
+  // Persistir sessão no sessionStorage
+  React.useEffect(function(){
+    try{
+      if(dentist){sessionStorage.setItem("dcad_session",JSON.stringify(dentist));}
+      else{sessionStorage.removeItem("dcad_session");}
+    }catch{}
+  },[dentist]);
+
+  React.useEffect(function(){
+    if(!dentist)return;
+    var events=["mousemove","mousedown","keydown","touchstart","scroll","click"];
+    function onActivity(){resetInactivityTimer();}
+    events.forEach(function(e){window.addEventListener(e,onActivity,{passive:true});});
+    resetInactivityTimer();
+    return function(){
+      events.forEach(function(e){window.removeEventListener(e,onActivity);});
+      if(inactivityTimerRef.current)clearTimeout(inactivityTimerRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[!!dentist]);
+
   function closeProfileModal(){
     if(webcamStreamRef.current){webcamStreamRef.current.getTracks().forEach(function(t){t.stop();});webcamStreamRef.current=null;}
     setShowWebcam(false);
@@ -1256,6 +1298,18 @@ input,textarea,select{touch-action:manipulation;}
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ── AVISO DE INATIVIDADE ── */}
+      {inactivityWarning&&dentist&&(
+        <div style={{position:"fixed",bottom:24,left:"50%",transform:"translateX(-50%)",zIndex:9999,background:"#1a1a1a",border:"1px solid rgba(229,34,41,0.6)",borderRadius:14,padding:"14px 20px",display:"flex",alignItems:"center",gap:14,boxShadow:"0 8px 32px rgba(0,0,0,0.6)",maxWidth:360,width:"calc(100% - 32px)"}}>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#E52229" strokeWidth="2" style={{flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <div style={{flex:1}}>
+            <div style={{color:"#fff",fontSize:13,fontWeight:600}}>Sessão expirando em 1 minuto</div>
+            <div style={{color:"rgba(255,255,255,0.5)",fontSize:12,marginTop:2}}>Clique em qualquer lugar para continuar</div>
+          </div>
+          <button onClick={function(){resetInactivityTimer();}} style={{background:"rgba(229,34,41,0.15)",border:"1px solid rgba(229,34,41,0.4)",color:"#E52229",fontSize:12,fontWeight:700,padding:"6px 12px",borderRadius:8,cursor:"pointer",flexShrink:0}}>Continuar</button>
         </div>
       )}
 
