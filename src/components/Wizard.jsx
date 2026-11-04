@@ -1285,11 +1285,12 @@ input,textarea,select{touch-action:manipulation;}
           <div style={{display:"flex",alignItems:"center",gap:8}}>
             {patient&&<span style={{fontSize:12,color:C.textSec}}>Paciente: <b style={{color:C.text}}>{patient.nome}</b></span>}
             {discount>0&&<span style={{fontSize:12,fontWeight:700,background:"rgba(34,197,94,0.15)",color:C.green,padding:"3px 9px",borderRadius:16}}>15% desconto</span>}
-            <button onClick={()=>{setProfileForm({nome:dentist.nome,cro:dentist.cro||"",especialidade:dentist.especialidade||"",clinica:dentist.clinica||"",celular:dentist.celular||""});setShowProfileModal(true);}} title="Meu Perfil"
-              style={{width:32,height:32,borderRadius:"50%",background:avatarUrl?"transparent":C.dark3,border:`2px solid ${C.red}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red,cursor:"pointer",padding:0,overflow:"hidden",flexShrink:0}}>
-              {avatarUrl?<img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:dentist.nome.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase()}
-            </button>
-            <button onClick={resetAll} style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer"}}>Sair</button>
+            <div style={{width:32,height:32,borderRadius:"50%",background:avatarUrl?"transparent":C.dark3,border:`2px solid ${C.red}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red,padding:0,overflow:"hidden",flexShrink:0}}>
+              {avatarUrl?<img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:dentist.nome.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase()}
+            </div>
+            <button onClick={function(){setProfileForm({nome:dentist.nome,cro:dentist.cro||"",especialidade:dentist.especialidade||"",clinica:dentist.clinica||"",celular:dentist.celular||""});setShowProfileModal(true);}}
+              style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600}}>PERFIL</button>
+            <button onClick={resetAll} style={{background:"rgba(229,34,41,0.1)",border:`1px solid ${C.red}`,color:C.red,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Sair</button>
           </div>
         )}
       </div>)}
