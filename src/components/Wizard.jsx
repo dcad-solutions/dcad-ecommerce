@@ -2215,6 +2215,7 @@ input,textarea,select{touch-action:manipulation;}
                   nome_fantasia:profile.docType==="cnpj"?(profile.razaoSocial||null):null,
                   endereco:endFat,
                   endereco_entrega:endEnt,
+                  cadastro_completo:true,
                 };
                 const{error:saveErr}=await sb.from("dcad_clientes").update(updateData).eq("email",dentist.email);
                 if(saveErr){setToast("Erro ao salvar: "+saveErr.message);return;}
