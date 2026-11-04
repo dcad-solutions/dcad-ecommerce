@@ -2054,12 +2054,14 @@ input,textarea,select{touch-action:manipulation;}
         {screen==="profile"&&(
           <div style={{maxWidth:560,margin:"0 auto",paddingTop:isDesktop?32:8}}>
             <div style={{marginBottom:20}}>
-              <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(234,179,8,0.12)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:16,padding:"4px 12px",marginBottom:12}}>
-                <AlertTriangle size={12} color={C.yellow}/>
-                <span style={{fontSize:13,fontWeight:700,color:"#FCD34D"}}>Cadastro pendente</span>
-              </div>
-              <div style={{fontSize:20,fontWeight:800,marginBottom:4}}>Complete seu cadastro</div>
-              <div style={{fontSize:13,color:C.textSec,lineHeight:1.6}}>Necessário para emissão de nota fiscal e envio dos produtos. Você pode navegar livremente, mas precisará completar antes de finalizar qualquer compra.</div>
+              {!profileComplete&&(
+                <div style={{display:"inline-flex",alignItems:"center",gap:8,background:"rgba(234,179,8,0.12)",border:"1px solid rgba(234,179,8,0.3)",borderRadius:16,padding:"4px 12px",marginBottom:12}}>
+                  <AlertTriangle size={12} color={C.yellow}/>
+                  <span style={{fontSize:13,fontWeight:700,color:"#FCD34D"}}>Cadastro pendente</span>
+                </div>
+              )}
+              <div style={{fontSize:20,fontWeight:800,marginBottom:4}}>{profileComplete?"Editar cadastro":"Complete seu cadastro"}</div>
+              <div style={{fontSize:13,color:C.textSec,lineHeight:1.6}}>{profileComplete?"Seus dados de faturamento e entrega cadastrados. Você pode atualizá-los a qualquer momento.":"Necessário para emissão de nota fiscal e envio dos produtos. Você pode navegar livremente, mas precisará completar antes de finalizar qualquer compra."}</div>
             </div>
 
             {/* CPF / CNPJ */}
@@ -2230,7 +2232,7 @@ input,textarea,select{touch-action:manipulation;}
               setProfileComplete(true);
               setDentist(function(d){return d?{...d,cadastro_completo:true}:d;});
               setScreen("dashboard");
-            }}>Salvar cadastro e continuar →</Btn>
+            }}>{profileComplete?"Salvar alterações →":"Salvar cadastro e continuar →"}</Btn>
             {dentist&&screen==="profile"&&services.length>0&&(
               <button onClick={()=>setScreen("resumo")} style={{width:"100%",marginTop:10,padding:"11px 0",background:"none",border:`1px solid ${C.border}`,borderRadius:12,color:C.textSec,fontSize:13,cursor:"pointer"}}>
                 Salvar e voltar ao pedido
