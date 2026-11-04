@@ -1625,7 +1625,7 @@ input,textarea,select{touch-action:manipulation;}
                 )}
 
                 <button onClick={async()=>{
-                  if(!regForm.nome||!regForm.cro||!regForm.whatsapp||!regForm.email||!regForm.senha){setToast("Preencha todos os campos obrigatórios.");return;}
+                  if(!regForm.nome||!regForm.cro||!regForm.celular||!regForm.email||!regForm.senha){setToast("Preencha todos os campos obrigatórios.");return;}
                   if(regForm.senha!==regForm.confirmaSenha){setToast("As senhas não coincidem.");return;}
                   if(regForm.senha.length<8){setToast("A senha deve ter no mínimo 8 caracteres.");return;}
                   const needsApproval=["clinica","cursos"].includes(regForm.tipo);
@@ -1648,6 +1648,7 @@ input,textarea,select{touch-action:manipulation;}
                     nome:regForm.nome,
                     celular:regForm.celular,
                     tipo_cliente:regForm.tipo,cro:regForm.cro,
+                    especialidade:regForm.especialidade||null,
                     nome_clinica:regForm.clinica||null,
                     cnpj:regForm.cnpj||null,cpf:regForm.cpf||null,
                     razao_social:regForm.razaoSocial||null,
