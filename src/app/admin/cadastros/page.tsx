@@ -128,6 +128,7 @@ interface Cliente {
   cnpj?: string;
   cpf?: string;
   cro?: string;
+  especialidade?: string;
   tipo_pessoa?: string;
   ativo: boolean;
   cadastro_completo: boolean;
@@ -306,10 +307,11 @@ function ModalEditarCliente({ cliente, onClose, onSalvo, onAprovar }: { cliente:
     nome: cliente.nome || '',
     email: cliente.email || '',
     telefone: cliente.telefone || cliente.celular || '',
+    cro: cliente.cro || '',
+    especialidade: cliente.especialidade || '',
     nome_clinica: cliente.nome_clinica || '',
     cnpj: cliente.cnpj || '',
     cpf: cliente.cpf || '',
-    cro: cliente.cro || '',
     tipo_cliente: cliente.tipo_cliente || 'dentista_clinica',
     tipo_pessoa: cliente.tipo_pessoa || 'juridica',
     ativo: String(cliente.ativo),
@@ -335,10 +337,11 @@ function ModalEditarCliente({ cliente, onClose, onSalvo, onAprovar }: { cliente:
       email: form.email.trim().toLowerCase(),
       telefone: form.telefone || null,
       celular: form.telefone || null,
+      cro: form.cro || null,
+      especialidade: form.especialidade || null,
       nome_clinica: form.nome_clinica || null,
       cnpj: form.cnpj?.replace(/\D/g, '') || null,
       cpf: form.cpf?.replace(/\D/g, '') || null,
-      cro: form.cro || null,
       tipo_cliente: form.tipo_cliente,
       tipo_pessoa: form.tipo_pessoa || null,
       ativo: form.ativo === 'true',
@@ -390,9 +393,15 @@ function ModalEditarCliente({ cliente, onClose, onSalvo, onAprovar }: { cliente:
             <input type="tel" value={form.telefone} onChange={e => setForm(f => ({ ...f, telefone: e.target.value }))} placeholder="(98) 99999-9999" style={inputS} />
           </div>
 
-          <div>
-            <label style={labelS}>CRO</label>
-            <input type="text" value={form.cro} onChange={e => setForm(f => ({ ...f, cro: e.target.value }))} placeholder="MA-12345" style={inputS} />
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+            <div>
+              <label style={labelS}>CRO</label>
+              <input type="text" value={form.cro} onChange={e => setForm(f => ({ ...f, cro: e.target.value }))} placeholder="MA-12345" style={inputS} />
+            </div>
+            <div>
+              <label style={labelS}>Especialidade</label>
+              <input type="text" value={form.especialidade} onChange={e => setForm(f => ({ ...f, especialidade: e.target.value }))} placeholder="Ex: Implantodontia" style={inputS} />
+            </div>
           </div>
 
           {/* Seção: Dados da empresa */}
@@ -739,16 +748,17 @@ function ClientesContent() {
                     <span style={{ fontSize: '11px', color: '#374151' }}>
                       {new Date(cliente.criado_em).toLocaleDateString('pt-BR')}
                     </span>
+                    {/* Botão editar integrado ao card */}
+                    <button
+                      onClick={() => setClienteEditando(cliente)}
+                      title="Editar cadastro"
+                      style={{ padding: '3px 8px', backgroundColor: 'transparent', border: '1px solid #2a2a4e', borderRadius: '5px', color: '#818cf8', fontSize: '11px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', lineHeight: 1 }}>
+                      <Pencil size={10} />
+                      Editar
+                    </button>
                   </div>
                 </div>
                 <div className="cad-item-acoes" style={{ flexShrink: 0, display: 'flex', gap: '6px', alignItems: 'center' }}>
-                  {/* Botão editar */}
-                  <button
-                    onClick={() => setClienteEditando(cliente)}
-                    title="Editar cadastro"
-                    style={{ padding: '6px 8px', backgroundColor: '#1a1a2e', border: '1px solid #2a2a4e', borderRadius: '6px', color: '#818cf8', fontSize: '12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Pencil size={12} />
-                  </button>
                   {/* Botão bloquear/liberar */}
                   {cliente.ativo ? (
                     <button onClick={() => alterarStatus(cliente.id, false)} disabled={!!isAtualizando}
