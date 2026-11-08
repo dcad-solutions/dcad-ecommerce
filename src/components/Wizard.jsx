@@ -273,6 +273,13 @@ const IMPLANT_TABLE={
     {model:"MAESTRO CM AR Ø 3.5 / Ø 4.0",kit:"IMPLAGUIDE"},
     {model:"DUE CONE CM AR Ø 3.5 / Ø 4.0",kit:"IMPLAGUIDE"},
   ],
+  "CONEXÃO":[
+    {model:"SLIM Ø 2.9 (Narrow)",kit:"EXPERTGUIDE"},
+    {model:"FLASH Ø 3.3 / Ø 3.5 (Narrow)",kit:"EXPERTGUIDE"},
+    {model:"TORQ Ø 3.75 / Ø 4.0 (Regular)",kit:"EXPERTGUIDE"},
+    {model:"EASY GRIP Ø 3.75 / Ø 4.0 / Ø 4.3 (Regular)",kit:"EXPERTGUIDE"},
+    {model:"SHORT NP BL/TL Ø 3.75 / Ø 4.0 (Regular)",kit:"EXPERTGUIDE"},
+  ],
 };
 const BRANDS=Object.keys(IMPLANT_TABLE);
 const P={preplan:150,unit:388.98,strauAdd:110,provCaptura:100,provAdesiva:120,cicatriz:80,slicedFile:50,dsd3dProto:700}; // dsd3dProto = placeholder
