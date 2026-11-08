@@ -242,6 +242,8 @@ export default function PerfilPage() {
         endereco: enderecoPrincipal,
         endereco_entrega: enderecoEntrega,
         cadastro_completo: true,
+        // Dentista é ativado automaticamente ao completar o cadastro
+        ativo: true,
       };
 
       const { error: errUpdate } = await sb
