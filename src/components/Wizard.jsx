@@ -4200,7 +4200,7 @@ input,textarea,select{touch-action:manipulation;}
             ))}
             </div>{/* end stack */}
             {/* Cupom de desconto — antes do total */}
-            <CouponBlock totalAll={totalAllBase} onApply={v=>setCouponDiscount(v)}/>
+            <CouponBlock totalAll={totalAllBase} services={services} onApply={v=>setCouponDiscount(v)}/>
 
             {/* Total do pedido — com breakdown quando cupom aplicado */}
             <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.2)",borderRadius:12,padding:16,marginBottom:16}}>
@@ -4332,44 +4332,73 @@ function Odontogram({selected,onToggle}){
   );
 }
 
-const VALID_COUPONS={
-  "DCAD10":{type:"percent",value:10,label:"10% de desconto"},
-  "DCAD20":{type:"percent",value:20,label:"20% de desconto"},
-  "BEMVINDO":{type:"fixed",value:50,label:"R$ 50,00 de desconto"},
-  "IMPLANTE50":{type:"fixed",value:50,label:"R$ 50,00 em implantodontia"},
-};
+// ── Bloco de cupom (valida contra Supabase) ───────────────────────────────────
+// Lógica de desconto:
+//   1. Se o cupom tem servicos_ids ou especialidades definidos →
+//      aplica desconto somente nos itens do carrinho que pertençam a esses
+//      serviços/especialidades.
+//   2. Se o cupom não tem restrição → aplica ao totalAll inteiro.
+// O componente recebe `services` (array de itens do carrinho) além de `totalAll`.
 
-function CouponBlock({totalAll,onApply}){
+function CouponBlock({totalAll,services,onApply}){
+  const sb=supabaseBrowser();
   const [code,setCode]=useState("");
   const [applied,setApplied]=useState(null);
   const [error,setError]=useState("");
   const [loading,setLoading]=useState(false);
 
-  function handleApply(){
+  const fmt2=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+  async function handleApply(){
     const trimmed=code.trim().toUpperCase();
-    if(!trimmed){setError("Digite um cupom.");return;}
-    setLoading(true);
-    setTimeout(()=>{
-      const coupon=VALID_COUPONS[trimmed];
-      if(!coupon){setError("Cupom inválido ou expirado.");setLoading(false);return;}
-      const discount=coupon.type==="percent"
-        ?parseFloat((totalAll*(coupon.value/100)).toFixed(2))
-        :Math.min(coupon.value,totalAll);
-      setApplied({...coupon,code:trimmed,discount});
+    if(!trimmed){setError("Digite o código do cupom.");return;}
+    setLoading(true);setError("");
+    try{
+      const{data:cupom,error:err}=await sb.from("cupons")
+        .select("*")
+        .eq("codigo",trimmed)
+        .eq("ativo",true)
+        .maybeSingle();
+      if(err||!cupom){setError("Cupom inválido ou não encontrado.");setLoading(false);return;}
+      // Verificar validade
+      if(cupom.validade&&new Date(cupom.validade+"T23:59:59")<new Date()){
+        setError("Este cupom expirou.");setLoading(false);return;
+      }
+      // Verificar limite de usos
+      if(cupom.usos_max!=null&&cupom.usos_atual>=cupom.usos_max){
+        setError("Este cupom atingiu o limite de usos.");setLoading(false);return;
+      }
+      // Calcular base do desconto (restrito ou total)
+      const temRestricao=(cupom.servicos_ids?.length>0)||(cupom.especialidades?.length>0);
+      let base=totalAll;
+      if(temRestricao){
+        base=0;
+        for(const sv of (services||[])){
+          const matchEsp=cupom.especialidades?.length>0&&cupom.especialidades.includes(sv.specialty);
+          const matchSvc=cupom.servicos_ids?.length>0&&cupom.servicos_ids.includes(sv.serviceId||sv.id);
+          if(matchEsp||matchSvc) base+=sv.total||0;
+        }
+        if(base===0){
+          setError("Este cupom não se aplica aos serviços no carrinho.");setLoading(false);return;
+        }
+      }
+      const discount=cupom.tipo==="percentual"
+        ?parseFloat((base*(cupom.valor/100)).toFixed(2))
+        :Math.min(cupom.valor,base);
+      const label=cupom.tipo==="percentual"
+        ?`${cupom.valor}% de desconto${temRestricao?" (serviços selecionados)":""}`
+        :`${fmt2(cupom.valor)} de desconto${temRestricao?" (serviços selecionados)":""}`;
+      setApplied({code:trimmed,label,discount,temRestricao,base});
       onApply(discount);
-      setError("");
-      setLoading(false);
-    },600);
+    }catch(e){
+      setError("Erro ao validar cupom. Tente novamente.");
+    }
+    setLoading(false);
   }
 
   function handleRemove(){
-    setApplied(null);
-    setCode("");
-    setError("");
-    onApply(0);
+    setApplied(null);setCode("");setError("");onApply(0);
   }
-
-  const fmt2=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
   return(
     <div style={{background:C.dark2,border:`1px solid ${applied?"rgba(34,197,94,0.3)":C.border}`,borderRadius:12,padding:"14px 16px",marginBottom:14,transition:"border-color .2s"}}>
