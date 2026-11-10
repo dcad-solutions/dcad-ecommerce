@@ -8,6 +8,7 @@ import {
   RefreshCw, MessageCircle
 } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import ConsentimentoWhatsapp from '@/components/ConsentimentoWhatsapp';
 
 interface Endereco {
   rua: string;
@@ -86,7 +87,6 @@ export default function PerfilPage() {
   const [cadastroCompleto, setCadastroCompleto] = useState(false);
   const [buscandoCep, setBuscandoCep] = useState(false);
   const [buscandoCepEntrega, setBuscandoCepEntrega] = useState(false);
-  const [lgpdModal, setLgpdModal] = useState(false);
 
   const [form, setForm] = useState<FormData>({
     nome: '',
@@ -242,8 +242,6 @@ export default function PerfilPage() {
         endereco: enderecoPrincipal,
         endereco_entrega: enderecoEntrega,
         cadastro_completo: true,
-        // Dentista é ativado automaticamente ao completar o cadastro
-        ativo: true,
       };
 
       const { error: errUpdate } = await sb
@@ -435,48 +433,6 @@ export default function PerfilPage() {
       color: '#aaa',
       pointerEvents: 'none' as const,
     },
-    // Modal LGPD
-    overlay: {
-      position: 'fixed' as const,
-      inset: 0,
-      background: 'rgba(0,0,0,0.5)',
-      zIndex: 1000,
-      display: 'flex',
-      alignItems: 'flex-end',
-      justifyContent: 'center',
-    },
-    modalBox: {
-      background: '#fff',
-      borderRadius: '16px 16px 0 0',
-      padding: '24px 20px',
-      maxWidth: '480px',
-      width: '100%',
-      maxHeight: '80vh',
-      overflowY: 'auto' as const,
-    },
-    modalTitle: {
-      fontSize: '16px',
-      fontWeight: '700',
-      color: '#1A1A1A',
-      marginBottom: '12px',
-    },
-    modalText: {
-      fontSize: '13px',
-      color: '#555',
-      lineHeight: '1.6',
-      marginBottom: '20px',
-    },
-    modalBtn: {
-      width: '100%',
-      padding: '12px',
-      backgroundColor: '#E52229',
-      border: 'none',
-      borderRadius: '8px',
-      color: '#fff',
-      fontSize: '14px',
-      fontWeight: '600',
-      cursor: 'pointer',
-    },
   };
 
   if (carregando) {
@@ -614,13 +570,7 @@ export default function PerfilPage() {
                 <input
                   type="checkbox"
                   checked={form.tem_whatsapp}
-                  onChange={e => {
-                    if (e.target.checked) {
-                      setLgpdModal(true);
-                    } else {
-                      set('tem_whatsapp', false);
-                    }
-                  }}
+                  onChange={e => set('tem_whatsapp', e.target.checked)}
                   style={{ accentColor: '#E52229', width: '16px', height: '16px', cursor: 'pointer', flexShrink: 0 }}
                 />
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
@@ -628,6 +578,9 @@ export default function PerfilPage() {
                   <span>Este número tem WhatsApp</span>
                 </div>
               </label>
+
+              {/* O aceite das comunicações é separado do "tem WhatsApp" e grava na hora (com data, IP e termo) */}
+              <ConsentimentoWhatsapp tema="claro" />
 
               <div style={s.group}>
                 <label style={s.label}>Como nos conheceu<span style={s.optional}>(opcional)</span></label>
@@ -840,40 +793,6 @@ export default function PerfilPage() {
 
         </form>
       </div>
-
-      {/* Modal LGPD WhatsApp */}
-      {lgpdModal && (
-        <div style={s.overlay} onClick={() => setLgpdModal(false)}>
-          <div style={s.modalBox} onClick={e => e.stopPropagation()}>
-            <div style={s.modalTitle}>Consentimento para contato via WhatsApp</div>
-            <div style={s.modalText}>
-              Ao marcar esta opção, o <strong>titular dos dados pessoais</strong> (número de celular
-              informado) autoriza a <strong>D-CAD</strong> a enviar mensagens via WhatsApp
-              relacionadas ao atendimento, atualizações de pedidos e comunicações do serviço,
-              conforme a <strong>Lei Geral de Proteção de Dados (LGPD – Lei nº 13.709/2018)</strong>.
-              <br /><br />
-              Você pode revogar este consentimento a qualquer momento acessando seus dados cadastrais.
-            </div>
-            <div style={{ display: 'flex', gap: '10px' }}>
-              <button
-                style={{ ...s.modalBtn, backgroundColor: '#f0f0f0', color: '#555' }}
-                onClick={() => setLgpdModal(false)}
-              >
-                Cancelar
-              </button>
-              <button
-                style={s.modalBtn}
-                onClick={() => {
-                  set('tem_whatsapp', true);
-                  setLgpdModal(false);
-                }}
-              >
-                Autorizar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }

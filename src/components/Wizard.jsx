@@ -2,6 +2,8 @@ import React, { useState, useMemo, useEffect, useRef } from "react";
 import { Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
 import { fetchCatalog } from "@/lib/catalog";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import ConsentimentoWhatsapp from "@/components/ConsentimentoWhatsapp";
+import { TERMO_WHATSAPP_VERSAO } from "@/lib/termo-whatsapp";
 
 // ── Catálogo local (fallback) ─────────────────────────────────────────────────
 // Usado quando o Supabase não está disponível ou o usuário não está autenticado.
@@ -1064,7 +1066,7 @@ input,textarea,select{touch-action:manipulation;}
 
               {/* Termo LGPD colapsado */}
               <div style={{background:"rgba(255,255,255,0.02)",border:`1px solid ${C.border}`,borderRadius:10,padding:"12px 14px",marginBottom:12,fontSize:11,color:C.textSec,lineHeight:1.7}}>
-                <div style={{fontWeight:700,color:C.text,marginBottom:6,fontSize:11,letterSpacing:.5}}>TERMO DE AUTORIZAÇÃO — LGPD (v1.0)</div>
+                <div style={{fontWeight:700,color:C.text,marginBottom:6,fontSize:11,letterSpacing:.5}}>TERMO DE AUTORIZAÇÃO — LGPD ({TERMO_WHATSAPP_VERSAO})</div>
                 <p style={{margin:"0 0 6px"}}><b style={{color:C.text}}>Controladora:</b> D-CAD Dental Digital Solutions — São Luís/MA — dcadsolutions@gmail.com</p>
                 <p style={{margin:"0 0 6px"}}><b style={{color:C.text}}>Base legal:</b> consentimento livre, informado e inequívoco (LGPD Art. 7º I e Art. 8º; CDC Art. 6º III; Marco Civil da Internet Lei 12.965/2014).</p>
                 <p style={{margin:"0 0 6px"}}><b style={{color:C.text}}>Dados utilizados:</b> número de celular — exclusivamente para as comunicações descritas acima, por plataformas operadas pela D-CAD. Não compartilhado com terceiros.</p>
@@ -1111,7 +1113,7 @@ input,textarea,select{touch-action:manipulation;}
               </div>
 
               <div style={{fontSize:12,color:C.textSec,textAlign:"center",marginBottom:16,lineHeight:1.6,padding:"0 4px"}}>
-                Você pode alterar essa preferência a qualquer momento entrando em contato com a D-CAD.
+                Você pode alterar essa preferência a qualquer momento no seu perfil.
               </div>
 
               {/* Botões */}
@@ -1262,7 +1264,7 @@ input,textarea,select{touch-action:manipulation;}
                   {avatarUrl&&<button onClick={async()=>{
                     setAvatarUrl(null);
                     setDentist(function(d){return{...d,avatar_url:""};});
-                    try{const sb=(await import("../lib/supabase")).supabase;await sb.from("dcad_clientes").update({avatar_url:null}).eq("email",dentist.email);}catch{}
+                    try{const sb=supabaseBrowser();await sb.from("dcad_clientes").update({avatar_url:null}).eq("email",dentist.email);}catch{}
                     setToast("Foto removida.");
                   }} style={{background:"none",border:`1px solid rgba(229,34,41,0.3)`,color:C.red,padding:"7px 14px",borderRadius:10,fontSize:12,cursor:"pointer"}}>Remover</button>}
                 </div>
@@ -1353,6 +1355,9 @@ input,textarea,select{touch-action:manipulation;}
                 style={{width:"100%",marginTop:8,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"10px",borderRadius:10,cursor:"pointer"}}>
                 Dados de faturamento e entrega →
               </button>
+
+              {/* Aceite das comunicações pelo WhatsApp (grava na hora, pelo servidor) */}
+              <ConsentimentoWhatsapp tema="escuro"/>
             </div>
           </div>
         </div>
@@ -1695,12 +1700,14 @@ input,textarea,select{touch-action:manipulation;}
                   // Buscar dados do cliente no banco
                   const {data:cliente}=await sb.from("dcad_clientes").select("*").eq("email",data.user.email).maybeSingle();
                   if(cliente){
-                    const needsAdminApproval=["clinica","cursos"].includes(cliente.tipo_cliente);
+                    // tipo do banco → tipo do formulário (o desconto e os textos usam "clinica"/"dentista")
+                    const tipoForm={radiologia:"clinica",dentista_clinica:"dentista"}[cliente.tipo_cliente]||cliente.tipo_cliente||"dentista";
+                    const needsAdminApproval=["radiologia","clinica","cursos"].includes(cliente.tipo_cliente);
                     if(needsAdminApproval&&!cliente.ativo){
-                      setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente,accountStatus:"pending",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
+                      setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:tipoForm,accountStatus:"pending",especialidade:cliente.especialidade||"",celular:cliente.celular||""});
                       setScreen("pending");return;
                     }
-                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:cliente.tipo_cliente||"dentista",accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",cadastro_completo:!!cliente.cadastro_completo,_freshLoad:true});
+                    setDentist({nome:cliente.nome,cro:cliente.cro||"",clinica:cliente.nome_clinica||"",email:cliente.email,whatsapp:cliente.telefone||"",accountType:tipoForm,accountStatus:"active",especialidade:cliente.especialidade||"",celular:cliente.celular||"",avatar_url:cliente.avatar_url||"",cadastro_completo:!!cliente.cadastro_completo,_freshLoad:true});
                     setProfileComplete(!!cliente.cadastro_completo);
                     if(cliente.avatar_url)setAvatarUrl(cliente.avatar_url);
                     var croPartes2=(cliente.cro||"").split("-");var croUf2=croPartes2.length>1?croPartes2[0]:"";var croNum2=croPartes2.length>1?croPartes2.slice(1).join("-"):croPartes2[0];setProfileForm({nome:cliente.nome,croNum:croNum2,croUf:croUf2,especialidade:cliente.especialidade||"",clinica:cliente.nome_clinica||"",celular:cliente.celular||""});
@@ -1971,28 +1978,23 @@ input,textarea,select{touch-action:manipulation;}
                   const sb=supabaseBrowser();
                   const {data,error}=await sb.auth.signUp({email:regForm.email.trim().toLowerCase(),password:regForm.senha});
                   if(error){setAuthBusy(false);setAuthError(error.message.includes("already registered")?"Este e-mail já está cadastrado. Faça login.":error.message);return;}
-                  // Inserir dados complementares na tabela dcad_clientes
+                  // Grava o cadastro (e o aceite do WhatsApp, com data, IP e versão do termo) no servidor:
+                  // antes de confirmar o e-mail o navegador não tem sessão para gravar em dcad_clientes
                   const enderecoObj={rua:regForm.rua,numero:regForm.numero,bairro:regForm.bairro,complemento:regForm.complemento||"",cidade:regForm.cidade,estado:regForm.estado,cep:regForm.cep};
-                  const endEntrega=regForm.entregaIgual?enderecoObj:{rua:regForm.entRua,numero:regForm.entNumero,bairro:regForm.entBairro,complemento:regForm.entComplemento||"",cidade:regForm.entCidade,estado:regForm.entEstado,cep:regForm.entCep};
-                  await sb.from("dcad_clientes").upsert({
-                    email:regForm.email.trim().toLowerCase(),
-                    nome:regForm.nome,
-                    celular:regForm.celular,
-                    tipo_cliente:regForm.tipo,cro:regForm.cro,
-                    especialidade:regForm.especialidade||null,
-                    nome_clinica:regForm.clinica||null,
-                    cnpj:regForm.cnpj||null,cpf:regForm.cpf||null,
-                    nome_fantasia:regForm.razaoSocial||null,
-                    tipo_pessoa:regForm.docType==="cnpj"?"juridica":"fisica",
-                    endereco:enderecoObj,
-                    endereco_entrega:endEntrega,
-                    cadastro_completo:needsApproval,
-                    ativo:!needsApproval,
-                    tem_whatsapp:regForm.temWhatsapp,
-                    aceita_whatsapp:regForm.aceitaWhatsapp,
-                    aceita_whatsapp_em:regForm.aceitaWhatsapp?new Date().toISOString():null,
-                    aceita_whatsapp_versao:regForm.aceitaWhatsapp?"v1.0":null,
-                  },{onConflict:"email"});
+                  const endEntrega={rua:regForm.entRua,numero:regForm.entNumero,bairro:regForm.entBairro,complemento:regForm.entComplemento||"",cidade:regForm.entCidade,estado:regForm.entEstado,cep:regForm.entCep};
+                  let cad;
+                  try{
+                    const r=await fetch("/api/cadastro",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
+                      userId:data?.user?.id,email:regForm.email.trim().toLowerCase(),nome:regForm.nome,celular:regForm.celular,
+                      tipo:regForm.tipo,cro:regForm.cro,especialidade:regForm.especialidade,clinica:regForm.clinica,
+                      docType:regForm.docType,cnpj:regForm.cnpj,cpf:regForm.cpf,razaoSocial:regForm.razaoSocial,
+                      endereco:enderecoObj,entregaIgual:regForm.entregaIgual,enderecoEntrega:endEntrega,
+                      temWhatsapp:regForm.temWhatsapp,aceitaWhatsapp:regForm.aceitaWhatsapp,
+                    })});
+                    cad=await r.json().catch(()=>({error:"Não foi possível salvar o cadastro. Tente novamente."}));
+                    if(!r.ok&&!cad.error)cad.error="Não foi possível salvar o cadastro. Tente novamente.";
+                  }catch(e){cad={error:"Sem conexão. Verifique a internet e tente novamente."};}
+                  if(cad.error){setAuthBusy(false);setAuthError(cad.error);return;}
                   setAuthBusy(false);
                   setDentist({nome:regForm.nome,cro:regForm.cro,clinica:regForm.clinica,email:regForm.email,accountType:regForm.tipo,accountStatus:needsApproval?"pending":"active"});
                   if(needsApproval){
@@ -2232,8 +2234,6 @@ input,textarea,select{touch-action:manipulation;}
                   endereco:endFat,
                   endereco_entrega:endEnt,
                   cadastro_completo:true,
-                  // Dentistas são ativados automaticamente ao completar o cadastro
-                  ativo:true,
                 };
                 const{error:saveErr}=await sb.from("dcad_clientes").update(updateData).eq("email",dentist.email);
                 if(saveErr){setToast("Erro ao salvar: "+saveErr.message);return;}
