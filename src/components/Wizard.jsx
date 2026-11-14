@@ -355,12 +355,7 @@ export default function App() {
   const [cepTouched,setCepTouched]=useState({});
   const [isDesktop,setIsDesktop]=useState(false);
   const [isTablet,setIsTablet]=useState(false); // 640-1023px
-  const [savedPatients,setSavedPatients]=useState([
-    {id:"p1",nome:"Maria das Graças Almeida",nasc:"14/03/1984"},
-    {id:"p2",nome:"José Carlos Alves",nasc:"02/07/1968"},
-    {id:"p3",nome:"Ana Paula Costa",nasc:"21/11/1991"},
-    {id:"p4",nome:"Roberto Ferreira Silva",nasc:"09/05/1965"},
-  ]);
+  const [savedPatients,setSavedPatients]=useState([]); // pacientes cadastrados nesta sessão
   const [specialty,setSpecialty]=useState(null);
   const [serviceType,setServiceType]=useState(null);  // 'print' | 'planOnly'
   const [selectedGroup,setSelectedGroup]=useState(null); // grupo selecionado no protocolo
