@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
+import { AlertCircle, Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
 import { fetchCatalog } from "@/lib/catalog";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import ConsentimentoWhatsapp from "@/components/ConsentimentoWhatsapp";
@@ -417,11 +417,20 @@ export default function App() {
   const webcamVideoRef=React.useRef(null);
   const webcamStreamRef=React.useRef(null);
   const [lastConfig,setLastConfig]=useState({}); // {[specialtyId]: {brand,kit,model}} // {service, timer} // carts awaiting payment
-  const [mockOrders]=useState([
-    {id:"001",patient:"Maria das Graças",service:"Cirurgia Guiada Unitária",specialty:"Implantodontia",total:388.98,status:"planning",date:"20/06/2026",filesSubmitted:false},
-    {id:"002",patient:"José Alves",service:"DSD 3D — até 6 dentes",specialty:"Estética Dental",total:466.27,status:"shipped",date:"18/06/2026",filesSubmitted:true},
-    {id:"003",patient:"Ana Costa",service:"Placa Oclusal Impressa",specialty:"DTM",total:360.37,status:"pending_payment",date:"24/06/2026",filesSubmitted:false},
-  ]);
+  // Pedidos reais do cliente (tabela orders — o banco só devolve os do próprio dentista)
+  const [realOrders,setRealOrders]=useState([]);
+  useEffect(()=>{
+    if(!dentist||screen!=="dashboard")return;
+    let cancelled=false;
+    (async()=>{
+      try{
+        const sb=supabaseBrowser();
+        const{data,error}=await sb.from("orders").select("id,service_name,specialty,total,discount,freight_value,os_status,created_at").order("created_at",{ascending:false});
+        if(!cancelled&&!error&&data)setRealOrders(data);
+      }catch{}
+    })();
+    return()=>{cancelled=true;};
+  },[dentist?.email,screen]);
   const set=(k,v)=>setA(a=>({...a,[k]:v}));
 
   // ── Catálogo dinâmico (Supabase) com fallback para CATALOG estático ─────
@@ -2045,14 +2054,6 @@ input,textarea,select{touch-action:manipulation;}
               <b style={{color:C.text}}>WhatsApp: (98) 98542-5982</b>
             </div>
 
-            {/* Demo only: simulate approval */}
-            <div style={{background:"rgba(234,179,8,0.06)",border:"1px solid rgba(234,179,8,0.2)",borderRadius:12,padding:14,marginBottom:12}}>
-              <div style={{fontSize:12,fontWeight:700,color:C.yellow,letterSpacing:1,marginBottom:8}}>MODO DE DEMONSTRAÇÃO</div>
-              <button onClick={()=>{setDentist(d=>({...d,accountStatus:"active"}));setScreen("dashboard");}}
-                style={{width:"100%",padding:"10px 0",background:"rgba(34,197,94,0.12)",border:"1px solid rgba(34,197,94,0.3)",borderRadius:8,color:C.green,fontWeight:700,fontSize:13,cursor:"pointer"}}>
-                ✓ Simular aprovação pelo admin D-CAD
-              </button>
-            </div>
             <button onClick={resetAll} style={{background:"none",border:"none",color:C.textSec,fontSize:12,cursor:"pointer",textDecoration:"underline"}}>Voltar ao início</button>
           </div>
         )}
@@ -2349,9 +2350,9 @@ input,textarea,select{touch-action:manipulation;}
             {/* Stats */}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:24}}>
               {[
-                {label:"Total de pedidos",value:mockOrders.length,color:C.textSec},
-                {label:"Em andamento",value:mockOrders.filter(o=>o.status==="planning"||o.status==="printing").length,color:C.yellow},
-                {label:"Entregues",value:mockOrders.filter(o=>o.status==="shipped"||o.status==="delivered").length,color:C.green},
+                {label:"Total de pedidos",value:realOrders.length,color:C.textSec},
+                {label:"Em andamento",value:realOrders.filter(o=>o.os_status!=="entregue").length,color:C.yellow},
+                {label:"Entregues",value:realOrders.filter(o=>o.os_status==="entregue").length,color:C.green},
               ].map((s,i)=>(
                 <div key={i} style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}>
                   <div style={{fontSize:26,fontWeight:900,color:s.color}}>{s.value}</div>
@@ -2485,7 +2486,7 @@ input,textarea,select{touch-action:manipulation;}
             {/* Pedidos recentes */}
             <div>
               <div style={{fontSize:13,fontWeight:700,color:C.textSec,letterSpacing:1,marginBottom:10}}>PEDIDOS RECENTES</div>
-              {mockOrders.length===0&&services.length===0?(
+              {realOrders.length===0&&services.length===0?(
                 <div style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"32px 20px",textAlign:"center"}}>
                   <div style={{fontSize:32,marginBottom:10}}><ClipboardList size={16}/></div>
                   <div style={{fontWeight:700,fontSize:15,marginBottom:6}}>Nenhum pedido ainda</div>
@@ -2509,64 +2510,34 @@ input,textarea,select{touch-action:manipulation;}
                       </div>
                     </div>
                   ))}
-                  {/* Mock de pedidos anteriores */}
-                  {mockOrders.slice(0, Math.max(0, 8-services.length)).map(o=>{
+                  {/* Pedidos reais já registrados */}
+                  {realOrders.slice(0, Math.max(0, 8-services.length)).map(o=>{
                     const STATUS={
-                      pending_payment:{label:"Aguard. pagamento",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
-                      planning:{label:"Em planejamento",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
-                      printing:{label:"Em impressão",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
-                      shipped:{label:"Enviado",color:C.green,bg:"rgba(34,197,94,0.1)"},
-                      delivered:{label:"Entregue",color:C.green,bg:"rgba(34,197,94,0.1)"},
+                      novo:{label:"Recebido",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
+                      ag_arquivos:{label:"Aguard. arquivos",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
+                      planejamento:{label:"Em planejamento",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
+                      aprovacao:{label:"Em aprovação",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
+                      impressao:{label:"Em impressão",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
+                      enviado:{label:"Enviado",color:C.green,bg:"rgba(34,197,94,0.1)"},
+                      entregue:{label:"Entregue",color:C.green,bg:"rgba(34,197,94,0.1)"},
                     };
-                    const s=STATUS[o.status]||STATUS.planning;
+                    const s=STATUS[o.os_status]||STATUS.novo;
+                    const valor=(Number(o.total)||0)-(Number(o.discount)||0)+(Number(o.freight_value)||0);
+                    const data=o.created_at?new Date(o.created_at).toLocaleDateString("pt-BR"):"";
                     return(
-                      <div key={o.id} style={{background:C.dark2,border:`1px solid ${o.status==="pending_payment"?"rgba(234,179,8,0.3)":C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8}}>
+                      <a key={o.id} href="/pedidos" style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8,textDecoration:"none",color:C.text}}>
                         <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
                           <div style={{width:44,height:44,borderRadius:8,background:"rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><ClipboardList size={14}/></div>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontWeight:700,fontSize:12,lineHeight:1.3,marginBottom:2}}>{o.service}</div>
-                            <div style={{fontSize:12,color:C.textSec}}>{o.patient} · {o.date}</div>
+                            <div style={{fontWeight:700,fontSize:12,lineHeight:1.3,marginBottom:2}}>{o.service_name}</div>
+                            <div style={{fontSize:12,color:C.textSec}}>{[o.specialty,data].filter(Boolean).join(" · ")}</div>
                           </div>
                         </div>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
-                          <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontSize:11,background:s.bg,color:s.color,padding:"2px 7px",borderRadius:16,fontWeight:700,whiteSpace:"nowrap",display:"inline-block",marginBottom:4}}>{s.label}</div>
-                            {(o.status==="planning"||o.status==="printing")&&(
-                              <div style={{display:"flex",gap:3,alignItems:"center"}}>
-                                {["Recebido","Planejamento","Impressão","Enviado"].map((step,si)=>{
-                                  const stepIdx={planning:1,printing:2}[o.status]||0;
-                                  const done=si<=stepIdx;
-                                  return(
-                                    <React.Fragment key={si}>
-                                      <div style={{width:6,height:6,borderRadius:"50%",background:done?s.color:"rgba(255,255,255,0.12)",flexShrink:0}}/>
-                                      {si<3&&<div style={{flex:1,height:2,background:done&&si<stepIdx?s.color:"rgba(255,255,255,0.08)",borderRadius:1}}/>}
-                                    </React.Fragment>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                          <div style={{fontWeight:800,fontSize:13,color:C.text,flexShrink:0}}>{fmt(o.total)}</div>
+                          <div style={{fontSize:11,background:s.bg,color:s.color,padding:"2px 7px",borderRadius:16,fontWeight:700,whiteSpace:"nowrap"}}>{s.label}</div>
+                          <div style={{fontWeight:800,fontSize:13,color:C.text,flexShrink:0}}>{fmt(valor)}</div>
                         </div>
-                        {o.status==="pending_payment"&&(
-                          <button onClick={()=>{
-                            const pat=savedPatients.find(p=>p.nome===o.patient)||{id:"mock-"+o.id,nome:o.patient,nasc:""};
-                            setPatient(pat);
-                            setServices([{id:o.id,name:o.service,specialty:o.specialty,teeth:[],brand:"",kit:"",model:"",comps:{},observacoes:"",serviceType:"print",total:o.total}]);
-                            setFreight({method:"none",value:0,prazo:"",loading:false,simulated:false});
-                            setCouponDiscount(0);
-                            setScreen("resumo");
-                          }} style={{background:C.yellow,border:"none",borderRadius:8,padding:"5px 0",color:"#111",fontSize:12,fontWeight:800,cursor:"pointer",width:"100%"}}>
-                            Finalizar pagamento →
-                          </button>
-                        )}
-                        {o.status!=="pending_payment"&&o.filesSubmitted===false&&(
-                          <a href={process.env.NEXT_PUBLIC_CLICKUP_FORM_URL||"#"} target="_blank" rel="noopener noreferrer"
-                            style={{background:"rgba(229,34,41,0.12)",border:"1px solid rgba(229,34,41,0.25)",borderRadius:8,padding:"5px 0",color:C.textSec,fontSize:12,fontWeight:700,textDecoration:"none",display:"block",textAlign:"center",width:"100%"}}>
-                            <FolderOpen size={12} style={{display:"inline",marginRight:4}}/> Enviar exames →
-                          </a>
-                        )}
-                      </div>
+                      </a>
                     );
                   })}
                 </div>
@@ -4444,6 +4415,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
   const [method,setMethod]=useState(null);
   const [loading,setLoading]=useState(false);
   const [success,setSuccess]=useState(null);
+  const [payError,setPayError]=useState(null);
   const [responsavel,setResponsavel]=useState(null); // 'dentista' | 'paciente'
   const [showNFDisclaimer,setShowNFDisclaimer]=useState(false);
   const [nfConfirmed,setNfConfirmed]=useState(false);
@@ -4480,6 +4452,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
     if(!method){return;}
     if(!responsavel){return;}
     setLoading(true);
+    setPayError(null);
     try{
       const orderId=crypto.randomUUID();
       const payload={
@@ -4500,6 +4473,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(payload),
       });
+      if(!res.ok)throw new Error("Falha ao iniciar o pagamento (HTTP "+res.status+")");
       const data=await res.json();
       console.log("Resposta da API:", data);
       if(data.checkout_url){
@@ -4512,10 +4486,10 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
         throw new Error(data.error||"Sem URL de pagamento");
       }
     }catch(err){
+      // Nunca mostrar tela de sucesso/pendente se o checkout não foi criado
       console.error("Erro no pagamento:",err);
       setLoading(false);
-      const M=METHODS.find(m=>m.id===method);
-      setSuccess(M);
+      setPayError("Não foi possível iniciar o pagamento. Nenhuma cobrança foi feita. Tente novamente em instantes ou fale com a equipe D-CAD pelo WhatsApp (98) 98542-5982.");
     }
   }
 
@@ -4673,6 +4647,12 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
               </div>
             </button>
           ))}
+          {payError&&(
+            <div role="alert" style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.35)",borderRadius:12,padding:"12px 14px",marginBottom:8,fontSize:13,lineHeight:1.5,color:C.text}}>
+              <AlertCircle size={16} color={C.red} style={{flexShrink:0,marginTop:2}}/>
+              <span>{payError}</span>
+            </div>
+          )}
           {method&&(
             <button onClick={handlePay} disabled={loading}
               style={{width:"100%",marginTop:4,padding:"13px 20px",
