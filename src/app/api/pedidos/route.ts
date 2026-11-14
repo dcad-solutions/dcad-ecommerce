@@ -178,6 +178,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não foi possível registrar o pedido. Tente novamente.' }, { status: 500 });
   }
 
+  // Carrinho deste paciente vira pedido (recuperado, se já tinha recebido lembrete do "Carrinho perdido")
+  const chave = typeof b.carrinhoChave === 'string' ? b.carrinhoChave.slice(0, 80) : '';
+  if (chave) {
+    const { data: carrinho } = await db.from('dcad_carrinhos').select('id, envios')
+      .eq('cliente_id', user.id).eq('chave', chave).eq('status', 'aberto').maybeSingle();
+    if (carrinho) {
+      await db.from('dcad_carrinhos').update({
+        status: 'pedido', os_id: os.id, convertido_em: agora.toISOString(), recuperado: (carrinho.envios || 0) > 0,
+      }).eq('id', carrinho.id);
+    }
+  }
+  // Pedido que tinha sido cancelado por falta de pagamento e foi refeito para o mesmo paciente
+  if (pacienteId) {
+    const { data: perdidos } = await db.from('dcad_carrinhos').select('id, envios')
+      .eq('cliente_id', user.id).eq('origem', 'pagamento').eq('status', 'aberto').eq('paciente_id', pacienteId);
+    for (const c of perdidos || []) {
+      await db.from('dcad_carrinhos').update({ status: 'pedido', os_id: os.id, convertido_em: agora.toISOString(), recuperado: (c.envios || 0) > 0 }).eq('id', c.id);
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     os: { id: os.id, numero: os.numero },

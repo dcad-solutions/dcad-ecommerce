@@ -418,7 +418,47 @@ export default function App() {
   const [cepDestino,setCepDestino]=useState("");
   const [services,setServices]=useState([]);
   const [couponDiscount,setCouponDiscount]=useState(0); // absolute value off
+  useEffect(()=>{
+    if(!dentist||!patient?.id)return;
+    const itens=services;
+    const total=Math.max(0,itens.reduce((t,sv)=>t+(Number(sv.total)||0),0)-(couponDiscount||0));
+    const t=setTimeout(()=>{
+      fetch("/api/carrinho",{method:"POST",headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({chave:String(patient.id),paciente:{id:patient.id,nome:patient.nome},itens,total})}).catch(()=>{});
+    },1500);
+    return()=>clearTimeout(t);
+  },[services,patient?.id,couponDiscount,dentist?.email]);
   const [pendingCarts,setPendingCarts]=useState([]);
+  // Carrinho salvo no servidor: retoma em qualquer aparelho e alimenta o "Carrinho perdido" do Admin
+  const carrinhoLinkRef=useRef((()=>{try{return new URLSearchParams(window.location.search).get("carrinho");}catch{return null;}})());
+  useEffect(()=>{
+    if(!dentist)return;
+    let cancelled=false;
+    (async()=>{
+      try{
+        const{data,error}=await supabaseBrowser().from("dcad_carrinhos").select("id,chave,paciente_id,paciente_nome,itens,valor,origem,atualizado_em").eq("status","aberto").gt("qtd",0).order("atualizado_em",{ascending:false}).limit(20);
+        if(cancelled||error||!data)return;
+        const lista=data.map(c=>({carrinhoId:c.id,patientId:c.origem==="pagamento"?(c.paciente_id||c.chave):c.chave,patientNome:c.paciente_nome||"Não informado",services:Array.isArray(c.itens)?c.itens:[],total:Number(c.valor)||0,date:new Date(c.atualizado_em).toLocaleDateString("pt-BR")}));
+        const alvo=carrinhoLinkRef.current?lista.find(c=>c.carrinhoId===carrinhoLinkRef.current):null;
+        if(carrinhoLinkRef.current){
+          carrinhoLinkRef.current=null;
+          try{const u=new URL(window.location.href);u.searchParams.delete("carrinho");window.history.replaceState(null,"",u.pathname+u.search+u.hash);}catch{}
+        }
+        if(alvo&&alvo.services.length){
+          setPendingCarts(lista.filter(c=>c!==alvo));
+          setPatient({id:alvo.patientId,nome:alvo.patientNome});
+          setServices(alvo.services);
+          setScreen("resumo");
+        }else{
+          setPendingCarts(pc=>{
+            const locais=pc.filter(x=>!lista.some(c=>c.patientId===x.patientId));
+            return [...locais,...lista];
+          });
+        }
+      }catch{}
+    })();
+    return()=>{cancelled=true;};
+  },[dentist?.email]);
   const [pendingPayments,setPendingPayments]=useState([]); // orders where checkout was opened but payment not yet confirmed
   const [undoService,setUndoService]=useState(null);
   const [confirmDeleteId,setConfirmDeleteId]=useState(null);
@@ -2465,7 +2505,7 @@ input,textarea,select{touch-action:manipulation;}
             {pendingCarts.length>0&&(
               <div style={{marginBottom:24}}>
                 <div style={{fontSize:13,fontWeight:700,color:C.yellow,letterSpacing:1,marginBottom:8,display:"flex",alignItems:"center",gap:8}}>
-                  ⏳ AGUARDANDO PAGAMENTO
+                  ⏳ CARRINHOS EM ABERTO
                 </div>
                 <div style={{display:"flex",flexDirection:"column",gap:8}}>
                   {pendingCarts.map((cart,i)=>(
@@ -4544,6 +4584,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
         couponDiscount: couponDiscount||0,
         responsavel,
         nfData: responsavel==="paciente"?nf:null,
+        carrinhoChave: patient?.id?String(patient.id):null,
       };
       const res=await fetch("/api/pedidos",{
         method:"POST",
@@ -4731,7 +4772,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
           {boletoBloqueado&&(
             <div style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textSec,background:C.dark2,border:`1px dashed ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:8}}>
               <Calendar size={14} style={{flexShrink:0}}/>
-              <span>Boleto bancário disponível após {boleto.necessarios} pedidos pagos com Pix ou cartão{boleto.pagos>0?` (você tem ${boleto.pagos})`:""}.</span>
+              <span>Boleto disponível após {boleto.necessarios} pedidos realizados{boleto.pagos>0?` (você já fez ${boleto.pagos})`:""}.</span>
             </div>
           )}
           {payError&&(
