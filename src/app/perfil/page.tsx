@@ -4,7 +4,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   User, Phone, MapPin, Building2, Award,
-  CheckCircle, AlertCircle, Loader2, ArrowLeft,
+  CheckCircle, AlertCircle, Loader2,
   RefreshCw, MessageCircle
 } from 'lucide-react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
@@ -269,46 +269,33 @@ export default function PerfilPage() {
   // ─── Estilos ───────────────────────────────────────────────────────────────
   const s: Record<string, React.CSSProperties> = {
     page: {
-      minHeight: '100vh',
-      backgroundColor: '#FAFAFA',
-      color: '#1A1A1A',
+      minHeight: '100dvh',
+      backgroundColor: 'var(--dcad-bg)',
+      color: 'var(--dcad-text)',
       fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
     },
-    topbar: {
-      borderBottom: '1px solid #E5E5E5',
-      padding: '14px 20px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '12px',
-      backgroundColor: '#FFFFFF',
-      boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-    },
-    logo: {
-      fontSize: '18px',
-      fontWeight: '700',
-      color: '#1A1A1A',
-      letterSpacing: '-0.3px',
-    },
-    dot: { color: '#E52229' },
     container: {
       maxWidth: '640px',
       margin: '0 auto',
-      padding: '32px 20px 60px',
+      paddingTop: '32px',
+      paddingBottom: '60px',
+      paddingLeft: 'max(20px, env(safe-area-inset-left, 0px))',
+      paddingRight: 'max(20px, env(safe-area-inset-right, 0px))',
     },
     heading: {
       fontSize: '22px',
       fontWeight: '700',
-      color: '#1A1A1A',
+      color: 'var(--dcad-text)',
       margin: '0 0 6px 0',
     },
     subheading: {
       fontSize: '14px',
-      color: '#999',
+      color: 'var(--dcad-text-sec)',
       margin: '0 0 32px 0',
     },
     section: {
-      backgroundColor: '#FFFFFF',
-      border: '1px solid #E5E5E5',
+      backgroundColor: 'var(--dcad-card)',
+      border: '1px solid var(--dcad-border)',
       borderRadius: '12px',
       padding: '20px',
       marginBottom: '16px',
@@ -320,23 +307,18 @@ export default function PerfilPage() {
       gap: '8px',
       fontSize: '12px',
       fontWeight: '700',
-      color: '#E52229',
+      color: 'var(--dcad-accent)',
       textTransform: 'uppercase' as const,
       letterSpacing: '0.08em',
       marginBottom: '16px',
     },
-    grid2: {
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      gap: '12px',
-    },
     group: { display: 'flex', flexDirection: 'column' as const, gap: '6px' },
-    label: { fontSize: '12px', fontWeight: '500', color: '#555' },
+    label: { fontSize: '12px', fontWeight: '500', color: 'var(--dcad-text-sec)' },
     input: {
-      backgroundColor: '#FAFAFA',
-      border: '1px solid #E5E5E5',
+      backgroundColor: 'var(--dcad-bg)',
+      border: '1px solid var(--dcad-border)',
       borderRadius: '8px',
-      color: '#1A1A1A',
+      color: 'var(--dcad-text)',
       fontSize: '14px',
       padding: '10px 12px',
       outline: 'none',
@@ -345,10 +327,10 @@ export default function PerfilPage() {
       boxSizing: 'border-box' as const,
     },
     inputWithIcon: {
-      backgroundColor: '#FAFAFA',
-      border: '1px solid #E5E5E5',
+      backgroundColor: 'var(--dcad-bg)',
+      border: '1px solid var(--dcad-border)',
       borderRadius: '8px',
-      color: '#1A1A1A',
+      color: 'var(--dcad-text)',
       fontSize: '14px',
       padding: '10px 36px 10px 12px',
       outline: 'none',
@@ -357,10 +339,10 @@ export default function PerfilPage() {
       boxSizing: 'border-box' as const,
     },
     select: {
-      backgroundColor: '#FAFAFA',
-      border: '1px solid #E5E5E5',
+      backgroundColor: 'var(--dcad-bg)',
+      border: '1px solid var(--dcad-border)',
       borderRadius: '8px',
-      color: '#1A1A1A',
+      color: 'var(--dcad-text)',
       fontSize: '14px',
       padding: '10px 12px',
       outline: 'none',
@@ -373,17 +355,17 @@ export default function PerfilPage() {
       alignItems: 'center',
       gap: '10px',
       padding: '12px 14px',
-      backgroundColor: '#FAFAFA',
-      border: '1px solid #E5E5E5',
+      backgroundColor: 'var(--dcad-bg)',
+      border: '1px solid var(--dcad-border)',
       borderRadius: '8px',
       cursor: 'pointer',
       fontSize: '13px',
-      color: '#555',
+      color: 'var(--dcad-text-sec)',
     },
     btn: {
       width: '100%',
       padding: '14px',
-      backgroundColor: '#E52229',
+      backgroundColor: 'var(--dcad-accent)',
       border: 'none',
       borderRadius: '10px',
       color: '#fff',
@@ -402,10 +384,10 @@ export default function PerfilPage() {
       alignItems: 'flex-start',
       gap: '10px',
       padding: '12px 14px',
-      backgroundColor: '#FEF2F2',
-      border: '1px solid #FECACA',
+      backgroundColor: 'rgba(229,34,41,0.08)',
+      border: '1px solid rgba(229,34,41,0.25)',
       borderRadius: '8px',
-      color: '#E52229',
+      color: 'var(--dcad-accent)',
       fontSize: '13px',
       marginBottom: '16px',
     },
@@ -414,24 +396,68 @@ export default function PerfilPage() {
       alignItems: 'center',
       gap: '10px',
       padding: '16px',
-      backgroundColor: '#DCFCE7',
-      border: '1px solid #86EFAC',
+      backgroundColor: 'rgba(34,197,94,0.1)',
+      border: '1px solid rgba(34,197,94,0.3)',
       borderRadius: '10px',
-      color: '#166534',
+      color: '#22C55E',
       fontSize: '14px',
       fontWeight: '500',
       marginBottom: '16px',
     },
     required: { color: '#ef4444', marginLeft: '2px' },
-    optional: { color: '#aaa', marginLeft: '4px', fontSize: '11px', fontWeight: '400' },
+    optional: { color: 'var(--dcad-text-sec)', marginLeft: '4px', fontSize: '11px', fontWeight: '400' },
     cepWrapper: { position: 'relative' as const },
     cepIcon: {
       position: 'absolute' as const,
       right: '10px',
       top: '50%',
       transform: 'translateY(-50%)',
-      color: '#aaa',
+      color: 'var(--dcad-text-sec)',
       pointerEvents: 'none' as const,
+    },
+    // Modal LGPD
+    overlay: {
+      position: 'fixed' as const,
+      inset: 0,
+      background: 'rgba(0,0,0,0.5)',
+      zIndex: 1000,
+      display: 'flex',
+      alignItems: 'flex-end',
+      justifyContent: 'center',
+    },
+    modalBox: {
+      background: 'var(--dcad-card)',
+      borderRadius: '16px 16px 0 0',
+      padding: '24px max(20px, env(safe-area-inset-left, 0px))',
+      paddingRight: 'max(20px, env(safe-area-inset-right, 0px))',
+      paddingBottom: 'max(24px, env(safe-area-inset-bottom, 0px))',
+      maxWidth: '480px',
+      width: '100%',
+      maxHeight: '80dvh',
+      overflowY: 'auto' as const,
+    },
+    modalTitle: {
+      fontSize: '16px',
+      fontWeight: '700',
+      color: 'var(--dcad-text)',
+      marginBottom: '12px',
+    },
+    modalText: {
+      fontSize: '13px',
+      color: 'var(--dcad-text-sec)',
+      lineHeight: '1.6',
+      marginBottom: '20px',
+    },
+    modalBtn: {
+      width: '100%',
+      padding: '12px',
+      backgroundColor: 'var(--dcad-accent)',
+      border: 'none',
+      borderRadius: '8px',
+      color: '#fff',
+      fontSize: '14px',
+      fontWeight: '600',
+      cursor: 'pointer',
     },
   };
 
@@ -446,21 +472,6 @@ export default function PerfilPage() {
 
   return (
     <div style={s.page}>
-      {/* Topbar */}
-      <div style={s.topbar}>
-        <button
-          onClick={() => router.push('/')}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#999', display: 'flex', padding: '2px' }}
-          aria-label="Voltar"
-        >
-          <ArrowLeft size={18} />
-        </button>
-        <span style={s.logo}>D<span style={s.dot}>-</span>CAD</span>
-        <span style={{ fontSize: '13px', color: '#999', marginLeft: '4px' }}>
-          / {cadastroCompleto ? 'Meus Dados' : 'Completar cadastro'}
-        </span>
-      </div>
-
       <div style={s.container}>
         <h1 style={s.heading}>
           {cadastroCompleto ? 'Meus Dados' : 'Complete seu cadastro'}
@@ -505,7 +516,7 @@ export default function PerfilPage() {
                   required
                 />
               </div>
-              <div style={s.grid2}>
+              <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={s.group}>
                   <label style={s.label}>CRO<span style={s.required}>*</span></label>
                   <input
@@ -606,7 +617,7 @@ export default function PerfilPage() {
               <MapPin size={14} /> Endereço principal
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={s.grid2}>
+              <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={s.group}>
                   <label style={s.label}>CEP<span style={s.required}>*</span></label>
                   <div style={s.cepWrapper}>
@@ -654,7 +665,7 @@ export default function PerfilPage() {
                   required
                 />
               </div>
-              <div style={s.grid2}>
+              <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={s.group}>
                   <label style={s.label}>Número<span style={s.required}>*</span></label>
                   <input
@@ -675,7 +686,7 @@ export default function PerfilPage() {
                   />
                 </div>
               </div>
-              <div style={s.grid2}>
+              <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                 <div style={s.group}>
                   <label style={s.label}>Bairro<span style={s.required}>*</span></label>
                   <input
@@ -718,7 +729,7 @@ export default function PerfilPage() {
 
             {!form.entregaIgualPrincipal && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginTop: '16px' }}>
-                <div style={s.grid2}>
+                <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={s.group}>
                     <label style={s.label}>CEP<span style={s.required}>*</span></label>
                     <div style={s.cepWrapper}>
@@ -752,7 +763,7 @@ export default function PerfilPage() {
                   <label style={s.label}>Rua / Avenida<span style={s.required}>*</span></label>
                   <input style={s.input} value={form.entrega_rua} onChange={e => set('entrega_rua', e.target.value)} placeholder="Rua das Flores" />
                 </div>
-                <div style={s.grid2}>
+                <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={s.group}>
                     <label style={s.label}>Número<span style={s.required}>*</span></label>
                     <input style={s.input} value={form.entrega_numero} onChange={e => set('entrega_numero', e.target.value)} placeholder="123" />
@@ -762,7 +773,7 @@ export default function PerfilPage() {
                     <input style={s.input} value={form.entrega_complemento} onChange={e => set('entrega_complemento', e.target.value)} placeholder="Sala 5" />
                   </div>
                 </div>
-                <div style={s.grid2}>
+                <div className="dcad-grid2" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
                   <div style={s.group}>
                     <label style={s.label}>Bairro<span style={s.required}>*</span></label>
                     <input style={s.input} value={form.entrega_bairro} onChange={e => set('entrega_bairro', e.target.value)} placeholder="Centro" />
@@ -796,10 +807,10 @@ export default function PerfilPage() {
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg) } to { transform: rotate(360deg) } }
-        input::placeholder { color: #CCC; }
-        input:focus, select:focus { border-color: #E52229 !important; box-shadow: 0 0 0 3px rgba(229,34,41,0.1); }
+        input::placeholder { color: var(--dcad-border); }
+        input:focus, select:focus { border-color: var(--dcad-accent) !important; box-shadow: 0 0 0 3px rgba(229,34,41,0.1); }
         @media (max-width: 480px) {
-          .grid2 { grid-template-columns: 1fr !important; }
+          .dcad-grid2 { grid-template-columns: 1fr !important; }
         }
       `}</style>
     </div>

@@ -97,7 +97,7 @@ function BarraProgresso({ status }: { status: OsStatus }) {
                   right: '50%',
                   top: 11,
                   height: 2,
-                  backgroundColor: concluida || ativa ? '#E52229' : '#E5E5E5',
+                  backgroundColor: concluida || ativa ? '#E52229' : 'var(--dcad-border)',
                   zIndex: 0,
                 }} />
               )}
@@ -106,8 +106,8 @@ function BarraProgresso({ status }: { status: OsStatus }) {
                 width: 22,
                 height: 22,
                 borderRadius: '50%',
-                backgroundColor: concluida ? '#E52229' : ativa ? '#E52229' : '#E5E5E5',
-                border: ativa ? '3px solid #E52229' : concluida ? '3px solid #E52229' : '3px solid #E5E5E5',
+                backgroundColor: concluida ? '#E52229' : ativa ? '#E52229' : 'var(--dcad-border)',
+                border: ativa ? '3px solid #E52229' : concluida ? '3px solid #E52229' : '3px solid var(--dcad-border)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -144,7 +144,7 @@ function BarraProgresso({ status }: { status: OsStatus }) {
         }}>
           {ETAPAS[atual].icone} {ETAPAS[atual].label}
         </span>
-        <span style={{ fontSize: 11, color: '#999' }}>
+        <span style={{ fontSize: 11, color: 'var(--dcad-text-sec)' }}>
           — etapa {atual + 1} de {total}
         </span>
       </div>
@@ -162,9 +162,9 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
 
   return (
     <div style={{
-      backgroundColor: '#fff',
+      backgroundColor: 'var(--dcad-card)',
       borderRadius: 12,
-      border: '1px solid #EBEBEB',
+      border: '1px solid var(--dcad-border)',
       overflow: 'hidden',
       boxShadow: '0 1px 4px rgba(0,0,0,0.05)',
     }}>
@@ -191,7 +191,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
               margin: 0,
               fontSize: 14,
               fontWeight: 700,
-              color: '#1A1A1A',
+              color: 'var(--dcad-text)',
               lineHeight: 1.3,
             }}>
               {pedido.service_name}
@@ -199,7 +199,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
             <p style={{
               margin: '3px 0 0',
               fontSize: 12,
-              color: '#777',
+              color: 'var(--dcad-text-sec)',
             }}>
               {pedido.specialty}{pedido.service_type ? ` · ${pedido.service_type}` : ''}
             </p>
@@ -219,7 +219,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
                 Entregue
               </span>
             )}
-            {aberto ? <ChevronUp size={16} color="#999" /> : <ChevronDown size={16} color="#999" />}
+            {aberto ? <ChevronUp size={16} style={{ color: 'var(--dcad-text-sec)' }} /> : <ChevronDown size={16} style={{ color: 'var(--dcad-text-sec)' }} />}
           </div>
         </div>
 
@@ -232,11 +232,11 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
           alignItems: 'center',
           justifyContent: 'space-between',
         }}>
-          <span style={{ fontSize: 11, color: '#999' }}>
+          <span style={{ fontSize: 11, color: 'var(--dcad-text-sec)' }}>
             <Clock size={11} style={{ verticalAlign: 'middle', marginRight: 3 }} />
             {fmtData(pedido.created_at)}
           </span>
-          <span style={{ fontSize: 14, fontWeight: 700, color: '#1A1A1A' }}>
+          <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--dcad-text)' }}>
             {fmt(bruto - desc + frete)}
           </span>
         </div>
@@ -245,7 +245,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
       {/* Detalhe expandido */}
       {aberto && (
         <div style={{
-          borderTop: '1px solid #F0F0F0',
+          borderTop: '1px solid var(--dcad-border)',
           padding: '14px 16px 16px',
           display: 'flex',
           flexDirection: 'column',
@@ -253,7 +253,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
         }}>
           {/* Todas as etapas */}
           <div>
-            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: 'var(--dcad-text-sec)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Linha do tempo
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -272,7 +272,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
                       width: 28,
                       height: 28,
                       borderRadius: '50%',
-                      backgroundColor: ativa ? '#FEF2F2' : concluida ? '#E52229' : '#F5F5F5',
+                      backgroundColor: ativa ? 'rgba(229,34,41,0.08)' : concluida ? '#E52229' : 'var(--dcad-bg)',
                       border: ativa ? '2px solid #E52229' : 'none',
                       display: 'flex',
                       alignItems: 'center',
@@ -288,10 +288,10 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
                     <span style={{
                       fontSize: 13,
                       fontWeight: ativa ? 700 : 500,
-                      color: ativa ? '#E52229' : concluida ? '#1A1A1A' : '#999',
+                      color: ativa ? '#E52229' : concluida ? 'var(--dcad-text)' : 'var(--dcad-text-sec)',
                     }}>
                       {e.label}
-                      {ativa && <span style={{ fontWeight: 400, color: '#999', marginLeft: 6 }}>← atual</span>}
+                      {ativa && <span style={{ fontWeight: 400, color: 'var(--dcad-text-sec)', marginLeft: 6 }}>← atual</span>}
                     </span>
                   </div>
                 );
@@ -301,17 +301,17 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
 
           {/* Valores */}
           <div style={{
-            backgroundColor: '#FAFAFA',
+            backgroundColor: 'var(--dcad-bg)',
             borderRadius: 8,
             padding: '12px 14px',
             display: 'flex',
             flexDirection: 'column',
             gap: 6,
           }}>
-            <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 600, color: '#999', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+            <p style={{ margin: '0 0 4px', fontSize: 11, fontWeight: 600, color: 'var(--dcad-text-sec)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Resumo financeiro
             </p>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--dcad-text-sec)' }}>
               <span>Subtotal</span><span>{fmt(bruto)}</span>
             </div>
             {desc > 0 && (
@@ -320,7 +320,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
               </div>
             )}
             {frete > 0 && (
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#555' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'var(--dcad-text-sec)' }}>
                 <span>Frete</span><span>+{fmt(frete)}</span>
               </div>
             )}
@@ -329,8 +329,8 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
               justifyContent: 'space-between',
               fontSize: 15,
               fontWeight: 700,
-              color: '#1A1A1A',
-              borderTop: '1px solid #E5E5E5',
+              color: 'var(--dcad-text)',
+              borderTop: '1px solid var(--dcad-border)',
               paddingTop: 8,
               marginTop: 4,
             }}>
@@ -340,22 +340,22 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
 
           {/* Pagamento */}
           {pedido.payment_method && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#777' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: 'var(--dcad-text-sec)' }}>
               <span>Forma de pagamento</span>
-              <span style={{ fontWeight: 600, color: '#1A1A1A' }}>{pedido.payment_method}</span>
+              <span style={{ fontWeight: 600, color: 'var(--dcad-text)' }}>{pedido.payment_method}</span>
             </div>
           )}
 
           {/* Observações */}
           {pedido.observacoes && (
             <div style={{
-              backgroundColor: '#FEF9E7',
-              border: '1px solid #FDE68A',
+              backgroundColor: 'rgba(234,179,8,0.08)',
+              border: '1px solid rgba(234,179,8,0.25)',
               borderRadius: 8,
               padding: '10px 12px',
             }}>
-              <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: '#92400E', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Observações</p>
-              <p style={{ margin: 0, fontSize: 13, color: '#78350F', lineHeight: 1.5 }}>{pedido.observacoes}</p>
+              <p style={{ margin: 0, fontSize: 11, fontWeight: 600, color: '#B45309', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Observações</p>
+              <p style={{ margin: 0, fontSize: 13, color: 'var(--dcad-text-sec)', lineHeight: 1.5 }}>{pedido.observacoes}</p>
             </div>
           )}
         </div>
@@ -405,20 +405,20 @@ export default function PedidosPage() {
   return (
     <div style={{
       minHeight: '100dvh',
-      backgroundColor: '#FAFAFA',
+      backgroundColor: 'var(--dcad-bg)',
       fontFamily: "'Geist', 'Inter', system-ui, sans-serif",
     }}>
-      {/* Header */}
+      {/* Header da seção — fica abaixo da ClientNav (top: 56px = altura da nav) */}
       <div style={{
-        backgroundColor: '#fff',
-        borderBottom: '1px solid #EBEBEB',
+        backgroundColor: 'var(--dcad-card)',
+        borderBottom: '1px solid var(--dcad-border)',
         padding: '16px max(16px, env(safe-area-inset-left, 0px))',
         paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
-        top: 0,
+        top: 56,
         zIndex: 10,
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -426,7 +426,7 @@ export default function PedidosPage() {
             width: 36,
             height: 36,
             borderRadius: 8,
-            backgroundColor: '#FEF2F2',
+            backgroundColor: 'rgba(229,34,41,0.08)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -434,10 +434,10 @@ export default function PedidosPage() {
             <Package size={18} color="#E52229" />
           </div>
           <div>
-            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#1A1A1A' }}>
+            <h1 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: 'var(--dcad-text)' }}>
               Meus Pedidos
             </h1>
-            <p style={{ margin: 0, fontSize: 12, color: '#999' }}>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--dcad-text-sec)' }}>
               Acompanhe suas ordens de serviço
             </p>
           </div>
@@ -448,7 +448,7 @@ export default function PedidosPage() {
           aria-label="Atualizar pedidos"
           style={{
             background: 'none',
-            border: '1px solid #EBEBEB',
+            border: '1px solid var(--dcad-border)',
             borderRadius: 8,
             padding: '8px 10px',
             cursor: atualizando ? 'not-allowed' : 'pointer',
@@ -456,7 +456,7 @@ export default function PedidosPage() {
             alignItems: 'center',
             gap: 6,
             fontSize: 12,
-            color: '#555',
+            color: 'var(--dcad-text-sec)',
             minHeight: 44,
             minWidth: 44,
             justifyContent: 'center',
@@ -496,9 +496,9 @@ export default function PedidosPage() {
                 style={{
                   padding: '8px 14px',
                   borderRadius: 99,
-                  border: filtro === f.key ? '1.5px solid #E52229' : '1.5px solid #E5E5E5',
-                  backgroundColor: filtro === f.key ? '#FEF2F2' : '#fff',
-                  color: filtro === f.key ? '#E52229' : '#555',
+                  border: filtro === f.key ? '1.5px solid #E52229' : '1.5px solid var(--dcad-border)',
+                  backgroundColor: filtro === f.key ? 'rgba(229,34,41,0.08)' : 'var(--dcad-card)',
+                  color: filtro === f.key ? '#E52229' : 'var(--dcad-text-sec)',
                   fontSize: 13,
                   fontWeight: filtro === f.key ? 700 : 500,
                   cursor: 'pointer',
@@ -518,9 +518,9 @@ export default function PedidosPage() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {[1, 2, 3].map(i => (
               <div key={i} style={{
-                backgroundColor: '#fff',
+                backgroundColor: 'var(--dcad-card)',
                 borderRadius: 12,
-                border: '1px solid #EBEBEB',
+                border: '1px solid var(--dcad-border)',
                 padding: 16,
                 height: 120,
                 animation: 'pulse 1.5s ease-in-out infinite',
@@ -532,8 +532,8 @@ export default function PedidosPage() {
         {/* Estado: erro */}
         {erro && (
           <div style={{
-            backgroundColor: '#FEF2F2',
-            border: '1px solid #FECACA',
+            backgroundColor: 'rgba(229,34,41,0.06)',
+            border: '1px solid rgba(229,34,41,0.2)',
             borderRadius: 12,
             padding: '20px 16px',
             display: 'flex',
@@ -543,10 +543,10 @@ export default function PedidosPage() {
             textAlign: 'center',
           }}>
             <AlertCircle size={28} color="#E52229" />
-            <p style={{ margin: 0, fontSize: 14, color: '#1A1A1A', fontWeight: 600 }}>
+            <p style={{ margin: 0, fontSize: 14, color: 'var(--dcad-text)', fontWeight: 600 }}>
               Não foi possível carregar seus pedidos
             </p>
-            <p style={{ margin: 0, fontSize: 12, color: '#999' }}>{erro}</p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--dcad-text-sec)' }}>{erro}</p>
             <button
               onClick={carregar}
               style={{
@@ -570,9 +570,9 @@ export default function PedidosPage() {
         {/* Estado: vazio */}
         {!loading && !erro && filtrados.length === 0 && (
           <div style={{
-            backgroundColor: '#fff',
+            backgroundColor: 'var(--dcad-card)',
             borderRadius: 12,
-            border: '1px solid #EBEBEB',
+            border: '1px solid var(--dcad-border)',
             padding: '40px 16px',
             display: 'flex',
             flexDirection: 'column',
@@ -584,17 +584,17 @@ export default function PedidosPage() {
               width: 56,
               height: 56,
               borderRadius: 14,
-              backgroundColor: '#FEF2F2',
+              backgroundColor: 'rgba(229,34,41,0.08)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
             }}>
               <Package size={26} color="#E52229" />
             </div>
-            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#1A1A1A' }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: 'var(--dcad-text)' }}>
               {filtro === 'todos' ? 'Nenhum pedido ainda' : filtro === 'andamento' ? 'Nenhum pedido em andamento' : 'Nenhum pedido entregue'}
             </p>
-            <p style={{ margin: 0, fontSize: 13, color: '#999', maxWidth: 260 }}>
+            <p style={{ margin: 0, fontSize: 13, color: 'var(--dcad-text-sec)', maxWidth: 260 }}>
               {filtro === 'todos'
                 ? 'Seus pedidos D-CAD aparecerão aqui após serem criados pela equipe.'
                 : 'Altere o filtro para ver todos os pedidos.'}
