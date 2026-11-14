@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clienteAtual, supabaseAdmin } from '@/lib/supabase-server';
+import { conferirItens, descontoCupom } from '@/lib/preco-servidor';
 
 // Cria o pedido do Portal do Cliente como ordem de serviço do Kanban (ordens_servico) + conta a receber.
 //
@@ -67,19 +68,17 @@ export async function POST(req: NextRequest) {
     if (!sit?.liberado) return NextResponse.json({ error: 'O boleto ainda não está liberado para o seu cadastro.' }, { status: 403 });
   }
 
-  // ── Itens e valores ───────────────────────────────────────────────────────
-  // O preço vem do cálculo do portal. Antes de ligar a cobrança real ele passa a ser conferido no servidor.
-  const itens = Array.isArray(b.services) ? (b.services as Record<string, unknown>[]).slice(0, 30) : [];
-  if (!itens.length) return NextResponse.json({ error: 'Nenhum serviço no pedido.' }, { status: 400 });
-  for (const it of itens) {
-    const t = num(it.total);
-    if (!txt(it.name) || !Number.isFinite(t) || t <= 0 || t > 100000) {
-      return NextResponse.json({ error: 'Há um serviço com valor inválido no pedido.' }, { status: 400 });
-    }
-  }
-  const bruto = r2(itens.reduce((s, it) => s + num(it.total), 0));
-  const frete = r2(itens.reduce((s, it) => s + (num((it.freight as Record<string, unknown> | null)?.value) || 0), 0));
-  const cupom = Math.min(bruto, Math.max(0, num(b.couponDiscount) || 0));
+  // ── Itens e valores: preço recalculado no servidor (src/lib/preco.js) ────
+  const recebidos = Array.isArray(b.services) ? (b.services as Record<string, unknown>[]).slice(0, 30) : [];
+  if (!recebidos.length) return NextResponse.json({ error: 'Nenhum serviço no pedido.' }, { status: 400 });
+  const conf = await conferirItens(db, recebidos, cliente);
+  if (!conf.ok) return NextResponse.json({ error: conf.erro }, { status: 409 });
+  const itens: Record<string, unknown>[] = conf.itens.map(x => ({ ...x.item, total: x.total }));
+  const bruto = r2(conf.itens.reduce((s, x) => s + x.total, 0));
+  const frete = r2(conf.itens.reduce((s, x) => s + x.frete, 0));
+  const cup = await descontoCupom(db, b.couponCode, conf.itens);
+  if (!cup.ok) return NextResponse.json({ error: cup.erro }, { status: 409 });
+  const cupom = Math.min(bruto, cup.desconto);
   const aposCupom = r2(bruto - cupom);
   const descontoPix = forma === 'pix' ? r2(aposCupom * (Number(regras.pix_desconto_pct) / 100)) : 0;
   const total = r2(aposCupom - descontoPix);
@@ -109,6 +108,7 @@ export async function POST(req: NextRequest) {
     responsavel,
     nf: responsavel === 'paciente' ? b.nfData ?? null : null,
     cupom_desconto: cupom,
+    cupom_codigo: cup.cupomId ? String(b.couponCode).trim().toUpperCase() : null,
     desconto_pix: descontoPix,
     pix_desconto_pct: forma === 'pix' ? Number(regras.pix_desconto_pct) : null,
     itens,
@@ -176,6 +176,12 @@ export async function POST(req: NextRequest) {
     console.error('[pedidos] conta a receber', erroConta);
     await db.from('ordens_servico').delete().eq('id', os.id);
     return NextResponse.json({ error: 'Não foi possível registrar o pedido. Tente novamente.' }, { status: 500 });
+  }
+
+  // Uso do cupom
+  if (cup.cupomId) {
+    const { data: c } = await db.from('cupons').select('usos_atual').eq('id', cup.cupomId).single();
+    await db.from('cupons').update({ usos_atual: (c?.usos_atual || 0) + 1 }).eq('id', cup.cupomId);
   }
 
   // Carrinho deste paciente vira pedido (recuperado, se já tinha recebido lembrete do "Carrinho perdido")

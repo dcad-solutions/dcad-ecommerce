@@ -1,6 +1,7 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { AlertCircle, Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
 import { fetchCatalog } from "@/lib/catalog";
+import { CATALOG, P, URGENCY_TIERS, SUP, SUP_ALL, mesclarCatalogo, calcularPrecoItem, descontoDaConta } from "@/lib/preco";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import ConsentimentoWhatsapp from "@/components/ConsentimentoWhatsapp";
 import { TERMO_WHATSAPP_VERSAO } from "@/lib/termo-whatsapp";
@@ -84,85 +85,7 @@ function calcAge(masked){
   return `${years} ano${years===1?"":"s"}`;
 }
 
-const CATALOG=[
-  {id:"implanto",name:"Implantodontia",color:"#E52229",icon:"ti-tooth",desc:"Cirurgia guiada de implantes",
-   services:[
-    // ── Cirurgia Guiada Unitária ─────────────────────────────────────────────
-    {id:"cg1",type:"cirurgia_guiada_unitaria",groupLabel:"Cirurgia Guiada Unitária",name:"Cirurgia Guiada — 1 implante",desc:"Unitária · planejamento + guia impressa",
-     fullDesc:"Guia cirúrgico para instalação de 1 implante com posicionamento tridimensional ideal. Desenvolvido a partir de tomografia e escaneamento intraoral, garantindo precisão submilimétrica.",
-     exams:["Modelo digital da arcada (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],
-     includes:["Vídeo de planejamento para aprovação","Guia impresso com resina biocompatível e autoclavável com anilhas do sistema escolhido","Relatório cirúrgico em PDF"],
-     price:390,days:7,built:true,videoUrl:null,
-     usesOdontogram:true,maxTeeth:1,usesArch:false,usesBrand:true,usesKit:true,offersUpsell:true,offersSlicedFile:true,
-     planOnly:{name:"Planejamento Cirurgia Guiada — 1 implante",desc:"Arquivo digital do guia (STL)",
-       fullDesc:"Planejamento digital completo para 1 implante. Entrega do arquivo STL do guia para impressão pelo cliente.",
-       price:220,days:5,exams:["Modelo digital da arcada (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],offersSlicedFile:true}},
-    // ── Cirurgia Guiada Parcial — preço por quantidade exata ────────────────
-    {id:"cgparc",type:"cirurgia_guiada_parcial",groupLabel:"Cirurgia Guiada Parcial",name:"Cirurgia Guiada Parcial",desc:"2 a 8 implantes · preço por quantidade",
-     fullDesc:"Guia cirúrgico para instalação de 2 a 8 implantes. Selecione os dentes no odontograma — o valor é calculado automaticamente pela quantidade por arcada.",
-     exams:["Modelo digital da arcada (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],
-     includes:["Vídeo de planejamento para aprovação","Guia impresso com resina biocompatível e autoclavável com anilhas do sistema escolhido","Relatório cirúrgico em PDF"],
-     /* Preço por quantidade exata de implantes — ajustar após validação comercial */
-     priceByQty:{2:480,3:560,4:640,5:720,6:800,7:880,8:960},
-     price:480,days:7,built:false,videoUrl:null,maxTeeth:8,
-     usesOdontogram:true,usesArch:false,usesBrand:true,usesKit:true,offersUpsell:true,offersSlicedFile:true,
-     planOnly:{name:"Planejamento Cirurgia Guiada Parcial",desc:"Arquivo digital dos guias (STL)",
-       priceByQty:{2:270,3:320,4:380,5:430,6:480,7:530,8:580},
-       price:270,days:5,exams:["Modelo digital da arcada (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],offersSlicedFile:true}},
-    // ── Protocolos edêntulos ─────────────────────────────────────────────────
-    {id:"proto_total",type:"protocolo",groupLabel:"Protocolo",name:"Protocolo Edêntulo Total",desc:"Arcada total · Reabilitação Completa",
-     fullDesc:"Planejamento Completo para Reabilitação de Arcada Total com implantes. Seleção de arcada superior, inferior ou ambas.",
-     exams:["Modelo digital das arcadas (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],
-     includes:["A definir — itens inclusos serão atualizados em breve"],
-     price:1100,days:10,built:false,videoUrl:null,
-     usesOdontogram:false,usesArch:true,archAffectsPrice:true,usesBrand:true,usesKit:true,offersUpsell:true,offersSlicedFile:true,
-     planOnly:{name:"Planejamento Protocolo Edêntulo Total",desc:"Arquivo digital do protocolo (STL)",price:700,days:7,exams:["Modelo digital das arcadas (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],offersSlicedFile:true}},
-    {id:"proto_parc",type:"protocolo",groupLabel:"Protocolo",name:"Protocolo Edêntulo Parcial",desc:"Arcada parcial · Sem Só Planejamento",
-     fullDesc:"Planejamento para Reabilitação de Arcada Parcialmente edêntula com implantes. Disponível apenas como Planejamento + Impressão.",
-     exams:["Modelo digital das arcadas (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],
-     includes:["A definir — itens inclusos serão atualizados em breve"],
-     price:950,days:10,built:false,videoUrl:null,
-     usesOdontogram:false,usesArch:true,archAffectsPrice:true,usesBrand:true,usesKit:true,offersUpsell:true,offersSlicedFile:false,
-     planOnly:null},
-    // ── Stackable Guide ──────────────────────────────────────────────────────
-    {id:"stackable",type:"protocolo",groupLabel:"Protocolo",name:"Stackable Guide / Guias Empilháveis",desc:"Protocolo Especial · Por Arcada",
-     fullDesc:"Guia Cirúrgico Empilhável para Casos Protocolares Complexos. Sem opção de Só Planejamento. Seleção por arcada.",
-     exams:["Modelo digital das arcadas (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM)","Marca e modelo do implante + kit cirúrgico a ser utilizado"],
-     includes:["A definir — itens inclusos serão atualizados em breve"],
-     price:1300,days:12,built:false,videoUrl:null,
-     usesOdontogram:false,usesArch:true,archAffectsPrice:true,usesBrand:true,usesKit:true,offersUpsell:false,offersSlicedFile:false,
-     planOnly:null},
-   ]},
-  {id:"estetica",name:"Estética Dental",color:"#EA580C",icon:"ti-sparkles",desc:"Planejamento digital do sorriso",
-   services:[
-     {id:"dsd2d",name:"Simulação 2D",desc:"Apresentação motivacional",fullDesc:"Apresentação visual do novo sorriso a partir de fotografias clínicas.",exams:["Protocolo fotográfico (JPEG)"],price:250,days:5,built:false,videoUrl:null,planOnly:{name:"Simulação 2D — Arquivo Digital",desc:"Arquivo de apresentação · sem impressão",fullDesc:"Arquivo digital da simulação do sorriso 2D para uso em apresentações. Sem impressão ou mockup físico.",price:180,days:3,exams:["Protocolo fotográfico (JPEG)"]}},
-     {id:"dsd3d",name:"DSD 3D — até 6 dentes",desc:"Enceramento + mockup",fullDesc:"Enceramento diagnóstico digital 3D com até 6 dentes anteriores.",exams:["Protocolo fotográfico (JPEG)","STL dos modelos"],price:466.27,days:7,built:false,videoUrl:null},
-   ]},
-  {id:"reab",name:"Reabilitação Oral",color:"#16A34A",icon:"ti-dental",desc:"Planejamento funcional 3D",
-   services:[
-     {id:"func3d",name:"Planejamento Funcional 3D",desc:"2 arcadas · articulador virtual",fullDesc:"Enceramento diagnóstico com análise oclusal e articulador virtual, até 28 dentes.",exams:["Protocolo fotográfico (JPEG)","STL dos modelos com registro em MIH e/ou RC"],price:1321.50,days:10,built:false,videoUrl:null,planOnly:{name:"Enceramento Digital Funcional 3D",desc:"2 arcadas · arquivo STL do enceramento",fullDesc:"Enceramento diagnóstico digital com articulador virtual. Entrega do arquivo STL do enceramento para impressão pelo cliente.",price:900,days:7,exams:["Protocolo fotográfico (JPEG)","STL dos modelos com registro em MIH e/ou RC"]}},
-   ]},
-  {id:"dtm",name:"DTM",color:"#CA8A04",icon:"ti-shield",desc:"Placa oclusal digital",
-   services:[
-     {id:"placa",name:"Placa Oclusal Impressa",desc:"Resina rígida biocompatível",fullDesc:"Placa rígida planejada em articulador virtual com contatos oclusais uniformes.",exams:["STL dos modelos com registro em RC (JIG)"],price:360.37,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Placa Oclusal Digital",desc:"Arquivo STL para impressão própria",fullDesc:"Projeto digital da placa oclusal em articulador virtual. Entrega do arquivo STL para impressão pelo cliente.",price:200,days:5,exams:["STL dos modelos com registro em RC (JIG)"]}},
-   ]},
-  {id:"perio",name:"Periodontia",color:C.textSec,icon:"ti-plant",desc:"Perioguide",
-   services:[
-     {id:"perioguide",name:"Perioguide",desc:"Guia + planejamento periodontal",fullDesc:"Guia cirúrgico periodontal com definição milimétrica do nível de gengivectomia por dente.",exams:["Protocolo fotográfico (JPEG)","STL ou PLY dos modelos","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse (com afastador labial)"],price:650.88,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Perioguide Digital",desc:"Arquivo STL do guia periodontal",fullDesc:"Planejamento digital do guia periodontal com entrega do arquivo STL para impressão pelo cliente.",price:400,days:5,exams:["Protocolo fotográfico (JPEG)","STL ou PLY dos modelos","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse (com afastador labial)"]}},
-   ]},
-  {id:"endo",name:"Endodontia",color:"#2563EB",icon:"ti-microscope",desc:"Guia de acesso endodôntico",
-   services:[
-     {id:"endo_uni",name:"Endo Access Unirradicular",desc:"Canais calcificados",fullDesc:"Guia de acesso endodôntico para dentes unirradiculares com canais calcificados.",exams:["Modelo digital da arcada (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse","Kit Endo Access DSP"],price:599.57,days:7,built:false,videoUrl:null,planOnly:{name:"Projeto Endo Access Unirradicular Digital",desc:"Arquivo STL do guia endodôntico",fullDesc:"Planejamento digital do guia de acesso endodôntico. Entrega do arquivo STL para impressão pelo cliente.",price:350,days:5,exams:["Modelo digital da arcada (arquivo STL)","Tomografia computadorizada da arcada (arquivo DICOM) da arcada de interesse","Kit Endo Access DSP"]}},
-   ]},
-  {id:"imp3d",name:"Impressão 3D",color:"#0D9488",icon:"ti-3d-cube-sphere",desc:"Modelos e biomodelos",
-   services:[
-     {id:"mod_normal",name:"Modelo base normal",desc:"Adulto ou infantil",fullDesc:"Modelo de estudo para arcada adulto ou infantil, simples ou articulado.",exams:["STL dos modelos"],price:80,days:3,built:false,videoUrl:null},
-   ]},
-  {id:"consult",name:"Consultoria",color:"#DC2626",icon:"ti-bulb",desc:"Suporte especializado",
-   services:[
-     {id:"consult_online",name:"Consultoria Online",desc:"Por hora",fullDesc:"Suporte especializado por videoconferência para discussão de casos clínicos.",exams:["Imagens e exames do caso"],price:200,days:3,built:false,videoUrl:null},
-   ]},
-];
+// Catálogo base: src/lib/preco.js (compartilhado com o servidor)
 
 // ── Hook: carrega catálogo do Supabase com fallback para CATALOG estático ─────
 function useCatalog() {
@@ -178,39 +101,7 @@ function useCatalog() {
         if (data && data.length > 0) {
           // Mescla dados dinâmicos com campos do CATALOG estático que não vêm do Supabase
           // (priceByQty, IMPLANT_TABLE, etc. permanecem no Wizard)
-          const merged = data.map((dynSpec) => {
-            const staticSpec = CATALOG.find((s) => s.id === dynSpec.id);
-            if (!staticSpec) return dynSpec;
-            return {
-              ...staticSpec,
-              ...dynSpec,
-              services: dynSpec.services.map((dynSvc) => {
-                const staticSvc = staticSpec.services.find((s) => s.type === dynSvc.type || s.id === dynSvc.id);
-                if (!staticSvc) return dynSvc;
-                return {
-                  ...staticSvc,
-                  // Campos que vêm do Supabase sobrescrevem o estático:
-                  name:     dynSvc.name     || staticSvc.name,
-                  desc:     dynSvc.desc     || staticSvc.desc,
-                  fullDesc: dynSvc.fullDesc || staticSvc.fullDesc,
-                  exams:    dynSvc.exams?.length ? dynSvc.exams    : staticSvc.exams,
-                  includes: dynSvc.includes?.length ? dynSvc.includes : staticSvc.includes,
-                  imagens:  dynSvc.imagens?.length  ? dynSvc.imagens  : (staticSvc.imagens || []),
-                  days:     dynSvc.days     || staticSvc.days,
-                  // Preço vem do Supabase apenas se autenticado (RLS); caso null usa estático
-                  price:    dynSvc.price    ?? staticSvc.price,
-                  planOnly: dynSvc.planOnly
-                    ? {
-                        ...staticSvc.planOnly,
-                        ...dynSvc.planOnly,
-                        price: dynSvc.planOnly.price ?? staticSvc.planOnly?.price,
-                        days:  dynSvc.planOnly.days  ?? staticSvc.planOnly?.days,
-                      }
-                    : staticSvc.planOnly,
-                };
-              }),
-            };
-          });
+          const merged = mesclarCatalogo(data);
           setCatalog(merged);
         }
       })
@@ -313,21 +204,13 @@ const IMPLANT_TABLE={
   ],
 };
 const BRANDS=Object.keys(IMPLANT_TABLE);
-const P={preplan:150,unit:388.98,strauAdd:110,provCaptura:100,provAdesiva:120,cicatriz:80,slicedFile:50,dsd3dProto:700}; // dsd3dProto = placeholder
 // ── URL do manual de orientações sobre exames (substituir pelo link real) ──
 const EXAMS_MANUAL_URL="https://drive.google.com/placeholder-manual-exames";
 // ── Urgency tiers — percentage fee over service value + delivery time factor ──
 // Valores de referência (ajustar conforme necessidade): Expresso +20% / Urgente +40%
-const URGENCY_TIERS=[
-  {id:"normal",label:"Prazo normal",feePercent:0,planFactor:1},
-  {id:"expresso",label:"Expresso",feePercent:0.20,planFactor:0.5},
-  {id:"urgente",label:"Urgente",feePercent:0.40,planFactor:0.25},
-];
 // Prazo de impressão+entrega: fixo, NÃO afetado pela urgência
 const PRINT_DAYS=2; // dias úteis após aprovação do cliente
 const urgencyPlanDays=(baseDays,tier)=>Math.max(1,Math.round(baseDays*tier.planFactor));
-const SUP=[[18,17,16,15,14,13,12,11],[21,22,23,24,25,26,27,28]];
-const SUP_ALL=[...SUP[0],...SUP[1]];
 const arcade=n=>SUP_ALL.includes(n)?"sup":"inf";
 const WIZARD_STEPS_BASE=    ["Pré-planejamento","Dentes",     "Marca do Implante","Kit Cirúrgico","Modelo do Implante","Serviços Adicionais","Prazo","Informações do Caso"];
 const WIZARD_STEPS_PLAN=    ["Pré-planejamento","Dentes",     "Marca do Implante","Kit Cirúrgico","Modelo do Implante","Serviços Adicionais","Arquivo p/ Impressão","Prazo","Informações do Caso"];
@@ -418,6 +301,7 @@ export default function App() {
   const [cepDestino,setCepDestino]=useState("");
   const [services,setServices]=useState([]);
   const [couponDiscount,setCouponDiscount]=useState(0); // absolute value off
+  const [couponCode,setCouponCode]=useState(null); // código do cupom aplicado (o servidor confere de novo)
   useEffect(()=>{
     if(!dentist||!patient?.id)return;
     const itens=services;
@@ -603,73 +487,12 @@ export default function App() {
   // ── Discount: must be defined BEFORE calcTotal ─────────────────────────
   const accountType=dentist?.accountType||"dentista";
   const accountStatus=dentist?.accountStatus||"active";
-  const discount=accountStatus==="active"&&(accountType==="clinica"||accountType==="cursos")?0.15:0;
+  const discount=descontoDaConta(accountType,accountStatus);
   const applyDiscount=v=>parseFloat((v*(1-discount)).toFixed(2));
 
+  // Preço: mesma conta feita no servidor ao registrar o pedido (src/lib/preco.js)
   function calcTotal(sv){
-    const nTeeth=sv.teeth?.length||0;
-    const supCount=(sv.teeth||[]).filter(t=>SUP_ALL.includes(t)).length;
-    const infCount=(sv.teeth||[]).filter(t=>!SUP_ALL.includes(t)).length;
-    const archCount=(sv.arch?.sup?1:0)+(sv.arch?.inf?1:0)||1;
-
-    // ── Regras de precificação do catálogo ─────────────────────────────────
-    const pr=service?.pricing||{};
-    const baseMode=pr.baseMode||(service?.priceByQty?'per_qty':service?.usesArch&&service?.archAffectsPrice?'per_arch':'fixed');
-    const pbyq=baseMode==='per_qty'?(pr.priceByQty||service?.priceByQty||(serviceType==="planOnly"&&service?.planOnly?.priceByQty)||null):null;
-
-    let t=0;
-    if(pbyq){
-      if(supCount>=2)t+=pbyq[Math.min(supCount,8)]||0;
-      if(infCount>=2)t+=pbyq[Math.min(infCount,8)]||0;
-      if(t===0)t=pbyq[2]||service?.price||0;
-    } else if(baseMode==='per_arch'){
-      t=(service?.price||0)*archCount;
-    } else {
-      t=service?.price||P.unit;
-      if(supCount>0&&infCount>0)t*=2;
-    }
-
-    // ── Taxas por marca ────────────────────────────────────────────────────
-    const brandFees=pr.brandFees||service?.brandFees||{STRAUMANN:P.strauAdd};
-    const guias=pbyq?((supCount>=2?1:0)+(infCount>=2?1:0)||1):baseMode==='per_arch'?archCount:(supCount>0&&infCount>0?2:1);
-    if(sv.brand&&brandFees[sv.brand])t+=brandFees[sv.brand]*guias;
-
-    // ── Adicionais configurados no catálogo ────────────────────────────────
-    const addons=pr.addons||[];
-    addons.forEach(addon=>{
-      if(!addon.key||!addon.value)return;
-      const comp=sv.comps?.[addon.key];
-      if(Array.isArray(comp)&&comp.length>0){
-        t+=addon.value*(addon.perUnit?comp.length:1);
-      } else if(typeof comp==='number'&&comp>0){
-        t+=addon.value*(addon.perUnit?comp:1);
-      } else if(comp===true){
-        t+=addon.value;
-      }
-    });
-
-    // ── Fallback para adicionais hardcoded (legado) ────────────────────────
-    if(!addons.length){
-      if(sv.comps?.captura?.length)t+=P.provCaptura*sv.comps.captura.length;
-      if(sv.comps?.adesiva?.length)t+=P.provAdesiva*sv.comps.adesiva.length;
-      if(sv.comps?.cicatriz?.length)t+=P.cicatriz*sv.comps.cicatriz.length;
-      if(sv.comps?.proto_captura)t+=350*sv.comps.proto_captura;
-      if(sv.dsd3dAddon)t+=P.dsd3dProto;
-    }
-
-    // ── Urgência ───────────────────────────────────────────────────────────
-    const urgRules=pr.urgency||{};
-    const uTier=URGENCY_TIERS.find(u=>u.id===sv.urgency)||URGENCY_TIERS[0];
-    const urgFee=(urgRules[sv.urgency]!=null?(urgRules[sv.urgency]/100):uTier.feePercent)||0;
-    if(urgFee>0)t+=t*urgFee;
-
-    // ── Arquivo p/ impressão ───────────────────────────────────────────────
-    if(sv.slicedFile&&serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile){
-      const slicedStep=service?.steps?.find(s=>s.type==='file'||s.k==='sliced');
-      t+=(slicedStep?.data?.price||P.slicedFile);
-    }
-
-    return parseFloat((t*(1-discount)).toFixed(2));
+    return calcularPrecoItem({service,serviceType,discount},sv);
   }
   /* ── Correios freight calculation ──────────────────────────────────────
      * In production: call Correios REST API (OAuth2 token required)
@@ -4275,7 +4098,7 @@ input,textarea,select{touch-action:manipulation;}
             ))}
             </div>{/* end stack */}
             {/* Cupom de desconto — antes do total */}
-            <CouponBlock totalAll={totalAllBase} services={services} onApply={v=>setCouponDiscount(v)}/>
+            <CouponBlock totalAll={totalAllBase} services={services} onApply={(v,codigo)=>{setCouponDiscount(v);setCouponCode(v>0?codigo:null);}}/>
 
             {/* Total do pedido — com breakdown quando cupom aplicado */}
             <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.2)",borderRadius:12,padding:16,marginBottom:16}}>
@@ -4320,7 +4143,7 @@ input,textarea,select{touch-action:manipulation;}
 
           {/* Checkout column (sticky on desktop) */}
           <div style={{position:isDesktop?"sticky":"static",top:isDesktop?80:0,marginTop:isDesktop?0:16}}>
-            <InfinitePayCheckout amount={totalAll} services={services} patient={patient} dentist={dentist} freight={freight} couponDiscount={couponDiscount} profileComplete={profileComplete} onProfileIncomplete={()=>setScreen("profile")} onOrderPending={registerPendingPayment} onBackToDashboard={()=>setScreen("dashboard")}/>
+            <InfinitePayCheckout amount={totalAll} services={services} patient={patient} dentist={dentist} freight={freight} couponDiscount={couponDiscount} couponCode={couponCode} profileComplete={profileComplete} onProfileIncomplete={()=>setScreen("profile")} onOrderPending={registerPendingPayment} onBackToDashboard={()=>setScreen("dashboard")}/>
           </div>
         </div>
         )}
@@ -4464,7 +4287,7 @@ function CouponBlock({totalAll,services,onApply}){
         ?`${cupom.valor}% de desconto${temRestricao?" (serviços selecionados)":""}`
         :`${fmt2(cupom.valor)} de desconto${temRestricao?" (serviços selecionados)":""}`;
       setApplied({code:trimmed,label,discount,temRestricao,base});
-      onApply(discount);
+      onApply(discount,trimmed);
     }catch(e){
       setError("Erro ao validar cupom. Tente novamente.");
     }
@@ -4508,7 +4331,7 @@ function CouponBlock({totalAll,services,onApply}){
   );
 }
 
-function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDiscount,profileComplete,onProfileIncomplete,onOrderPending,onBackToDashboard}){
+function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDiscount,couponCode,profileComplete,onProfileIncomplete,onOrderPending,onBackToDashboard}){
   const [method,setMethod]=useState(null);
   const [loading,setLoading]=useState(false);
   const [success,setSuccess]=useState(null);
@@ -4582,6 +4405,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
         patient: patient||{},
         freight: freight||{method:"none",value:0},
         couponDiscount: couponDiscount||0,
+        couponCode: couponCode||null,
         responsavel,
         nfData: responsavel==="paciente"?nf:null,
         carrinhoChave: patient?.id?String(patient.id):null,

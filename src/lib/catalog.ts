@@ -173,11 +173,12 @@ function rowToService(row: Record<string, unknown>): CatalogService {
 }
 
 /** Busca o catálogo do Supabase e retorna no formato CatalogSpecialty[] */
-export async function fetchCatalog(): Promise<CatalogSpecialty[]> {
+// client: o navegador usa o cliente anônimo/logado; o servidor passa o cliente do servidor para conferir preços
+export async function fetchCatalog(client: { from: typeof supabase.from } = supabase): Promise<CatalogSpecialty[]> {
   // Busca serviços e imagens das especialidades em paralelo
   const [servicosResult, especialidadesResult] = await Promise.all([
-    supabase.from('servicos').select('*').eq('ativo', true).order('especialidade').order('nome'),
-    supabase.from('especialidades').select('nome, imagem').eq('ativo', true),
+    client.from('servicos').select('*').eq('ativo', true).order('especialidade').order('nome'),
+    client.from('especialidades').select('nome, imagem').eq('ativo', true),
   ])
 
   const { data, error } = servicosResult
