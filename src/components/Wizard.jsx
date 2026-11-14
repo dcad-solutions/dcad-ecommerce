@@ -4,6 +4,7 @@ import { fetchCatalog } from "@/lib/catalog";
 import { CATALOG, P, URGENCY_TIERS, SUP, SUP_ALL, mesclarCatalogo, calcularPrecoItem, descontoDaConta } from "@/lib/preco";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import ConsentimentoWhatsapp from "@/components/ConsentimentoWhatsapp";
+import PagamentoBox from "@/components/PagamentoBox";
 import { TERMO_WHATSAPP_VERSAO } from "@/lib/termo-whatsapp";
 
 // ── Catálogo local (fallback) ─────────────────────────────────────────────────
@@ -4422,7 +4423,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
         throw e;
       }
       setLoading(false);
-      setSuccess({...METHODS.find(m=>m.id===method),numero:data.os?.numero,total:data.total,modoTeste:data.modo_teste,forma:data.forma,expiraEm:data.expira_em});
+      setSuccess({...METHODS.find(m=>m.id===method),osId:data.os?.id,numero:data.os?.numero,total:data.total,modoTeste:data.modo_teste,forma:data.forma,expiraEm:data.expira_em,pagamento:data.pagamento||null,erroPagamento:data.erro_pagamento||null});
       // Limpa o carrinho: o pedido já está gravado e aparece em "Meus Pedidos"
       if(onOrderPending)onOrderPending({orderId:data.os?.id,checkoutUrl:null,amount:data.total,servicesList:services||[]});
     }catch(err){
@@ -4448,7 +4449,9 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
           </div>
           {success.modoTeste&&(
             <div style={{fontSize:12,color:C.yellow,background:"rgba(234,179,8,0.08)",border:"1px solid rgba(234,179,8,0.25)",borderRadius:8,padding:"8px 12px",marginTop:8}}>
-              Modo teste: nenhuma cobrança foi gerada. As vendas pelo portal ainda não estão liberadas.
+              {success.pagamento||success.erroPagamento
+                ?"Modo teste: as vendas pelo portal ainda não estão liberadas para os clientes."
+                :"Modo teste: nenhuma cobrança foi gerada. As vendas pelo portal ainda não estão liberadas."}
             </div>
           )}
           {responsavel==="paciente"&&(
@@ -4457,11 +4460,10 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
             </div>
           )}
         </div>
-        {success.checkout_url&&(
-          <button onClick={()=>window.open(success.checkout_url,"_blank")}
-            style={{width:"100%",display:"flex",alignItems:"center",justifyContent:"center",gap:8,background:"rgba(234,179,8,0.12)",border:"1px solid rgba(234,179,8,0.35)",borderRadius:12,padding:"13px 20px",color:C.yellow,fontSize:14,fontWeight:700,cursor:"pointer",marginBottom:12}}>
-            <Clock size={16}/> Finalizar pagamento →
-          </button>
+        {success.osId&&(success.pagamento||success.erroPagamento)&&(
+          <div style={{marginBottom:12}}>
+            <PagamentoBox osId={success.osId} inicial={success.pagamento} erroInicial={success.erroPagamento} forma={success.forma}/>
+          </div>
         )}
         <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.25)",borderRadius:12,padding:20,textAlign:"center",marginBottom:12}}>
           <div style={{fontSize:28,marginBottom:8}}><FolderOpen size={32}/></div>

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
+import PagamentoBox from '@/components/PagamentoBox';
 import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, RefreshCw, AlertCircle } from 'lucide-react';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
@@ -30,6 +31,8 @@ interface Pedido {
   observacoes: string | null;
   created_at: string;
   expira_em: string | null;
+  forma: string | null;
+  cobrar: boolean;
 }
 
 // ── Configuração das etapas ──────────────────────────────────────────────────
@@ -100,6 +103,10 @@ function paraPedido(o: LinhaOS): Pedido {
     observacoes: o.observacoes,
     created_at: o.criado_em,
     expira_em: o.status === 'aguardando_pagamento' ? o.pagamento_expira_em : null,
+    forma: o.pagamento_forma,
+    // Caixa de pagamento: Pix/cartão aguardando, ou boleto em aberto (o trabalho já começou)
+    cobrar: o.pagamento_status !== 'pago' && o.status !== 'cancelado' && o.status !== 'concluido'
+      && (o.status === 'aguardando_pagamento' || o.pagamento_forma === 'boleto'),
   };
 }
 
@@ -319,6 +326,9 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
           flexDirection: 'column',
           gap: 12,
         }}>
+          {pedido.cobrar && pedido.forma && (
+            <PagamentoBox osId={pedido.id} forma={pedido.forma} temaDoPortal />
+          )}
           {/* Todas as etapas */}
           {!cancelado && <div>
             <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: 'var(--dcad-text-sec)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>

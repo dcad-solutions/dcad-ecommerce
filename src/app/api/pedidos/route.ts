@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { clienteAtual, supabaseAdmin } from '@/lib/supabase-server';
 import { conferirItens, descontoCupom } from '@/lib/preco-servidor';
+import { cobrancaDisponivel, criarCobranca, type PagamentoPublico } from '@/lib/pagamentos';
 
 // Cria o pedido do Portal do Cliente como ordem de serviço do Kanban (ordens_servico) + conta a receber.
 //
@@ -10,7 +11,9 @@ import { conferirItens, descontoCupom } from '@/lib/preco-servidor';
 // * Enquanto fin_regras_pagamento.vendas_ativas estiver desligado, só contas de administrador
 //   (dcad_clientes.is_admin) fazem pedidos — em modo teste, sem cobrança.
 //
-// A cobrança (InfinitePay / Banco Inter) entra nas próximas fases; esta rota devolve a OS criada.
+// * Cobrança: com a integração da forma escolhida ativa (Financeiro → Integrações), o Admin cria o Pix,
+//   o boleto (Banco Inter) ou o link de cartão (InfinitePay) e a resposta já leva o que o cliente precisa.
+//   Com as vendas liberadas e a integração desligada, o pedido nem é registrado.
 
 type Forma = 'pix' | 'cartao' | 'boleto';
 const FORMA_DO_WIZARD: Record<string, Forma> = { pix: 'pix', card: 'cartao', prazo: 'boleto' };
@@ -37,6 +40,8 @@ const proximoNumero = (maior?: string | null) => {
   const n = Number(maior);
   return String((Number.isFinite(n) ? n : 0) + 1).padStart(5, '0');
 };
+
+export const maxDuration = 30;
 
 export async function POST(req: NextRequest) {
   const { user, cliente } = await clienteAtual();
@@ -66,6 +71,11 @@ export async function POST(req: NextRequest) {
     if (responsavel !== 'dentista') return NextResponse.json({ error: 'O boleto é só para pagamento pelo dentista.' }, { status: 400 });
     const { data: sit } = await db.rpc('dcad_boleto_situacao', { p_cliente: user.id });
     if (!sit?.liberado) return NextResponse.json({ error: 'O boleto ainda não está liberado para o seu cadastro.' }, { status: 403 });
+  }
+
+  const cobrar = await cobrancaDisponivel(db, forma);
+  if (!modoTeste && !cobrar) {
+    return NextResponse.json({ error: 'Esta forma de pagamento está indisponível no momento. Escolha outra ou fale com a D-CAD pelo WhatsApp (98) 98542-5982.' }, { status: 503 });
   }
 
   // ── Itens e valores: preço recalculado no servidor (src/lib/preco.js) ────
@@ -135,7 +145,7 @@ export async function POST(req: NextRequest) {
     log: [{
       ts: agora.toISOString(),
       acao: 'Pedido recebido pelo Portal do Cliente',
-      detalhe: `${FORMA_FINANCEIRO[forma]} · R$ ${total.toFixed(2).replace('.', ',')}${modoTeste ? ' · modo teste (sem cobrança)' : ''}`,
+      detalhe: `${FORMA_FINANCEIRO[forma]} · R$ ${total.toFixed(2).replace('.', ',')}${modoTeste ? (cobrar ? ' · modo teste' : ' · modo teste (sem cobrança)') : ''}`,
       usuario_nome: cliente.nome || 'Cliente',
     }],
   };
@@ -169,7 +179,7 @@ export async function POST(req: NextRequest) {
     valor: total,
     vencimento: forma === 'boleto' ? diaSaoLuis(Number(regras.boleto_vencimento_dias)) : diaSaoLuis(),
     forma_pagamento: FORMA_FINANCEIRO[forma],
-    obs: modoTeste ? 'Pedido de teste feito pelo Portal do Cliente (sem cobrança).' : 'Pedido do Portal do Cliente.',
+    obs: modoTeste ? `Pedido de teste feito pelo Portal do Cliente${cobrar ? '' : ' (sem cobrança)'}.` : 'Pedido do Portal do Cliente.',
   });
   if (erroConta) {
     // Sem a conta a receber o pedido não fica completo: desfaz a OS criada nesta mesma requisição
@@ -204,6 +214,18 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // ── Cobrança ──────────────────────────────────────────────────────────────
+  // Se falhar aqui, o pedido fica registrado e o cliente gera o pagamento de novo em Meus Pedidos.
+  let pagamento: PagamentoPublico | null = null;
+  let erroPagamento: string | null = null;
+  if (cobrar) {
+    try { pagamento = await criarCobranca(db, os.id); }
+    catch (e) {
+      console.error('[pedidos] cobrança', e);
+      erroPagamento = 'Seu pedido foi registrado, mas o banco não respondeu ao gerar o pagamento. Gere de novo em Meus Pedidos.';
+    }
+  }
+
   return NextResponse.json({
     ok: true,
     os: { id: os.id, numero: os.numero },
@@ -211,5 +233,7 @@ export async function POST(req: NextRequest) {
     total,
     expira_em: expira,
     modo_teste: modoTeste,
+    pagamento,
+    erro_pagamento: erroPagamento,
   });
 }
