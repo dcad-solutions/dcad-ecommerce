@@ -384,7 +384,22 @@ export default function App() {
   const [cepTouched,setCepTouched]=useState({});
   const [isDesktop,setIsDesktop]=useState(false);
   const [isTablet,setIsTablet]=useState(false); // 640-1023px
-  const [savedPatients,setSavedPatients]=useState([]); // pacientes cadastrados nesta sessão
+  const [patSaving,setPatSaving]=useState(false);
+  const [savedPatients,setSavedPatients]=useState([]); // pacientes do cliente (dcad_pacientes)
+  useEffect(()=>{
+    if(!dentist)return;
+    let cancelled=false;
+    (async()=>{
+      try{
+        const sb=supabaseBrowser();
+        const{data,error}=await sb.from("dcad_pacientes").select("id,nome,nascimento").order("criado_em",{ascending:false}).limit(200);
+        if(cancelled||error||!data)return;
+        const fmtNasc=d=>d?d.split("-").reverse().join("/"):"";
+        setSavedPatients(data.map(p=>({id:p.id,nome:p.nome,nasc:fmtNasc(p.nascimento)})));
+      }catch{}
+    })();
+    return()=>{cancelled=true;};
+  },[dentist?.email]);
   const [specialty,setSpecialty]=useState(null);
   const [serviceType,setServiceType]=useState(null);  // 'print' | 'planOnly'
   const [selectedGroup,setSelectedGroup]=useState(null); // grupo selecionado no protocolo
@@ -449,7 +464,7 @@ export default function App() {
     (async()=>{
       try{
         const sb=supabaseBrowser();
-        const{data,error}=await sb.from("orders").select("id,service_name,specialty,total,discount,freight_value,os_status,created_at").order("created_at",{ascending:false});
+        const{data,error}=await sb.from("ordens_servico").select("id,numero,status,servicos,paciente_nome,valor_total,pagamento_status,criado_em").order("criado_em",{ascending:false}).limit(50);
         if(!cancelled&&!error&&data)setRealOrders(data);
       }catch{}
     })();
@@ -655,7 +670,7 @@ export default function App() {
   function finalize(){
     const freightVal=serviceType==="print"?freight.value:0;
     const svcName=service?.name||(specialty?.name+" — Serviço");
-    const svc={id:editingId||Date.now(),specialty:specialty?.name,name:svcName+(A.teeth.length>1?" (2 dentes)":""),teeth:[...A.teeth],arch:{...A.arch},implantQty:A.implantQty,dsd3dAddon:A.dsd3dAddon,brand:A.brand,kit:A.kit,model:A.model||(A.modelText||"Não especificado"),comps:{...A.comps},observacoes:A.observacoes,urgency:A.urgency,slicedFile:A.slicedFile,printerId:A.printerId||null,serviceType,freight:freightVal>0?{...freight}:null,total:calcTotal(A)+freightVal};
+    const svc={id:editingId||Date.now(),servicoId:service?._supabaseId||null,specialty:specialty?.name,name:svcName+(A.teeth.length>1?" (2 dentes)":""),teeth:[...A.teeth],arch:{...A.arch},implantQty:A.implantQty,dsd3dAddon:A.dsd3dAddon,brand:A.brand,kit:A.kit,model:A.model||(A.modelText||"Não especificado"),comps:{...A.comps},observacoes:A.observacoes,urgency:A.urgency,slicedFile:A.slicedFile,printerId:A.printerId||null,serviceType,freight:freightVal>0?{...freight}:null,total:calcTotal(A)+freightVal};
     setServices(s=>[...s,svc]);
     if(service){trackFrequentService({...service,specialty:specialty?.name,specialtyColor:specialty?.color});}
     setEditingId(null);
@@ -2379,8 +2394,8 @@ input,textarea,select{touch-action:manipulation;}
             <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginBottom:24}}>
               {[
                 {label:"Total de pedidos",value:realOrders.length,color:C.textSec},
-                {label:"Em andamento",value:realOrders.filter(o=>o.os_status!=="entregue").length,color:C.yellow},
-                {label:"Entregues",value:realOrders.filter(o=>o.os_status==="entregue").length,color:C.green},
+                {label:"Em andamento",value:realOrders.filter(o=>!["entregue","pos_venda","concluido","cancelado"].includes(o.status)).length,color:C.yellow},
+                {label:"Entregues",value:realOrders.filter(o=>["entregue","pos_venda","concluido"].includes(o.status)).length,color:C.green},
               ].map((s,i)=>(
                 <div key={i} style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"14px 16px",textAlign:"center"}}>
                   <div style={{fontSize:26,fontWeight:900,color:s.color}}>{s.value}</div>
@@ -2541,24 +2556,30 @@ input,textarea,select{touch-action:manipulation;}
                   {/* Pedidos reais já registrados */}
                   {realOrders.slice(0, Math.max(0, 8-services.length)).map(o=>{
                     const STATUS={
+                      aguardando_pagamento:{label:"Aguard. pagamento",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
                       novo:{label:"Recebido",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
-                      ag_arquivos:{label:"Aguard. arquivos",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
-                      planejamento:{label:"Em planejamento",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
-                      aprovacao:{label:"Em aprovação",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
-                      impressao:{label:"Em impressão",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
-                      enviado:{label:"Enviado",color:C.green,bg:"rgba(34,197,94,0.1)"},
+                      aguardando_arquivos:{label:"Aguard. arquivos",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
+                      em_planejamento:{label:"Em planejamento",color:C.textSec,bg:"rgba(229,34,41,0.10)"},
+                      aguardando_aprovacao:{label:"Aguard. sua aprovação",color:C.yellow,bg:"rgba(234,179,8,0.1)"},
+                      pronto_impressao:{label:"Em produção",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
+                      em_impressao:{label:"Em impressão",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
+                      revisao:{label:"Em revisão",color:C.textSec,bg:"rgba(168,85,247,0.1)"},
                       entregue:{label:"Entregue",color:C.green,bg:"rgba(34,197,94,0.1)"},
+                      pos_venda:{label:"Entregue",color:C.green,bg:"rgba(34,197,94,0.1)"},
+                      concluido:{label:"Concluído",color:C.green,bg:"rgba(34,197,94,0.1)"},
+                      cancelado:{label:"Cancelado",color:C.textSec,bg:"rgba(255,255,255,0.06)"},
                     };
-                    const s=STATUS[o.os_status]||STATUS.novo;
-                    const valor=(Number(o.total)||0)-(Number(o.discount)||0)+(Number(o.freight_value)||0);
-                    const data=o.created_at?new Date(o.created_at).toLocaleDateString("pt-BR"):"";
+                    const s=STATUS[o.status]||STATUS.novo;
+                    const valor=Number(o.valor_total)||0;
+                    const data=o.criado_em?new Date(o.criado_em).toLocaleDateString("pt-BR"):"";
+                    const nomeServ=(o.servicos||[]).map(x=>x.nome).filter(Boolean).join(", ")||"Pedido";
                     return(
                       <a key={o.id} href="/pedidos" style={{background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"12px 14px",display:"flex",flexDirection:"column",gap:8,textDecoration:"none",color:C.text}}>
                         <div style={{display:"flex",alignItems:"flex-start",gap:8}}>
                           <div style={{width:44,height:44,borderRadius:8,background:"rgba(255,255,255,0.05)",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}><ClipboardList size={14}/></div>
                           <div style={{flex:1,minWidth:0}}>
-                            <div style={{fontWeight:700,fontSize:12,lineHeight:1.3,marginBottom:2}}>{o.service_name}</div>
-                            <div style={{fontSize:12,color:C.textSec}}>{[o.specialty,data].filter(Boolean).join(" · ")}</div>
+                            <div style={{fontWeight:700,fontSize:12,lineHeight:1.3,marginBottom:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{nomeServ}</div>
+                            <div style={{fontSize:12,color:C.textSec,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{["OS "+o.numero,o.paciente_nome,data].filter(Boolean).join(" · ")}</div>
                           </div>
                         </div>
                         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",gap:8}}>
@@ -2659,8 +2680,16 @@ input,textarea,select{touch-action:manipulation;}
               {patForm.nasc&&calcAge(patForm.nasc)&&<div style={{fontSize:13,color:C.green,marginTop:5,fontWeight:600}}>Idade: {calcAge(patForm.nasc)}</div>}
               {patForm.nasc.length===10&&!calcAge(patForm.nasc)&&<div style={{fontSize:13,color:C.red,marginTop:5}}>Data inválida. Verifique dia, mês e ano.</div>}
             </div>
-            <button disabled={!patForm.nome.trim()||!calcAge(patForm.nasc)} onClick={()=>{
-              const novo={id:"p"+Date.now(),nome:patForm.nome.trim(),nasc:patForm.nasc};
+            <button disabled={!patForm.nome.trim()||!calcAge(patForm.nasc)||patSaving} onClick={async()=>{
+              let novo={id:"p"+Date.now(),nome:patForm.nome.trim(),nasc:patForm.nasc};
+              setPatSaving(true);
+              try{
+                const [d,m,a]=patForm.nasc.split("/");
+                const{data,error}=await supabaseBrowser().from("dcad_pacientes").insert({nome:novo.nome,nascimento:`${a}-${m}-${d}`}).select("id").single();
+                if(error)throw error;
+                novo={...novo,id:data.id};
+              }catch{setToast("Não foi possível salvar o paciente. Ele vale só para este pedido.");}
+              finally{setPatSaving(false);}
               setSavedPatients(list=>[novo,...list]);
               // Save current cart if not empty
               if(services.length>0&&patient){
@@ -4449,31 +4478,56 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
   const [nfConfirmed,setNfConfirmed]=useState(false);
   const [nf,setNf]=useState({nome:"",cpf:"",rua:"",numero:"",bairro:"",complemento:"",cidade:"",estado:"",cep:""});
 
-  const pixAmount=parseFloat((amount*0.90).toFixed(2));
-  const pixDiscount=parseFloat((amount*0.10).toFixed(2));
-  const installmentVal=parseFloat((amount/2).toFixed(2));
-  const dueDate=useMemo(()=>{
-    const d=new Date(); d.setDate(d.getDate()+14);
-    return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  // Regras definidas no Portal Admin (Financeiro → Configurações → Formas de pagamento)
+  const [regras,setRegras]=useState({pix_desconto_pct:10,pedido_expira_horas:24,cartao_parcelas_sem_juros:2,cartao_parcelas_max:12,boleto_vencimento_dias:14,boleto_multa_pct:2,boleto_juros_mes_pct:1,boleto_desconto_tipo:"nenhum",boleto_desconto_valor:0});
+  const [boleto,setBoleto]=useState({liberado:false,pagos:0,necessarios:2,carregado:false});
+  useEffect(()=>{
+    let cancelled=false;
+    (async()=>{
+      try{
+        const sb=supabaseBrowser();
+        const [{data:r},{data:sit}]=await Promise.all([
+          sb.from("fin_regras_pagamento").select("pix_desconto_pct,pedido_expira_horas,cartao_parcelas_sem_juros,cartao_parcelas_max,boleto_vencimento_dias,boleto_multa_pct,boleto_juros_mes_pct,boleto_desconto_tipo,boleto_desconto_valor").eq("id",1).maybeSingle(),
+          sb.rpc("dcad_boleto_situacao"),
+        ]);
+        if(cancelled)return;
+        if(r)setRegras(Object.fromEntries(Object.entries(r).map(([k,v])=>[k,typeof v==="string"&&k!=="boleto_desconto_tipo"?Number(v):v])));
+        if(sit)setBoleto({...sit,carregado:true});
+      }catch{}
+    })();
+    return()=>{cancelled=true;};
   },[]);
+  const pixPct=Number(regras.pix_desconto_pct)||0;
+  const pixAmount=parseFloat((amount*(1-pixPct/100)).toFixed(2));
+  const pixDiscount=parseFloat((amount*pixPct/100).toFixed(2));
+  const semJuros=Math.max(1,Number(regras.cartao_parcelas_sem_juros)||1);
+  const installmentVal=parseFloat((amount/semJuros).toFixed(2));
+  const dueDate=useMemo(()=>{
+    const d=new Date(); d.setDate(d.getDate()+(Number(regras.boleto_vencimento_dias)||14));
+    return d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit",year:"numeric"});
+  },[regras.boleto_vencimento_dias]);
+  const boletoDesc=regras.boleto_desconto_tipo==="percentual"&&regras.boleto_desconto_valor>0?`${String(regras.boleto_desconto_valor).replace(".",",")}% de desconto até o vencimento`
+    :regras.boleto_desconto_tipo==="valor"&&regras.boleto_desconto_valor>0?`${(Number(regras.boleto_desconto_valor)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} de desconto até o vencimento`:null;
   const fmt2=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   const setN=(k,v)=>setNf(f=>({...f,[k]:v}));
 
   const ALL_METHODS=[
-    {id:"pix",icon:<Zap size={18}/>,label:"Pix — 10% de desconto",tag:"Pagamento imediato",
+    {id:"pix",icon:<Zap size={18}/>,label:pixPct>0?`Pix — ${String(pixPct).replace(".",",")}% de desconto`:"Pix",tag:"Pagamento imediato",
      detail:`De ${fmt2(amount)} por`,highlight:fmt2(pixAmount),
-     sub:`Economia de ${fmt2(pixDiscount)}`,color:"#22C55E",
+     sub:pixPct>0?`Economia de ${fmt2(pixDiscount)}`:"Confirmação na hora",color:"#22C55E",
      tagColor:"rgba(34,197,94,0.15)",tagText:"#22C55E",action:"Pagar com Pix"},
-    {id:"card",icon:<CreditCard size={18}/>,label:"Cartão de crédito",tag:"Sem juros",
-     detail:"Em até 2× de",highlight:fmt2(installmentVal),
-     sub:`Total: ${fmt2(amount)}`,color:"#6366F1",
+    {id:"card",icon:<CreditCard size={18}/>,label:"Cartão de crédito",tag:semJuros>1?`${semJuros}× sem juros`:"À vista",
+     detail:semJuros>1?`Em até ${semJuros}× de`:"Total",highlight:fmt2(installmentVal),
+     sub:Number(regras.cartao_parcelas_max)>semJuros?`Total: ${fmt2(amount)} · ou até ${regras.cartao_parcelas_max}× com juros da operadora`:`Total: ${fmt2(amount)}`,color:"#6366F1",
      tagColor:"rgba(229,34,41,0.12)",tagText:"#818CF8",action:"Pagar com cartão"},
-    {id:"prazo",icon:<Calendar size={18}/>,label:"Cobrança a prazo",tag:"14 dias",
+    {id:"prazo",icon:<Calendar size={18}/>,label:"Boleto bancário",tag:`${regras.boleto_vencimento_dias} dias`,
      detail:`Vencimento em ${dueDate}`,highlight:fmt2(amount),
-     sub:"Via InfinitePay Gestão de Cobrança",color:"#EAB308",
+     sub:boletoDesc||`Após o vencimento: multa de ${String(regras.boleto_multa_pct).replace(".",",")}% e juros de ${String(regras.boleto_juros_mes_pct).replace(".",",")}% ao mês`,color:"#EAB308",
      tagColor:"rgba(234,179,8,0.12)",tagText:"#EAB308",action:"Gerar cobrança"},
   ];
-  const METHODS=responsavel==="paciente"?ALL_METHODS.filter(m=>m.id!=="prazo"):ALL_METHODS;
+  // Boleto: só quando o dentista paga e o cadastro está liberado (cliente antigo ou N pedidos pagos)
+  const METHODS=(responsavel==="paciente"||!boleto.liberado)?ALL_METHODS.filter(m=>m.id!=="prazo"):ALL_METHODS;
+  const boletoBloqueado=responsavel==="dentista"&&boleto.carregado&&!boleto.liberado;
 
   async function handlePay(){
     if(!profileComplete){onProfileIncomplete();return;}
@@ -4482,42 +4536,35 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
     setLoading(true);
     setPayError(null);
     try{
-      const orderId=crypto.randomUUID();
       const payload={
-        orderId,
-        amount,
         method,
         services: services||[],
         patient: patient||{},
-        dentist: dentist||{},
         freight: freight||{method:"none",value:0},
         couponDiscount: couponDiscount||0,
         responsavel,
         nfData: responsavel==="paciente"?nf:null,
       };
-      console.log("Chamando InfinitePay com payload:", JSON.stringify(payload).slice(0,300));
-      const res=await fetch("/api/infinitepay/checkout",{
+      const res=await fetch("/api/pedidos",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
         body:JSON.stringify(payload),
       });
-      if(!res.ok)throw new Error("Falha ao iniciar o pagamento (HTTP "+res.status+")");
-      const data=await res.json();
-      console.log("Resposta da API:", data);
-      if(data.checkout_url){
-        window.open(data.checkout_url,"_blank");
-        setSuccess({...METHODS.find(m=>m.id===method),checkout_url:data.checkout_url,order_id:data.order_id});
-        // Pagamento ainda não confirmado — registra o pedido no dashboard como "pagamento pendente"
-        if(onOrderPending)onOrderPending({orderId:data.order_id||orderId,checkoutUrl:data.checkout_url,amount,servicesList:services||[]});
-      }else{
-        console.error("Sem checkout_url:", data);
-        throw new Error(data.error||"Sem URL de pagamento");
+      const data=await res.json().catch(()=>({}));
+      if(!res.ok||!data.ok){
+        const e=new Error(data.error||"Falha ao registrar o pedido (HTTP "+res.status+")");
+        e.mensagem=data.error;
+        throw e;
       }
+      setLoading(false);
+      setSuccess({...METHODS.find(m=>m.id===method),numero:data.os?.numero,total:data.total,modoTeste:data.modo_teste,forma:data.forma,expiraEm:data.expira_em});
+      // Limpa o carrinho: o pedido já está gravado e aparece em "Meus Pedidos"
+      if(onOrderPending)onOrderPending({orderId:data.os?.id,checkoutUrl:null,amount:data.total,servicesList:services||[]});
     }catch(err){
       // Nunca mostrar tela de sucesso/pendente se o checkout não foi criado
       console.error("Erro no pagamento:",err);
       setLoading(false);
-      setPayError("Não foi possível iniciar o pagamento. Nenhuma cobrança foi feita. Tente novamente em instantes ou fale com a equipe D-CAD pelo WhatsApp (98) 98542-5982.");
+      setPayError(err?.mensagem||"Não foi possível registrar o pedido. Nenhuma cobrança foi feita. Tente novamente em instantes ou fale com a equipe D-CAD pelo WhatsApp (98) 98542-5982.");
     }
   }
 
@@ -4525,14 +4572,20 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
   if(success){
     return(
       <div style={{marginTop:4}}>
-        <div style={{background:C.dark2,border:"1px solid rgba(234,179,8,0.35)",borderRadius:12,padding:24,textAlign:"center",marginBottom:16}}>
-          <div style={{display:"flex",justifyContent:"center",marginBottom:10}}><Clock size={40} color={C.yellow}/></div>
-          <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>Pagamento pendente</div>
+        <div style={{background:C.dark2,border:`1px solid ${success.forma==="boleto"?"rgba(34,197,94,0.35)":"rgba(234,179,8,0.35)"}`,borderRadius:12,padding:24,textAlign:"center",marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>{success.forma==="boleto"?<CheckCircle size={40} color={C.green}/>:<Clock size={40} color={C.yellow}/>}</div>
+          <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>Pedido OS {success.numero} registrado</div>
           <div style={{fontSize:13,color:C.textSec,marginBottom:6,lineHeight:1.6}}>
-            O checkout InfinitePay foi aberto em uma nova aba.<br/>
-            Assim que o pagamento for confirmado, o status será atualizado.<br/>
-            <b style={{color:C.text}}>{success.label}</b>
+            {success.forma==="boleto"
+              ?<>Seu pedido já entrou na fila de trabalho da D-CAD.<br/>O boleto vence em {dueDate}.</>
+              :<>O trabalho começa assim que o pagamento for confirmado.<br/>Sem pagamento em {regras.pedido_expira_horas||24} horas, o pedido é cancelado automaticamente.</>}
+            <br/><b style={{color:C.text}}>{success.label} · {fmt2(Number(success.total)||0)}</b>
           </div>
+          {success.modoTeste&&(
+            <div style={{fontSize:12,color:C.yellow,background:"rgba(234,179,8,0.08)",border:"1px solid rgba(234,179,8,0.25)",borderRadius:8,padding:"8px 12px",marginTop:8}}>
+              Modo teste: nenhuma cobrança foi gerada. As vendas pelo portal ainda não estão liberadas.
+            </div>
+          )}
           {responsavel==="paciente"&&(
             <div style={{fontSize:12,color:C.textSec,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.18)",borderRadius:8,padding:"8px 12px",marginTop:8,marginBottom:4}}>
               NF em nome de: <b style={{color:C.text}}>{nf.nome}</b>
@@ -4675,6 +4728,12 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
               </div>
             </button>
           ))}
+          {boletoBloqueado&&(
+            <div style={{display:"flex",alignItems:"center",gap:8,fontSize:12,color:C.textSec,background:C.dark2,border:`1px dashed ${C.border}`,borderRadius:12,padding:"10px 14px",marginBottom:8}}>
+              <Calendar size={14} style={{flexShrink:0}}/>
+              <span>Boleto bancário disponível após {boleto.necessarios} pedidos pagos com Pix ou cartão{boleto.pagos>0?` (você tem ${boleto.pagos})`:""}.</span>
+            </div>
+          )}
           {payError&&(
             <div role="alert" style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.35)",borderRadius:12,padding:"12px 14px",marginBottom:8,fontSize:13,lineHeight:1.5,color:C.text}}>
               <AlertCircle size={16} color={C.red} style={{flexShrink:0,marginTop:2}}/>

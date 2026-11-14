@@ -5,14 +5,16 @@ import { supabaseBrowser } from '@/lib/supabase-browser';
 import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, RefreshCw, AlertCircle } from 'lucide-react';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
+// Etapas que o cliente vê (agrupam os status do Kanban da D-CAD)
 type OsStatus =
+  | 'pagamento'
   | 'novo'
   | 'ag_arquivos'
   | 'planejamento'
   | 'aprovacao'
   | 'impressao'
-  | 'enviado'
-  | 'entregue';
+  | 'entregue'
+  | 'cancelado';
 
 interface Pedido {
   id: string;
@@ -27,28 +29,79 @@ interface Pedido {
   os_status: OsStatus;
   observacoes: string | null;
   created_at: string;
+  expira_em: string | null;
 }
 
 // ── Configuração das etapas ──────────────────────────────────────────────────
 const ETAPAS: { key: OsStatus; label: string; icone: string }[] = [
+  { key: 'pagamento',   label: 'Pagamento',    icone: '💳' },
   { key: 'novo',        label: 'Recebido',     icone: '📥' },
   { key: 'ag_arquivos', label: 'Ag. Arquivos', icone: '📎' },
   { key: 'planejamento',label: 'Planejamento', icone: '🔬' },
   { key: 'aprovacao',   label: 'Aprovação',    icone: '✅' },
   { key: 'impressao',   label: 'Impressão',    icone: '🖨️' },
-  { key: 'enviado',     label: 'Enviado',      icone: '📦' },
   { key: 'entregue',    label: 'Entregue',     icone: '🏁' },
 ];
 
 const STATUS_IDX: Record<OsStatus, number> = {
-  novo: 0,
-  ag_arquivos: 1,
-  planejamento: 2,
-  aprovacao: 3,
-  impressao: 4,
-  enviado: 5,
+  pagamento: 0,
+  novo: 1,
+  ag_arquivos: 2,
+  planejamento: 3,
+  aprovacao: 4,
+  impressao: 5,
   entregue: 6,
+  cancelado: 0,
 };
+
+// Status da ordem de serviço (Kanban) → etapa mostrada ao cliente
+const ETAPA_DO_STATUS: Record<string, OsStatus> = {
+  aguardando_pagamento: 'pagamento',
+  novo: 'novo',
+  aguardando_arquivos: 'ag_arquivos',
+  em_planejamento: 'planejamento',
+  aguardando_aprovacao: 'aprovacao',
+  pronto_impressao: 'impressao',
+  em_impressao: 'impressao',
+  revisao: 'impressao',
+  entregue: 'entregue',
+  pos_venda: 'entregue',
+  concluido: 'entregue',
+  cancelado: 'cancelado',
+};
+
+const FORMA: Record<string, string> = { pix: 'Pix', cartao: 'Cartão de crédito', boleto: 'Boleto bancário' };
+const SITUACAO_PAGAMENTO: Record<string, string> = {
+  aguardando: 'Aguardando pagamento', pago: 'Pago', vencido: 'Vencido', cancelado: 'Cancelado', teste: 'Teste',
+};
+
+interface LinhaOS {
+  id: string; numero: string; status: string; servicos: { nome?: string }[] | null; paciente_nome: string | null;
+  valor_bruto: number | null; desconto: number | null; valor_total: number | null;
+  pagamento_forma: string | null; pagamento_status: string | null; pagamento_expira_em: string | null;
+  observacoes: string | null; criado_em: string;
+}
+
+function paraPedido(o: LinhaOS): Pedido {
+  const bruto = Number(o.valor_bruto ?? o.valor_total ?? 0);
+  return {
+    id: o.id,
+    service_name: (o.servicos || []).map(s => s.nome).filter(Boolean).join(', ') || 'Pedido',
+    specialty: [`OS ${o.numero}`, o.paciente_nome].filter(Boolean).join(' · '),
+    service_type: null,
+    total: bruto,
+    discount: Number(o.desconto ?? 0),
+    freight_value: 0,
+    payment_status: o.pagamento_status || '',
+    payment_method: o.pagamento_forma
+      ? `${FORMA[o.pagamento_forma] || o.pagamento_forma}${o.pagamento_status ? ' · ' + (SITUACAO_PAGAMENTO[o.pagamento_status] || o.pagamento_status) : ''}`
+      : null,
+    os_status: ETAPA_DO_STATUS[o.status] || 'novo',
+    observacoes: o.observacoes,
+    created_at: o.criado_em,
+    expira_em: o.status === 'aguardando_pagamento' ? o.pagamento_expira_em : null,
+  };
+}
 
 type Filtro = 'todos' | 'andamento' | 'entregues';
 
@@ -156,6 +209,7 @@ function BarraProgresso({ status }: { status: OsStatus }) {
 function CardPedido({ pedido }: { pedido: Pedido }) {
   const [aberto, setAberto] = useState(false);
   const entregue = pedido.os_status === 'entregue';
+  const cancelado = pedido.os_status === 'cancelado';
   const bruto = pedido.total;
   const desc = pedido.discount ?? 0;
   const frete = pedido.freight_value ?? 0;
@@ -205,6 +259,15 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
             </p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+            {cancelado && (
+              <span style={{
+                fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 99,
+                backgroundColor: 'var(--dcad-bg)', color: 'var(--dcad-text-sec)', border: '1px solid var(--dcad-border)',
+                textTransform: 'uppercase', letterSpacing: '0.05em',
+              }}>
+                Cancelado
+              </span>
+            )}
             {entregue && (
               <span style={{
                 fontSize: 10,
@@ -224,7 +287,12 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
         </div>
 
         {/* Barra de progresso */}
-        {!entregue && <BarraProgresso status={pedido.os_status} />}
+        {!entregue && !cancelado && <BarraProgresso status={pedido.os_status} />}
+        {pedido.expira_em && (
+          <span style={{ fontSize: 12, color: '#B45309' }}>
+            Pague até {new Date(pedido.expira_em).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })} — depois disso o pedido é cancelado.
+          </span>
+        )}
 
         {/* Linha inferior: data + valor */}
         <div style={{
@@ -252,7 +320,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
           gap: 12,
         }}>
           {/* Todas as etapas */}
-          <div>
+          {!cancelado && <div>
             <p style={{ margin: '0 0 8px', fontSize: 11, fontWeight: 600, color: 'var(--dcad-text-sec)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
               Linha do tempo
             </p>
@@ -297,7 +365,7 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
                 );
               })}
             </div>
-          </div>
+          </div>}
 
           {/* Valores */}
           <div style={{
@@ -377,12 +445,12 @@ export default function PedidosPage() {
       setAtualizando(true);
       const sb = supabaseBrowser();
       const { data, error } = await sb
-        .from('orders')
-        .select('id, service_name, specialty, service_type, total, discount, freight_value, payment_status, payment_method, os_status, observacoes, created_at')
-        .order('created_at', { ascending: false });
+        .from('ordens_servico')
+        .select('id, numero, status, servicos, paciente_nome, valor_bruto, desconto, valor_total, pagamento_forma, pagamento_status, pagamento_expira_em, observacoes, criado_em')
+        .order('criado_em', { ascending: false });
 
       if (error) throw error;
-      setPedidos((data as Pedido[]) ?? []);
+      setPedidos(((data as LinhaOS[]) ?? []).map(paraPedido));
     } catch (e: unknown) {
       setErro((e as Error).message ?? 'Erro ao carregar pedidos');
     } finally {
@@ -394,12 +462,12 @@ export default function PedidosPage() {
   useEffect(() => { carregar(); }, []);
 
   const filtrados = pedidos.filter(p => {
-    if (filtro === 'andamento') return p.os_status !== 'entregue';
+    if (filtro === 'andamento') return p.os_status !== 'entregue' && p.os_status !== 'cancelado';
     if (filtro === 'entregues') return p.os_status === 'entregue';
     return true;
   });
 
-  const contAndamento = pedidos.filter(p => p.os_status !== 'entregue').length;
+  const contAndamento = pedidos.filter(p => p.os_status !== 'entregue' && p.os_status !== 'cancelado').length;
   const contEntregues = pedidos.filter(p => p.os_status === 'entregue').length;
 
   return (
