@@ -109,7 +109,12 @@ export function mesclarCatalogo(data){
       ...staticSpec,
       ...dynSpec,
       services: dynSpec.services.map((dynSvc) => {
-        const staticSvc = staticSpec.services.find((s) => s.type === dynSvc.type || s.id === dynSvc.id);
+        // Correspondência com o catálogo do código: pelo id, depois pelo nome; pelo tipo só se ele for único
+        // (os três protocolos têm o mesmo tipo e eram todos tratados como o Edêntulo Total)
+        const mesmoTipo = staticSpec.services.filter((s) => s.type && s.type === dynSvc.type);
+        const staticSvc = staticSpec.services.find((s) => s.id === dynSvc.id)
+          || staticSpec.services.find((s) => s.name === dynSvc.name)
+          || (mesmoTipo.length === 1 ? mesmoTipo[0] : undefined);
         if (!staticSvc) return dynSvc;
         return {
           ...staticSvc,
@@ -124,6 +129,7 @@ export function mesclarCatalogo(data){
           days:     dynSvc.days     || staticSvc.days,
           // Preço vem do Supabase apenas se autenticado (RLS); caso null usa estático
           price:    dynSvc.price    ?? staticSvc.price,
+          // "Só planejamento" só existe se o serviço tiver preço/prazo de planejamento no admin
           planOnly: dynSvc.planOnly
             ? {
                 ...staticSvc.planOnly,
@@ -131,7 +137,7 @@ export function mesclarCatalogo(data){
                 price: dynSvc.planOnly.price ?? staticSvc.planOnly?.price,
                 days:  dynSvc.planOnly.days  ?? staticSvc.planOnly?.days,
               }
-            : staticSvc.planOnly,
+            : null,
         };
       }),
     };
