@@ -4345,6 +4345,20 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
   // Regras definidas no Portal Admin (Financeiro → Configurações → Formas de pagamento)
   const [regras,setRegras]=useState({pix_desconto_pct:10,pedido_expira_horas:24,cartao_parcelas_sem_juros:2,cartao_parcelas_max:12,boleto_vencimento_dias:14,boleto_multa_pct:2,boleto_juros_mes_pct:1,boleto_desconto_tipo:"nenhum",boleto_desconto_valor:0});
   const [boleto,setBoleto]=useState({liberado:false,pagos:0,necessarios:2,carregado:false});
+  // Crédito do cliente (OS canceladas mantidas como crédito): abatido do total no servidor
+  const [saldoCredito,setSaldoCredito]=useState(0);
+  const [usarCredito,setUsarCredito]=useState(true);
+  useEffect(()=>{
+    let cancelled=false;
+    (async()=>{
+      try{
+        const sb=supabaseBrowser();
+        const {data:movs}=await sb.from("fin_creditos").select("valor").limit(5000);
+        if(!cancelled&&movs)setSaldoCredito(Math.max(0,Math.round(movs.reduce((t,m)=>t+Number(m.valor||0),0)*100)/100));
+      }catch{}
+    })();
+    return()=>{cancelled=true;};
+  },[]);
   useEffect(()=>{
     let cancelled=false;
     (async()=>{
@@ -4374,18 +4388,23 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
     :regras.boleto_desconto_tipo==="valor"&&regras.boleto_desconto_valor>0?`${(Number(regras.boleto_desconto_valor)).toLocaleString("pt-BR",{style:"currency",currency:"BRL"})} de desconto até o vencimento`:null;
   const fmt2=v=>v.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
   const setN=(k,v)=>setNf(f=>({...f,[k]:v}));
+  const temCredito=saldoCredito>0;
+  const creditoAtivo=temCredito&&usarCredito;
+  const creditoCobreTudo=creditoAtivo&&saldoCredito>=amount;
+  // Valor que falta pagar em cada forma depois do crédito (o Pix tem desconto antes do crédito)
+  const aPagar=v=>Math.max(0,parseFloat((v-(creditoAtivo?saldoCredito:0)).toFixed(2)));
 
   const ALL_METHODS=[
     {id:"pix",icon:<Zap size={18}/>,label:pixPct>0?`Pix — ${String(pixPct).replace(".",",")}% de desconto`:"Pix",tag:"Pagamento imediato",
-     detail:`De ${fmt2(amount)} por`,highlight:fmt2(pixAmount),
+     detail:creditoAtivo?`${fmt2(pixAmount)} − crédito =`:`De ${fmt2(amount)} por`,highlight:fmt2(aPagar(pixAmount)),
      sub:pixPct>0?`Economia de ${fmt2(pixDiscount)}`:"Confirmação na hora",color:"#22C55E",
      tagColor:"rgba(34,197,94,0.15)",tagText:"#22C55E",action:"Pagar com Pix"},
     {id:"card",icon:<CreditCard size={18}/>,label:"Cartão de crédito",tag:semJuros>1?`${semJuros}× sem juros`:"À vista",
-     detail:semJuros>1?`Em até ${semJuros}× de`:"Total",highlight:fmt2(installmentVal),
+     detail:creditoAtivo?"A pagar depois do crédito":semJuros>1?`Em até ${semJuros}× de`:"Total",highlight:fmt2(creditoAtivo?aPagar(amount):installmentVal),
      sub:Number(regras.cartao_parcelas_max)>semJuros?`Total: ${fmt2(amount)} · ou até ${regras.cartao_parcelas_max}× com juros da operadora`:`Total: ${fmt2(amount)}`,color:"#6366F1",
      tagColor:"rgba(229,34,41,0.12)",tagText:"#818CF8",action:"Pagar com cartão"},
     {id:"prazo",icon:<Calendar size={18}/>,label:"Boleto bancário",tag:`${regras.boleto_vencimento_dias} dias`,
-     detail:`Vencimento em ${dueDate}`,highlight:fmt2(amount),
+     detail:`Vencimento em ${dueDate}${creditoAtivo?" · a pagar":""}`,highlight:fmt2(creditoAtivo?aPagar(amount):amount),
      sub:boletoDesc||`Após o vencimento: multa de ${String(regras.boleto_multa_pct).replace(".",",")}% e juros de ${String(regras.boleto_juros_mes_pct).replace(".",",")}% ao mês`,color:"#EAB308",
      tagColor:"rgba(234,179,8,0.12)",tagText:"#EAB308",action:"Gerar cobrança"},
   ];
@@ -4395,13 +4414,14 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
 
   async function handlePay(){
     if(!profileComplete){onProfileIncomplete();return;}
-    if(!method){return;}
+    if(!method&&!creditoCobreTudo){return;}
     if(!responsavel){return;}
     setLoading(true);
     setPayError(null);
     try{
       const payload={
-        method,
+        method: creditoCobreTudo?"credito":method,
+        usarCredito: creditoAtivo,
         services: services||[],
         patient: patient||{},
         freight: freight||{method:"none",value:0},
@@ -4423,7 +4443,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
         throw e;
       }
       setLoading(false);
-      setSuccess({...METHODS.find(m=>m.id===method),osId:data.os?.id,numero:data.os?.numero,total:data.total,modoTeste:data.modo_teste,forma:data.forma,expiraEm:data.expira_em,pagamento:data.pagamento||null,erroPagamento:data.erro_pagamento||null});
+      setSuccess({...(data.pago_com_credito&&data.forma==="credito"?{label:"Crédito do cliente"}:METHODS.find(m=>m.id===method)),pagoComCredito:!!data.pago_com_credito,creditoAplicado:Number(data.credito_aplicado)||0,aPagar:Number(data.a_pagar)||0,osId:data.os?.id,numero:data.os?.numero,total:data.total,modoTeste:data.modo_teste,forma:data.forma,expiraEm:data.expira_em,pagamento:data.pagamento||null,erroPagamento:data.erro_pagamento||null});
       // Limpa o carrinho: o pedido já está gravado e aparece em "Meus Pedidos"
       if(onOrderPending)onOrderPending({orderId:data.os?.id,checkoutUrl:null,amount:data.total,servicesList:services||[]});
     }catch(err){
@@ -4438,14 +4458,22 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
   if(success){
     return(
       <div style={{marginTop:4}}>
-        <div style={{background:C.dark2,border:`1px solid ${success.forma==="boleto"?"rgba(34,197,94,0.35)":"rgba(234,179,8,0.35)"}`,borderRadius:12,padding:24,textAlign:"center",marginBottom:16}}>
-          <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>{success.forma==="boleto"?<CheckCircle size={40} color={C.green}/>:<Clock size={40} color={C.yellow}/>}</div>
+        <div style={{background:C.dark2,border:`1px solid ${success.forma==="boleto"||success.pagoComCredito?"rgba(34,197,94,0.35)":"rgba(234,179,8,0.35)"}`,borderRadius:12,padding:24,textAlign:"center",marginBottom:16}}>
+          <div style={{display:"flex",justifyContent:"center",marginBottom:10}}>{success.forma==="boleto"||success.pagoComCredito?<CheckCircle size={40} color={C.green}/>:<Clock size={40} color={C.yellow}/>}</div>
           <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>Pedido OS {success.numero} registrado</div>
           <div style={{fontSize:13,color:C.textSec,marginBottom:6,lineHeight:1.6}}>
-            {success.forma==="boleto"
+            {success.pagoComCredito
+              ?<>Pedido pago com o seu crédito e já na fila de trabalho da D-CAD.</>
+              :success.forma==="boleto"
               ?<>Seu pedido já entrou na fila de trabalho da D-CAD.<br/>O boleto vence em {dueDate}.</>
               :<>O trabalho começa assim que o pagamento for confirmado.<br/>Sem pagamento em {regras.pedido_expira_horas||24} horas, o pedido é cancelado automaticamente.</>}
             <br/><b style={{color:C.text}}>{success.label} · {fmt2(Number(success.total)||0)}</b>
+            {success.creditoAplicado>0&&!success.pagoComCredito&&(
+              <><br/><span style={{color:C.green}}>Crédito usado: {fmt2(success.creditoAplicado)}</span> · a pagar: <b style={{color:C.text}}>{fmt2(success.aPagar)}</b></>
+            )}
+            {success.creditoAplicado>0&&success.pagoComCredito&&(
+              <><br/><span style={{color:C.green}}>Crédito usado: {fmt2(success.creditoAplicado)}</span></>
+            )}
           </div>
           {success.modoTeste&&(
             <div style={{fontSize:12,color:C.yellow,background:"rgba(234,179,8,0.08)",border:"1px solid rgba(234,179,8,0.25)",borderRadius:8,padding:"8px 12px",marginTop:8}}>
@@ -4573,7 +4601,32 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
       {/* ── MÉTODOS DE PAGAMENTO ── */}
       {responsavel&&(responsavel==="dentista"||(responsavel==="paciente"&&nfConfirmed&&nf.nome&&nf.cpf&&nf.rua&&nf.numero&&nf.cidade&&nf.estado&&nf.cep))&&(
         <div>
-          <div style={{fontSize:13,fontWeight:700,color:C.textSec,marginBottom:10,letterSpacing:.5}}>FORMA DE PAGAMENTO</div>
+          {temCredito&&(
+            <label style={{display:"flex",alignItems:"center",gap:12,background:creditoAtivo?"rgba(34,197,94,0.08)":C.dark2,border:`1.5px solid ${creditoAtivo?"rgba(34,197,94,0.6)":C.border}`,borderRadius:12,padding:"13px 15px",marginBottom:14,cursor:"pointer"}}>
+              <input type="checkbox" checked={usarCredito} onChange={e=>setUsarCredito(e.target.checked)} style={{width:18,height:18,accentColor:"#22C55E",flexShrink:0}}/>
+              <span style={{flex:1,minWidth:0}}>
+                <span style={{display:"block",fontWeight:700,fontSize:13}}>Usar meu crédito de <span style={{color:C.green}}>{fmt2(saldoCredito)}</span></span>
+                <span style={{display:"block",fontSize:12,color:C.textSec,marginTop:2}}>
+                  {creditoCobreTudo?"O crédito paga o pedido inteiro.":usarCredito?"Abatido do total; o restante é pago na forma escolhida abaixo.":"Crédito de pedidos anteriores da D-CAD."}
+                </span>
+              </span>
+            </label>
+          )}
+          {creditoCobreTudo?(
+            <>
+              {payError&&(
+                <div role="alert" style={{display:"flex",alignItems:"flex-start",gap:8,background:"rgba(229,34,41,0.08)",border:"1px solid rgba(229,34,41,0.35)",borderRadius:12,padding:"12px 14px",marginBottom:8,fontSize:13,lineHeight:1.5,color:C.text}}>
+                  <AlertCircle size={16} color={C.red} style={{flexShrink:0,marginTop:2}}/>
+                  <span>{payError}</span>
+                </div>
+              )}
+              <button onClick={handlePay} disabled={loading}
+                style={{width:"100%",marginTop:4,padding:"13px 20px",background:loading?"#2a2a2a":"#22C55E",border:"none",borderRadius:12,color:loading?C.textSec:"#0F0F0F",fontSize:14,fontWeight:700,cursor:loading?"not-allowed":"pointer"}}>
+                {loading?"Processando...":`Finalizar pedido com crédito · ${fmt2(amount)}`}
+              </button>
+            </>
+          ):(<>
+          <div style={{fontSize:13,fontWeight:700,color:C.textSec,marginBottom:10,letterSpacing:.5}}>{creditoAtivo?"FORMA DE PAGAMENTO DO RESTANTE":"FORMA DE PAGAMENTO"}</div>
           {METHODS.map(m=>(
             <button key={m.id} onClick={()=>setMethod(m.id)}
               style={{width:"100%",display:"flex",alignItems:"center",gap:12,
@@ -4622,6 +4675,7 @@ function InfinitePayCheckout({amount,services,patient,dentist,freight,couponDisc
             <span style={{fontSize:12,fontWeight:700,color:"#22C55E"}}>InfinitePay</span>
             <span style={{fontSize:12,color:C.textSec}}>SSL</span>
           </div>
+          </>)}
         </div>
       )}
     </div>

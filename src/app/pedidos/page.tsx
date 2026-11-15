@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { supabaseBrowser } from '@/lib/supabase-browser';
 import PagamentoBox from '@/components/PagamentoBox';
-import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, RefreshCw, AlertCircle } from 'lucide-react';
+import { Package, ChevronDown, ChevronUp, Clock, CheckCircle, Truck, RefreshCw, AlertCircle, Wallet } from 'lucide-react';
 
 // ── Tipos ────────────────────────────────────────────────────────────────────
 // Etapas que o cliente vê (agrupam os status do Kanban da D-CAD)
@@ -32,6 +32,7 @@ interface Pedido {
   created_at: string;
   expira_em: string | null;
   forma: string | null;
+  credito: number;
   cobrar: boolean;
 }
 
@@ -73,16 +74,17 @@ const ETAPA_DO_STATUS: Record<string, OsStatus> = {
   cancelado: 'cancelado',
 };
 
-const FORMA: Record<string, string> = { pix: 'Pix', cartao: 'Cartão de crédito', boleto: 'Boleto bancário' };
+const FORMA: Record<string, string> = { pix: 'Pix', cartao: 'Cartão de crédito', boleto: 'Boleto bancário', credito: 'Crédito D-CAD' };
 const SITUACAO_PAGAMENTO: Record<string, string> = {
   aguardando: 'Aguardando pagamento', pago: 'Pago', vencido: 'Vencido', cancelado: 'Cancelado', teste: 'Teste',
+  creditado: 'Valor convertido em crédito', devolvido: 'Valor devolvido',
 };
 
 interface LinhaOS {
   id: string; numero: string; status: string; servicos: { nome?: string }[] | null; paciente_nome: string | null;
   valor_bruto: number | null; desconto: number | null; valor_total: number | null;
   pagamento_forma: string | null; pagamento_status: string | null; pagamento_expira_em: string | null;
-  observacoes: string | null; criado_em: string;
+  credito_aplicado: number | null; observacoes: string | null; criado_em: string;
 }
 
 function paraPedido(o: LinhaOS): Pedido {
@@ -104,8 +106,9 @@ function paraPedido(o: LinhaOS): Pedido {
     created_at: o.criado_em,
     expira_em: o.status === 'aguardando_pagamento' ? o.pagamento_expira_em : null,
     forma: o.pagamento_forma,
+    credito: Number(o.credito_aplicado ?? 0),
     // Caixa de pagamento: Pix/cartão aguardando, ou boleto em aberto (o trabalho já começou)
-    cobrar: o.pagamento_status !== 'pago' && o.status !== 'cancelado' && o.status !== 'concluido'
+    cobrar: o.pagamento_status !== 'pago' && o.pagamento_forma !== 'credito' && o.status !== 'cancelado' && o.status !== 'concluido'
       && (o.status === 'aguardando_pagamento' || o.pagamento_forma === 'boleto'),
   };
 }
@@ -429,6 +432,18 @@ function CardPedido({ pedido, avaliacao }: { pedido: Pedido; avaliacao?: { token
             }}>
               <span>Total</span><span>{fmt(bruto - desc + frete)}</span>
             </div>
+            {pedido.credito > 0 && (
+              <>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: '#16A34A' }}>
+                  <span>Pago com crédito</span><span>-{fmt(pedido.credito)}</span>
+                </div>
+                {pedido.payment_status !== 'pago' && (
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 600, color: 'var(--dcad-text)' }}>
+                    <span>A pagar</span><span>{fmt(Math.max(0, bruto - desc + frete - pedido.credito))}</span>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Pagamento */}
@@ -464,6 +479,7 @@ export default function PedidosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [atualizando, setAtualizando] = useState(false);
+  const [saldoCredito, setSaldoCredito] = useState(0);
   const [avaliacoes, setAvaliacoes] = useState<Record<string, { token: string; respondida: boolean }>>({});
 
   async function carregar() {
@@ -472,11 +488,14 @@ export default function PedidosPage() {
       const sb = supabaseBrowser();
       const { data, error } = await sb
         .from('ordens_servico')
-        .select('id, numero, status, servicos, paciente_nome, valor_bruto, desconto, valor_total, pagamento_forma, pagamento_status, pagamento_expira_em, observacoes, criado_em')
+        .select('id, numero, status, servicos, paciente_nome, valor_bruto, desconto, valor_total, pagamento_forma, pagamento_status, pagamento_expira_em, credito_aplicado, observacoes, criado_em')
         .order('criado_em', { ascending: false });
 
       if (error) throw error;
       setPedidos(((data as LinhaOS[]) ?? []).map(paraPedido));
+      // Saldo de crédito (OS canceladas mantidas como crédito)
+      sb.from('fin_creditos').select('valor').limit(5000)
+        .then(({ data: movs }) => setSaldoCredito(Math.max(0, Math.round((movs || []).reduce((t, m) => t + Number(m.valor || 0), 0) * 100) / 100)));
       // Avaliações de pós-venda das OS entregues (link para o dentista avaliar)
       fetch('/api/avaliacao?minhas=1', { cache: 'no-store' }).then(r => r.json())
         .then(j => setAvaliacoes(Object.fromEntries(((j.avaliacoes || []) as { os_id: string; token: string; respondida: boolean }[]).map(a => [a.os_id, a]))))
@@ -574,6 +593,20 @@ export default function PedidosPage() {
         padding: '16px max(16px, env(safe-area-inset-left, 0px)) 32px',
         paddingRight: 'max(16px, env(safe-area-inset-right, 0px))',
       }}>
+        {/* Crédito disponível */}
+        {saldoCredito > 0 && (
+          <div role="status" style={{
+            display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, padding: '12px 14px', borderRadius: 12,
+            backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.35)',
+          }}>
+            <Wallet size={18} color="#16A34A" style={{ flexShrink: 0 }} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--dcad-text)' }}>Você tem {fmt(saldoCredito)} de crédito</div>
+              <div style={{ fontSize: 12, color: 'var(--dcad-text-sec)' }}>Ele é abatido automaticamente no pagamento do seu próximo pedido.</div>
+            </div>
+          </div>
+        )}
+
         {/* Filtros */}
         {!loading && !erro && (
           <div style={{
