@@ -146,7 +146,6 @@ export default function AvaliacaoPage() {
     <main style={{ minHeight: '100dvh', background: 'var(--dcad-bg)', color: 'var(--dcad-text)', paddingBlock: 28, paddingLeft: 'max(16px, env(safe-area-inset-left, 0px))', paddingRight: 'max(16px, env(safe-area-inset-right, 0px))' }}>
       <style>{'@keyframes giro { to { transform: rotate(360deg); } }'}</style>
       <div style={{ maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 18 }}>
-        <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: '-0.02em' }}>D<span style={{ color: vermelho }}>-</span>CAD</div>
         <Suspense fallback={null}><Formulario /></Suspense>
       </div>
     </main>
