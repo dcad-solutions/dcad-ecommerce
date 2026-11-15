@@ -14,10 +14,12 @@ import { cobrancaDisponivel, criarCobranca, type PagamentoPublico } from '@/lib/
 // * Cobrança: com a integração da forma escolhida ativa (Financeiro → Integrações), o Admin cria o Pix,
 //   o boleto (Banco Inter) ou o link de cartão (InfinitePay) e a resposta já leva o que o cliente precisa.
 //   Com as vendas liberadas e a integração desligada, o pedido nem é registrado.
+// * Crédito do cliente (usarCredito): abatido do total depois dos descontos (função dcad_credito_aplicar_os).
+//   Se cobrir tudo, a OS já entra paga (forma 'credito' quando o cliente não escolhe outra); senão, cobra só a diferença.
 
-type Forma = 'pix' | 'cartao' | 'boleto';
-const FORMA_DO_WIZARD: Record<string, Forma> = { pix: 'pix', card: 'cartao', prazo: 'boleto' };
-const FORMA_FINANCEIRO: Record<Forma, string> = { pix: 'PIX', cartao: 'Cartão de crédito', boleto: 'Boleto' };
+type Forma = 'pix' | 'cartao' | 'boleto' | 'credito';
+const FORMA_DO_WIZARD: Record<string, Forma> = { pix: 'pix', card: 'cartao', prazo: 'boleto', credito: 'credito' };
+const FORMA_FINANCEIRO: Record<Forma, string> = { pix: 'PIX', cartao: 'Cartão de crédito', boleto: 'Boleto', credito: 'Crédito do cliente' };
 
 const num = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : Number(v));
 const r2 = (v: number) => Math.round(v * 100) / 100;
@@ -73,10 +75,16 @@ export async function POST(req: NextRequest) {
     if (!sit?.liberado) return NextResponse.json({ error: 'O boleto ainda não está liberado para o seu cadastro.' }, { status: 403 });
   }
 
-  const cobrar = await cobrancaDisponivel(db, forma);
-  if (!modoTeste && !cobrar) {
-    return NextResponse.json({ error: 'Esta forma de pagamento está indisponível no momento. Escolha outra ou fale com a D-CAD pelo WhatsApp (98) 98542-5982.' }, { status: 503 });
+  // Crédito do cliente: saldo conferido aqui e de novo no banco ao aplicar
+  const usarCredito = b.usarCredito === true || forma === 'credito';
+  let saldoCredito = 0;
+  if (usarCredito) {
+    const { data: saldo } = await db.rpc('dcad_credito_saldo', { p_cliente: user.id });
+    saldoCredito = Number(saldo) || 0;
+    if (saldoCredito <= 0) return NextResponse.json({ error: 'Você não tem crédito disponível. Escolha uma forma de pagamento.' }, { status: 409 });
   }
+
+  const cobrar = forma === 'credito' ? false : await cobrancaDisponivel(db, forma);
 
   // ── Itens e valores: preço recalculado no servidor (src/lib/preco.js) ────
   const recebidos = Array.isArray(b.services) ? (b.services as Record<string, unknown>[]).slice(0, 30) : [];
@@ -93,6 +101,15 @@ export async function POST(req: NextRequest) {
   const descontoPix = forma === 'pix' ? r2(aposCupom * (Number(regras.pix_desconto_pct) / 100)) : 0;
   const total = r2(aposCupom - descontoPix);
   if (total <= 0) return NextResponse.json({ error: 'Valor do pedido inválido.' }, { status: 400 });
+  const credito = usarCredito ? r2(Math.min(saldoCredito, total)) : 0;
+  const cobertoPeloCredito = usarCredito && credito >= total;
+  if (forma === 'credito' && !cobertoPeloCredito) {
+    return NextResponse.json({ error: 'Seu crédito não cobre o pedido inteiro. Escolha uma forma de pagamento para o restante.' }, { status: 409 });
+  }
+  // Com as vendas liberadas, a forma escolhida precisa estar disponível (a não ser que o crédito pague tudo)
+  if (!modoTeste && !cobrar && !cobertoPeloCredito) {
+    return NextResponse.json({ error: 'Esta forma de pagamento está indisponível no momento. Escolha outra ou fale com a D-CAD pelo WhatsApp (98) 98542-5982.' }, { status: 503 });
+  }
 
   // ── Paciente ──────────────────────────────────────────────────────────────
   const pac = (b.patient || {}) as Record<string, unknown>;
@@ -145,7 +162,7 @@ export async function POST(req: NextRequest) {
     log: [{
       ts: agora.toISOString(),
       acao: 'Pedido recebido pelo Portal do Cliente',
-      detalhe: `${FORMA_FINANCEIRO[forma]} · R$ ${total.toFixed(2).replace('.', ',')}${modoTeste ? (cobrar ? ' · modo teste' : ' · modo teste (sem cobrança)') : ''}`,
+      detalhe: `${FORMA_FINANCEIRO[forma]} · R$ ${total.toFixed(2).replace('.', ',')}${credito > 0 && forma !== 'credito' ? ` · crédito de R$ ${credito.toFixed(2).replace('.', ',')}` : ''}${modoTeste ? (cobrar ? ' · modo teste' : ' · modo teste (sem cobrança)') : ''}`,
       usuario_nome: cliente.nome || 'Cliente',
     }],
   };
@@ -188,6 +205,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Não foi possível registrar o pedido. Tente novamente.' }, { status: 500 });
   }
 
+  // Crédito do cliente: abate do total (e libera a OS se pagar tudo)
+  let pagoComCredito = false;
+  if (credito > 0) {
+    const { data: r, error: erroCredito } = await db.rpc('dcad_credito_aplicar_os', { p_os: os.id, p_valor: credito, p_usuario: null, p_usuario_nome: cliente.nome || 'Cliente' });
+    if (erroCredito) {
+      console.error('[pedidos] crédito', erroCredito);
+      await db.from('fin_contas_receber').delete().eq('os_id', os.id);
+      await db.from('ordens_servico').delete().eq('id', os.id);
+      return NextResponse.json({ error: 'Não foi possível usar o seu crédito agora. Nenhuma cobrança foi feita. Tente novamente.' }, { status: 409 });
+    }
+    pagoComCredito = !!(r as { pago?: boolean } | null)?.pago;
+  }
+
   // Uso do cupom
   if (cup.cupomId) {
     const { data: c } = await db.from('cupons').select('usos_atual').eq('id', cup.cupomId).single();
@@ -218,7 +248,7 @@ export async function POST(req: NextRequest) {
   // Se falhar aqui, o pedido fica registrado e o cliente gera o pagamento de novo em Meus Pedidos.
   let pagamento: PagamentoPublico | null = null;
   let erroPagamento: string | null = null;
-  if (cobrar) {
+  if (cobrar && !pagoComCredito) {
     try { pagamento = await criarCobranca(db, os.id); }
     catch (e) {
       console.error('[pedidos] cobrança', e);
@@ -231,7 +261,10 @@ export async function POST(req: NextRequest) {
     os: { id: os.id, numero: os.numero },
     forma,
     total,
-    expira_em: expira,
+    expira_em: pagoComCredito ? null : expira,
+    credito_aplicado: credito,
+    a_pagar: r2(total - credito),
+    pago_com_credito: pagoComCredito,
     modo_teste: modoTeste,
     pagamento,
     erro_pagamento: erroPagamento,
