@@ -20,7 +20,7 @@ export async function cobrancaDisponivel(db: SupabaseClient, forma: Forma) {
   return !!(data?.ativo && data.status === 'ok');
 }
 
-async function chamarAdmin<T>(db: SupabaseClient, caminho: string, corpo: unknown): Promise<T> {
+export async function chamarAdmin<T>(db: SupabaseClient, caminho: string, corpo: unknown): Promise<T> {
   const { data: token, error } = await db.rpc('dcad_segredo_ler', { p_nome: 'dcad_interno_token' });
   if (error || !token) throw new Error('Token interno indisponível');
   const r = await fetch(ADMIN_URL + caminho, {

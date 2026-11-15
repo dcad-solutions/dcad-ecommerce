@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Rotas públicas: / (Wizard gerencia auth internamente), login, cadastro, callback, etc.
-  const rotasPublicas = ['/', '/login', '/cadastro', '/auth/callback', '/api/cadastro', '/recuperar-senha', '/nova-senha', '/acesso-negado'];
+  const rotasPublicas = ['/', '/login', '/cadastro', '/auth/callback', '/api/cadastro', '/recuperar-senha', '/nova-senha', '/acesso-negado', '/avaliacao', '/api/avaliacao'];
   const ehPublica = rotasPublicas.some(r => pathname === r || (r !== '/' && pathname.startsWith(r)));
 
   if (ehPublica) {

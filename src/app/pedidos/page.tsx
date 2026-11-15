@@ -213,7 +213,7 @@ function BarraProgresso({ status }: { status: OsStatus }) {
 }
 
 // ── Componente: Card de Pedido ───────────────────────────────────────────────
-function CardPedido({ pedido }: { pedido: Pedido }) {
+function CardPedido({ pedido, avaliacao }: { pedido: Pedido; avaliacao?: { token: string; respondida: boolean } }) {
   const [aberto, setAberto] = useState(false);
   const entregue = pedido.os_status === 'entregue';
   const cancelado = pedido.os_status === 'cancelado';
@@ -316,6 +316,21 @@ function CardPedido({ pedido }: { pedido: Pedido }) {
           </span>
         </div>
       </button>
+
+      {/* Avaliação de pós-venda (OS entregue) */}
+      {avaliacao && (
+        <div style={{ padding: '0 16px 14px' }}>
+          {avaliacao.respondida ? (
+            <span style={{ fontSize: 12, color: '#16A34A', fontWeight: 600 }}>✓ Caso avaliado — obrigado!</span>
+          ) : (
+            <a href={`/avaliacao?t=${avaliacao.token}`} style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44, borderRadius: 10,
+              border: '1px solid rgba(234,179,8,0.45)', background: 'rgba(234,179,8,0.10)', color: 'var(--dcad-text)',
+              fontSize: 14, fontWeight: 700, textDecoration: 'none',
+            }}>★ Avaliar este caso</a>
+          )}
+        </div>
+      )}
 
       {/* Detalhe expandido */}
       {aberto && (
@@ -449,6 +464,7 @@ export default function PedidosPage() {
   const [erro, setErro] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [atualizando, setAtualizando] = useState(false);
+  const [avaliacoes, setAvaliacoes] = useState<Record<string, { token: string; respondida: boolean }>>({});
 
   async function carregar() {
     try {
@@ -461,6 +477,10 @@ export default function PedidosPage() {
 
       if (error) throw error;
       setPedidos(((data as LinhaOS[]) ?? []).map(paraPedido));
+      // Avaliações de pós-venda das OS entregues (link para o dentista avaliar)
+      fetch('/api/avaliacao?minhas=1', { cache: 'no-store' }).then(r => r.json())
+        .then(j => setAvaliacoes(Object.fromEntries(((j.avaliacoes || []) as { os_id: string; token: string; respondida: boolean }[]).map(a => [a.os_id, a]))))
+        .catch(() => {});
     } catch (e: unknown) {
       setErro((e as Error).message ?? 'Erro ao carregar pedidos');
     } finally {
@@ -684,7 +704,7 @@ export default function PedidosPage() {
         {!loading && !erro && filtrados.length > 0 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {filtrados.map(p => (
-              <CardPedido key={p.id} pedido={p} />
+              <CardPedido key={p.id} pedido={p} avaliacao={avaliacoes[p.id]} />
             ))}
           </div>
         )}
