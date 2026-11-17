@@ -63,9 +63,15 @@ export interface CatalogService {
   fluxo?: 'arch' | 'odonto' | null
   unidade?: string
   precoPorDente?: boolean
+  // Etapas personalizadas: ordem ('sel' | 'implante' | 'fatiado' | 'prazo' | 'e:<id>') e definições por id
+  ordemEtapas?: string[]
+  etapasPers?: Record<string, EtapaPers>
   // Metadados do Supabase
   _supabaseId?: number
 }
+
+export interface OpcaoEtapa { id: string; rotulo: string; descricao?: string | null; acrescimo: number; cobranca: 'item' | 'quantidade' }
+export interface EtapaPers { id: string; titulo: string; pergunta: string; ajuda: string | null; tipo: 'unica' | 'multipla'; obrigatoria: boolean; cobrada: boolean; opcoes: OpcaoEtapa[] }
 
 export interface CatalogSpecialty {
   id: string
@@ -172,6 +178,7 @@ function rowToService(row: Record<string, unknown>): CatalogService {
     fluxo:         row.fluxo === 'arch' || row.fluxo === 'odonto' ? row.fluxo : null,
     unidade:       String(row.unidade || 'unidade'),
     precoPorDente: row.preco_por_dente === true,
+    ordemEtapas:   Array.isArray(row.ordem_etapas) ? (row.ordem_etapas as string[]) : [],
     // Regras de preço e fluxo vindas do Supabase
     priceByQty:    pbq && Object.keys(pbq).length > 0 ? pbq : undefined,
     brandFees:     bf  && Object.keys(bf).length  > 0 ? bf  : undefined,
@@ -185,10 +192,13 @@ function rowToService(row: Record<string, unknown>): CatalogService {
 // client: o navegador usa o cliente anônimo/logado; o servidor passa o cliente do servidor para conferir preços
 export async function fetchCatalog(client: { from: typeof supabase.from } = supabase): Promise<CatalogSpecialty[]> {
   // Busca serviços e imagens das especialidades em paralelo
-  const [servicosResult, especialidadesResult] = await Promise.all([
+  const [servicosResult, especialidadesResult, etapasResult] = await Promise.all([
     client.from('servicos').select('*').eq('ativo', true).order('especialidade').order('nome'),
     client.from('especialidades').select('nome, imagem').eq('ativo', true),
+    client.from('wizard_etapas').select('id, titulo, pergunta, ajuda, tipo, obrigatoria, cobrada, opcoes').eq('ativo', true),
   ])
+  const etapasPorId: Record<string, EtapaPers> = {}
+  for (const e of (etapasResult.data || []) as EtapaPers[]) etapasPorId[e.id] = e
 
   const { data, error } = servicosResult
 
@@ -227,7 +237,14 @@ export async function fetchCatalog(client: { from: typeof supabase.from } = supa
       icon:     meta.icon,
       desc:     meta.desc,
       imagem:   imagemMap[esp],
-      services: rows.map(rowToService),
+      services: rows.map(r => {
+        const sv = rowToService(r)
+        // Só as etapas personalizadas ativas que o serviço usa (as desativadas somem do pedido)
+        const ids = (sv.ordemEtapas || []).filter(k => k.startsWith('e:')).map(k => k.slice(2))
+        sv.etapasPers = Object.fromEntries(ids.filter(id => etapasPorId[id]).map(id => [id, etapasPorId[id]]))
+        sv.ordemEtapas = (sv.ordemEtapas || []).filter(k => !k.startsWith('e:') || etapasPorId[k.slice(2)])
+        return sv
+      }),
     }
   })
 

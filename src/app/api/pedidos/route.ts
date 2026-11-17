@@ -149,7 +149,12 @@ export async function POST(req: NextRequest) {
     dentista_nome: cliente.nome || cliente.email,
     dentista_cro: cliente.cro || '',
     dentista_whatsapp: cliente.celular || cliente.telefone || '',
-    servicos: itens.map(it => ({ nome: txt(it.name, 120), preco: r2(num(it.total)), quantidade: 1, servico_id: typeof it.servicoId === 'string' && UUID.test(it.servicoId) ? it.servicoId : null })),
+    servicos: itens.map(it => ({
+      nome: txt(it.name, 120), preco: r2(num(it.total)), quantidade: 1,
+      servico_id: typeof it.servicoId === 'string' && UUID.test(it.servicoId) ? it.servicoId : null,
+      // Respostas das etapas personalizadas (conferidas no servidor)
+      ...(Array.isArray(it.etapasResumo) && it.etapasResumo.length ? { etapas: it.etapasResumo } : {}),
+    })),
     observacoes: itens.map(it => txt(it.observacoes, 1000)).filter(Boolean).join('\n\n') || null,
     pagamento_forma: forma,
     pagamento_status: 'aguardando',
