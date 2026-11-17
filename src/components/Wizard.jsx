@@ -787,6 +787,17 @@ input,textarea,select{touch-action:manipulation;}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border-width:0;}
 @media(prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important;}}
 @keyframes spin{to{transform:rotate(360deg);}}
+.dc-head{gap:10px}
+.dc-head-esq,.dc-head-dir{min-width:0}
+.dc-head-pac{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+@media(max-width:640px){
+  .dc-head{padding:0 12px!important}
+  .dc-head-portal,.dc-head-dash-txt,.dc-head-pac-rot{display:none}
+  .dc-head-dir{gap:6px!important}
+  .dc-head-pac{max-width:28vw;font-size:12px}
+  .dc-head-desc{display:none}
+}
+@media(max-width:380px){.dc-head-pac{display:none}}
     `}</style>
 
       {/* ── DISCLAIMER MODAL — standalone ── */}
@@ -1359,35 +1370,35 @@ input,textarea,select{touch-action:manipulation;}
       {toast&&(
         <div role="alert" aria-live="polite" aria-atomic="true"
           onClick={()=>setToast("")}
-          style={{position:"fixed",bottom:"max(24px,env(safe-area-inset-bottom,24px))",left:"50%",transform:"translateX(-50%)",background:C.dark3,border:`1px solid ${C.border2}`,color:C.text,padding:"12px 20px",borderRadius:12,fontSize:13,fontWeight:600,zIndex:100,cursor:"pointer",whiteSpace:"nowrap",boxShadow:"0 4px 20px rgba(0,0,0,0.5)",maxWidth:"calc(100vw - 32px)",textAlign:"center"}}>
+          style={{position:"fixed",bottom:"max(24px,env(safe-area-inset-bottom,24px))",left:"50%",transform:"translateX(-50%)",background:C.dark3,border:`1px solid ${C.border2}`,color:C.text,padding:"12px 20px",borderRadius:12,fontSize:13,fontWeight:600,zIndex:100,cursor:"pointer",whiteSpace:"normal",width:"max-content",boxShadow:"0 4px 20px rgba(0,0,0,0.5)",maxWidth:"calc(100vw - 32px)",textAlign:"center"}}>
           {toast} <span aria-hidden="true" style={{opacity:.5,marginLeft:6}}>×</span>
         </div>
       )}
 
       {/* ── HEADER ── oculto na tela de auth (login/cadastro) pois ela tem seu próprio logo */}
-      {screen!=="auth"&&(<div style={{background:C.dark2,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,zIndex:10}}>
-        <div style={{display:"flex",alignItems:"center",gap:8}}>
+      {screen!=="auth"&&(<div className="dc-head" style={{background:C.dark2,borderBottom:`1px solid ${C.border}`,padding:"0 20px",display:"flex",alignItems:"center",justifyContent:"space-between",height:52,zIndex:10}}>
+        <div className="dc-head-esq" style={{display:"flex",alignItems:"center",gap:8}}>
           <img src={DCAD_LOGO} alt="D-CAD Dental Digital Solutions" style={{height:28,width:"auto",display:"block"}}/>
-          <span style={{fontWeight:600,fontSize:12,color:C.textSec,marginLeft:2}}>Portal</span>
+          <span className="dc-head-portal" style={{fontWeight:600,fontSize:12,color:C.textSec,marginLeft:2}}>Portal</span>
           {/* Botão voltar ao dashboard — visível em qualquer tela exceto auth/dashboard/pending */}
           {dentist&&screen!=="auth"&&screen!=="dashboard"&&screen!=="pending"&&(
-            <button onClick={()=>setScreen("dashboard")}
-              style={{display:"flex",alignItems:"center",gap:5,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",marginLeft:4}}>
+            <button onClick={()=>setScreen("dashboard")} aria-label="Voltar ao dashboard" title="Dashboard"
+              style={{display:"flex",alignItems:"center",gap:5,background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",minHeight:32,borderRadius:8,cursor:"pointer",marginLeft:4,flexShrink:0}}>
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="15 18 9 12 15 6"/></svg>
-              Dashboard
+              <span className="dc-head-dash-txt">Dashboard</span>
             </button>
           )}
         </div>
         {dentist&&(
-          <div style={{display:"flex",alignItems:"center",gap:8}}>
-            {patient&&<span style={{fontSize:12,color:C.textSec}}>Paciente: <b style={{color:C.text}}>{patient.nome}</b></span>}
-            {discount>0&&<span style={{fontSize:12,fontWeight:700,background:"rgba(34,197,94,0.15)",color:C.green,padding:"3px 9px",borderRadius:16}}>15% desconto</span>}
+          <div className="dc-head-dir" style={{display:"flex",alignItems:"center",gap:8}}>
+            {patient&&<span className="dc-head-pac" title={`Paciente: ${patient.nome}`} style={{fontSize:12,color:C.textSec}}><span className="dc-head-pac-rot">Paciente: </span><b style={{color:C.text}}>{patient.nome}</b></span>}
+            {discount>0&&<span className="dc-head-desc" style={{fontSize:12,fontWeight:700,background:"rgba(34,197,94,0.15)",color:C.green,padding:"3px 9px",borderRadius:16}}>15% desconto</span>}
             <div style={{width:32,height:32,borderRadius:"50%",background:avatarUrl?"transparent":C.dark3,border:`2px solid ${C.red}`,display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:700,color:C.red,padding:0,overflow:"hidden",flexShrink:0}}>
               {avatarUrl?<img src={avatarUrl} alt="avatar" style={{width:"100%",height:"100%",objectFit:"cover"}}/>:dentist.nome.split(" ").map(function(w){return w[0];}).join("").slice(0,2).toUpperCase()}
             </div>
             <button onClick={function(){var croPartes=(dentist.cro||"").split("-");var croUf=croPartes.length>1?croPartes[0]:"";var croNum=croPartes.length>1?croPartes.slice(1).join("-"):croPartes[0];setProfileForm({nome:dentist.nome,croNum:croNum,croUf:croUf,especialidade:dentist.especialidade||"",clinica:dentist.clinica||"",celular:dentist.celular||""});setProfileSaved(false);setShowProfileModal(true);}}
-              style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600}}>PERFIL</button>
-            <button onClick={resetAll} style={{background:"rgba(229,34,41,0.1)",border:`1px solid ${C.red}`,color:C.red,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600}}>Sair</button>
+              style={{background:"none",border:`1px solid ${C.border}`,color:C.textSec,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600,flexShrink:0,minHeight:32}}>PERFIL</button>
+            <button onClick={resetAll} style={{background:"rgba(229,34,41,0.1)",border:`1px solid ${C.red}`,color:C.red,fontSize:13,padding:"4px 10px",borderRadius:8,cursor:"pointer",fontWeight:600,flexShrink:0,minHeight:32}}>Sair</button>
           </div>
         )}
       </div>)}
