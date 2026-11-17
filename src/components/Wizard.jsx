@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from "react";
-import { AlertCircle, Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil } from "lucide-react";
+import { AlertCircle, Search, Eye, EyeOff, Check, User, Users, Archive, FolderOpen, MessageCircle, ShoppingCart, ClipboardList, CheckCircle, Clock, CreditCard, Zap, Calendar, Building2, GraduationCap, Stethoscope, Sparkles, Activity, Bone, Leaf, Microscope, Printer, Lightbulb, Package, Tag, Wrench, Ruler, FileText, AlertTriangle, Plus, Trash2, ChevronLeft, X as XIcon, Undo2, MapPin, Hash, BadgePercent, Image, Pencil, Maximize2 } from "lucide-react";
 import { fetchCatalog } from "@/lib/catalog";
 import { CATALOG, P, URGENCY_TIERS, SUP, SUP_ALL, mesclarCatalogo, calcularPrecoItem, descontoDaConta } from "@/lib/preco";
 import { supabaseBrowser } from "@/lib/supabase-browser";
@@ -238,6 +238,35 @@ const SPECIALTIES_LIST=["Clínico Geral","Implantodontia","Dentística Restaurad
 function TutorialRedirect({setScreen}){
   React.useEffect(()=>{setScreen("dashboard");},[setScreen]);
   return null;
+}
+
+// Imagens do serviço no cartão: a primeira é a capa; as outras, miniaturas. Tocar numa imagem abre ela grande.
+function abrirImagem(e,url){e.stopPropagation();e.preventDefault();window.open(url,"_blank","noopener");}
+function CapaServico({url,nome}){
+  if(!url)return null;
+  return(
+    <div style={{position:"relative",width:"100%",aspectRatio:"16/9",maxHeight:240,overflow:"hidden",flexShrink:0,background:"#111"}}>
+      <img src={url} alt={nome} loading="lazy" onError={e=>{e.target.parentElement.style.display="none";}}
+        style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+      <span role="button" tabIndex={0} aria-label="Ver imagem ampliada" title="Ver imagem ampliada"
+        onClick={e=>abrirImagem(e,url)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")abrirImagem(e,url);}}
+        style={{position:"absolute",top:8,right:8,width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-in"}}>
+        <Maximize2 size={16} color="#fff"/>
+      </span>
+    </div>
+  );
+}
+function MiniaturasServico({urls,nome,cor}){
+  if(!urls?.length)return null;
+  return(
+    <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
+      {urls.map((url,i)=>(
+        <img key={i} src={url} alt={`${nome} ${i+2}`} loading="lazy" role="button" tabIndex={0}
+          style={{width:56,height:56,objectFit:"cover",borderRadius:6,border:`1px solid ${cor}30`,cursor:"zoom-in"}}
+          onClick={e=>abrirImagem(e,url)} onKeyDown={e=>{if(e.key==="Enter")abrirImagem(e,url);}}/>
+      ))}
+    </div>
+  );
 }
 
 export default function App() {
@@ -2660,6 +2689,7 @@ input,textarea,select{touch-action:manipulation;}
                 const minPrice=Math.min(...group.services.map(sv=>isPlannedMode&&sv.planOnly?sv.planOnly.price:sv.price));
                 const hasVariablePrice=group.services.length>1&&!isProtocol;
                 const isArchBased=group.services[0]?.usesArch;
+                const fotos=(singleSv||isParcialGroup)?((singleSv||group.services[0]).imagens||[]):[];
 
                 return(
                   <button key={group.type}
@@ -2684,11 +2714,12 @@ input,textarea,select{touch-action:manipulation;}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=specialty.color;e.currentTarget.style.background="#222";}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.dark2;}}>
                     <div style={{height:3,background:specialty.color,width:"100%"}}/>
+                    <CapaServico url={fotos[0]} nome={group.label}/>
                     <div style={{padding:"16px 16px",display:"flex",gap:16,alignItems:"flex-start"}}>
-                      {/* Ícone */}
-                      <div style={{width:48,height:48,borderRadius:12,background:specialty.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:specialty.color}}>
+                      {/* Ícone (some quando há capa) */}
+                      {!fotos[0]&&<div style={{width:48,height:48,borderRadius:12,background:specialty.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:specialty.color}}>
                         <SpecIcon id={specialty.id} size={24} color={specialty.color}/>
-                      </div>
+                      </div>}
                       <div style={{flex:1,minWidth:0}}>
                         {/* Nome + preço */}
                         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:singleSv?6:4}}>
@@ -2714,6 +2745,7 @@ input,textarea,select{touch-action:manipulation;}
                               :(singleSv||group.services[0]).fullDesc}
                           </div>
                         )}
+                        <MiniaturasServico urls={fotos.slice(1)} nome={group.label} cor={specialty.color}/>
                         {/* Exames necessários + O que está incluso — lado a lado */}
                         {(singleSv||isParcialGroup)&&(()=>{
                           const sv0=singleSv||group.services[0];
@@ -2791,6 +2823,8 @@ input,textarea,select{touch-action:manipulation;}
               const disp=isPlannedMode&&sv.planOnly?{...sv,...sv.planOnly}:sv;
               const isArchBased=!!sv.usesArch;
               const archLabel=isArchBased?"por arcada":"";
+              const capa=sv.imageUrl||sv.imagens?.[0];
+              const outrasFotos=(sv.imagens||[]).filter(u=>u!==capa);
               return(
                 <button key={sv.id}
                   onClick={()=>{
@@ -2807,9 +2841,9 @@ input,textarea,select{touch-action:manipulation;}
                     </div>
                   )}
                   {/* Hero image / barra de cor */}
-                  {sv.imageUrl?(
+                  {capa?(
                     <div style={{position:"relative",width:"100%",height:140,overflow:"hidden",flexShrink:0}}>
-                      <img src={sv.imageUrl} alt={sv.name} onError={e=>{e.target.parentElement.style.display="none";}}
+                      <img src={capa} alt={sv.name} onError={e=>{e.target.parentElement.style.display="none";}}
                         style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
                       <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,0.85) 100%)"}}/>
                       <div style={{position:"absolute",bottom:10,left:12,right:12}}>
@@ -2825,7 +2859,7 @@ input,textarea,select{touch-action:manipulation;}
                   )}
                   <div style={{padding:"14px 16px",display:"flex",gap:12,alignItems:"flex-start"}}>
                     {/* Ícone / número — oculto quando tem hero image */}
-                    {!sv.imageUrl&&<div style={{width:44,height:44,borderRadius:12,background:specialty.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
+                    {!capa&&<div style={{width:44,height:44,borderRadius:12,background:specialty.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       {sv.exactQty
                         ?<span style={{fontSize:18,fontWeight:900,color:specialty.color}}>{sv.exactQty}</span>
                         :<SpecIcon id={specialty.id} size={20} color={specialty.color}/>
@@ -2833,7 +2867,7 @@ input,textarea,select{touch-action:manipulation;}
                     </div>}
                     <div style={{flex:1,minWidth:0}}>
                       {/* Nome + preço — oculto quando há hero image */}
-                      {!sv.imageUrl&&(
+                      {!capa&&(
                         <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:5}}>
                           <div style={{fontWeight:800,fontSize:14,lineHeight:1.3}}>{disp.name}</div>
                           <div style={{textAlign:"right",flexShrink:0}}>
@@ -2844,17 +2878,8 @@ input,textarea,select{touch-action:manipulation;}
                       )}
                       {/* Descrição */}
                       <div style={{fontSize:12,color:C.textSec,lineHeight:1.55,marginBottom:8}}>{disp.fullDesc}</div>
-                      {/* Galeria de imagens */}
-                      {sv.imagens?.length>0&&(
-                        <div style={{display:"flex",gap:6,flexWrap:"wrap",marginBottom:8}}>
-                          {sv.imagens.map((url,i)=>(
-                            <img key={i} src={url} alt={`${disp.name} ${i+1}`}
-                              style={{width:56,height:56,objectFit:"cover",borderRadius:6,border:`1px solid ${specialty.color}30`,cursor:"pointer"}}
-                              onClick={e=>{e.stopPropagation();window.open(url,"_blank");}}
-                            />
-                          ))}
-                        </div>
-                      )}
+                      {/* Demais imagens (a primeira é a capa) */}
+                      <MiniaturasServico urls={outrasFotos} nome={disp.name} cor={specialty.color}/>
                       {/* Exames + O que está incluso — lado a lado */}
                       {(disp.exams?.length>0||sv.includes?.length>0)&&(
                         <div style={{display:"grid",gridTemplateColumns:sv.includes?.length?"1fr 1fr":"1fr",gap:8}}>
