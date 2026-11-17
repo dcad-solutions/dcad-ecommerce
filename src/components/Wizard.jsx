@@ -240,18 +240,19 @@ function TutorialRedirect({setScreen}){
   return null;
 }
 
-// Imagens do serviço no cartão: a primeira é a capa; as outras, miniaturas. Tocar numa imagem abre ela grande.
+// Imagens do serviço no cartão: a primeira fica ao lado do texto; as outras, miniaturas. Tocar numa imagem abre ela grande.
 function abrirImagem(e,url){e.stopPropagation();e.preventDefault();window.open(url,"_blank","noopener");}
-function CapaServico({url,nome}){
+// Imagem principal ao lado (à esquerda) do texto, acompanhando a altura do cartão
+function ImagemLateral({url,nome}){
   if(!url)return null;
   return(
-    <div style={{position:"relative",width:"100%",aspectRatio:"16/9",maxHeight:240,overflow:"hidden",flexShrink:0,background:"#111"}}>
+    <div style={{position:"relative",width:"35%",maxWidth:280,minHeight:120,flexShrink:0,alignSelf:"stretch",overflow:"hidden",background:"#111"}}>
       <img src={url} alt={nome} loading="lazy" onError={e=>{e.target.parentElement.style.display="none";}}
-        style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
+        style={{position:"absolute",inset:0,width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
       <span role="button" tabIndex={0} aria-label="Ver imagem ampliada" title="Ver imagem ampliada"
         onClick={e=>abrirImagem(e,url)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" ")abrirImagem(e,url);}}
-        style={{position:"absolute",top:8,right:8,width:36,height:36,borderRadius:10,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-in"}}>
-        <Maximize2 size={16} color="#fff"/>
+        style={{position:"absolute",top:6,left:6,width:32,height:32,borderRadius:8,background:"rgba(0,0,0,0.55)",display:"flex",alignItems:"center",justifyContent:"center",cursor:"zoom-in"}}>
+        <Maximize2 size={14} color="#fff"/>
       </span>
     </div>
   );
@@ -2714,8 +2715,9 @@ input,textarea,select{touch-action:manipulation;}
                     onMouseEnter={e=>{e.currentTarget.style.borderColor=specialty.color;e.currentTarget.style.background="#222";}}
                     onMouseLeave={e=>{e.currentTarget.style.borderColor=C.border;e.currentTarget.style.background=C.dark2;}}>
                     <div style={{height:3,background:specialty.color,width:"100%"}}/>
-                    <CapaServico url={fotos[0]} nome={group.label}/>
-                    <div style={{padding:"16px 16px",display:"flex",gap:16,alignItems:"flex-start"}}>
+                    <div style={{display:"flex",alignItems:"stretch"}}>
+                    <ImagemLateral url={fotos[0]} nome={group.label}/>
+                    <div style={{padding:"16px 16px",display:"flex",gap:16,alignItems:"flex-start",flex:1,minWidth:0}}>
                       {/* Ícone (some quando há capa) */}
                       {!fotos[0]&&<div style={{width:48,height:48,borderRadius:12,background:specialty.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0,color:specialty.color}}>
                         <SpecIcon id={specialty.id} size={24} color={specialty.color}/>
@@ -2751,7 +2753,7 @@ input,textarea,select{touch-action:manipulation;}
                           const sv0=singleSv||group.services[0];
                           const hasIncludes=sv0.includes?.length>0;
                           return(
-                            <div style={{display:"grid",gridTemplateColumns:hasIncludes?"1fr 1fr":"1fr",gap:8,marginBottom:4}}>
+                            <div style={{display:"grid",gridTemplateColumns:hasIncludes?"repeat(auto-fit,minmax(min(100%,150px),1fr))":"1fr",gap:8,marginBottom:4}}>
                               {/* Exames */}
                               {sv0.exams?.length>0&&(
                                 <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:8,padding:"7px 10px"}}>
@@ -2795,6 +2797,7 @@ input,textarea,select{touch-action:manipulation;}
                           </div>
                         )}
                       </div>
+                    </div>
                     </div>
                   </button>
                 );
@@ -2840,25 +2843,11 @@ input,textarea,select{touch-action:manipulation;}
                       INDISPONÍVEL EM SOMENTE PLANEJAMENTO
                     </div>
                   )}
-                  {/* Hero image / barra de cor */}
-                  {capa?(
-                    <div style={{position:"relative",width:"100%",height:140,overflow:"hidden",flexShrink:0}}>
-                      <img src={capa} alt={sv.name} onError={e=>{e.target.parentElement.style.display="none";}}
-                        style={{width:"100%",height:"100%",objectFit:"cover",display:"block"}}/>
-                      <div style={{position:"absolute",inset:0,background:"linear-gradient(to bottom, rgba(0,0,0,0) 20%, rgba(0,0,0,0.85) 100%)"}}/>
-                      <div style={{position:"absolute",bottom:10,left:12,right:12}}>
-                        <div style={{fontWeight:800,fontSize:15,color:"#fff",lineHeight:1.2,textShadow:"0 1px 4px rgba(0,0,0,0.8)"}}>{disp.name}</div>
-                        <div style={{fontWeight:900,fontSize:16,color:specialty.color,marginTop:2}}>{fmt(applyDiscount(disp.price))}</div>
-                      </div>
-                      <div style={{position:"absolute",top:8,right:8,width:28,height:28,borderRadius:8,background:"rgba(0,0,0,0.5)",display:"flex",alignItems:"center",justifyContent:"center"}}>
-                        <SpecIcon id={specialty.id} size={14} color={specialty.color}/>
-                      </div>
-                    </div>
-                  ):(
-                    <div style={{height:3,background:specialty.color,width:"100%"}}/>
-                  )}
-                  <div style={{padding:"14px 16px",display:"flex",gap:12,alignItems:"flex-start"}}>
-                    {/* Ícone / número — oculto quando tem hero image */}
+                  <div style={{height:3,background:specialty.color,width:"100%"}}/>
+                  <div style={{display:"flex",alignItems:"stretch"}}>
+                  <ImagemLateral url={capa} nome={disp.name}/>
+                  <div style={{padding:"14px 16px",display:"flex",gap:12,alignItems:"flex-start",flex:1,minWidth:0}}>
+                    {/* Ícone / número — oculto quando tem imagem */}
                     {!capa&&<div style={{width:44,height:44,borderRadius:12,background:specialty.color+"18",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>
                       {sv.exactQty
                         ?<span style={{fontSize:18,fontWeight:900,color:specialty.color}}>{sv.exactQty}</span>
@@ -2866,9 +2855,9 @@ input,textarea,select{touch-action:manipulation;}
                       }
                     </div>}
                     <div style={{flex:1,minWidth:0}}>
-                      {/* Nome + preço — oculto quando há hero image */}
-                      {!capa&&(
-                        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:5}}>
+                      {/* Nome + preço */}
+                      {(
+                        <div style={{display:"flex",alignItems:"flex-start",justifyContent:"space-between",gap:8,marginBottom:5,flexWrap:"wrap"}}>
                           <div style={{fontWeight:800,fontSize:14,lineHeight:1.3}}>{disp.name}</div>
                           <div style={{textAlign:"right",flexShrink:0}}>
                             {archLabel&&<div style={{fontSize:12,color:C.textSec,marginBottom:1}}>{archLabel}</div>}
@@ -2882,7 +2871,7 @@ input,textarea,select{touch-action:manipulation;}
                       <MiniaturasServico urls={outrasFotos} nome={disp.name} cor={specialty.color}/>
                       {/* Exames + O que está incluso — lado a lado */}
                       {(disp.exams?.length>0||sv.includes?.length>0)&&(
-                        <div style={{display:"grid",gridTemplateColumns:sv.includes?.length?"1fr 1fr":"1fr",gap:8}}>
+                        <div style={{display:"grid",gridTemplateColumns:sv.includes?.length?"repeat(auto-fit,minmax(min(100%,150px),1fr))":"1fr",gap:8}}>
                           {disp.exams?.length>0&&(
                             <div style={{background:"rgba(229,34,41,0.06)",border:"1px solid rgba(229,34,41,0.12)",borderRadius:8,padding:"7px 10px"}}>
                               <div style={{fontSize:12,fontWeight:700,color:C.textSec,letterSpacing:.5,marginBottom:5,display:"flex",alignItems:"center",gap:4}}>
@@ -2923,6 +2912,7 @@ input,textarea,select{touch-action:manipulation;}
                       )}
 
                     </div>
+                  </div>
                   </div>
                 </button>
               );
