@@ -28,6 +28,18 @@ export async function conferirItens(db: Db, itens: Item[], cliente: { tipo_clien
       const sv = porId.get(String(it.servicoId || ''));
       if (!sv) return { ok: false, erro: `O serviço "${String(it.name || '')}" não está mais disponível. Remova-o do carrinho.` };
       const serviceType = (it.serviceType as string | null) || null;
+      // Etapas personalizadas: obrigatórias respondidas; respostas só com opções que existem (texto refeito aqui)
+      const defs = (sv.etapasPers || {}) as Record<string, { titulo: string; obrigatoria: boolean; tipo: string; opcoes: { id: string; rotulo: string }[] }>;
+      const resp = (it.etapas && typeof it.etapas === 'object' ? it.etapas : {}) as Record<string, unknown>;
+      const etapas: Record<string, string[]> = {};
+      for (const [id, e] of Object.entries(defs)) {
+        const v = Array.isArray(resp[id]) ? (resp[id] as unknown[]).map(String).filter(o => e.opcoes.some(x => x.id === o)) : [];
+        const escolhas = e.tipo === 'multipla' ? [...new Set(v)] : v.slice(0, 1);
+        if (e.obrigatoria && !escolhas.length) return { ok: false, erro: `Responda a etapa "${e.titulo}" de "${String(it.name || '')}".` };
+        if (escolhas.length) etapas[id] = escolhas;
+      }
+      it.etapas = etapas;
+      it.etapasResumo = Object.entries(etapas).map(([id, v]) => ({ titulo: defs[id].titulo, respostas: v.map(o => defs[id].opcoes.find(x => x.id === o)?.rotulo).filter(Boolean) }));
       preco = calcularPrecoItem({ service: servicoParaCalculo(sv, serviceType), serviceType, discount: desconto }, it);
     }
     const freteInf = Number((it.freight as Record<string, unknown> | null)?.value) || 0;

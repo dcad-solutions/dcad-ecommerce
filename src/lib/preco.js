@@ -130,6 +130,9 @@ export function mesclarCatalogo(data){
           maxTeeth: dynSvc.maxTeeth ?? staticSvc.maxTeeth,
           // Tabela "preço total por quantidade" do Admin (desconto por quantidade fora da Implantodontia)
           tabelaQtd: generico ? dynSvc.priceByQty : undefined,
+          // Etapas personalizadas: ordem das etapas do meio e definições (Serviços → Etapas personalizadas)
+          ordemEtapas: dynSvc.ordemEtapas,
+          etapasPers: dynSvc.etapasPers,
           // Campos que vêm do Supabase sobrescrevem o estático:
           _supabaseId: dynSvc._supabaseId, // id do serviço no banco (pedido, cupom e banners)
               name:     dynSvc.name     || staticSvc.name,
@@ -158,6 +161,30 @@ export function mesclarCatalogo(data){
 }
 
 // Serviço como o Wizard usa no cálculo: no modo "só planejamento" os dados do planOnly sobrescrevem
+/** Quantidade do item para acréscimos "por arcada/dente": arcadas escolhidas ou dentes marcados */
+export function quantidadeDoItem(service,sv){
+  const arcadas=(sv.arch?.sup?1:0)+(sv.arch?.inf?1:0);
+  if(service?.usesArch||service?.fluxo==="arch")return Math.max(1,arcadas);
+  return Math.max(1,sv.teeth?.length||0);
+}
+
+/** Soma dos acréscimos das opções escolhidas nas etapas personalizadas cobradas */
+export function acrescimoEtapas(service,sv){
+  const defs=service?.etapasPers||{};
+  const resp=sv?.etapas||{};
+  let soma=0;
+  for(const [id,escolhas] of Object.entries(resp)){
+    const e=defs[id];
+    if(!e||!e.cobrada||!Array.isArray(escolhas))continue;
+    for(const opId of escolhas){
+      const o=(e.opcoes||[]).find(x=>x.id===opId);
+      if(!o||!(o.acrescimo>0))continue;
+      soma+=o.acrescimo*(o.cobranca==="quantidade"?quantidadeDoItem(service,sv):1);
+    }
+  }
+  return soma;
+}
+
 export function servicoParaCalculo(sv, serviceType){
   return {...sv,...(serviceType==="planOnly"&&sv.planOnly?sv.planOnly:{})};
 }
@@ -229,6 +256,9 @@ export function calcularPrecoItem({ service, serviceType, discount }, sv){
     const uTier=URGENCY_TIERS.find(u=>u.id===sv.urgency)||URGENCY_TIERS[0];
     const urgFee=(urgRules[sv.urgency]!=null?(urgRules[sv.urgency]/100):uTier.feePercent)||0;
     if(urgFee>0)t+=t*urgFee;
+
+    // ── Etapas personalizadas cobradas (acréscimo por opção: uma vez ou por arcada/dente) ──
+    t+=acrescimoEtapas(service,sv);
 
     // ── Arquivo p/ impressão ───────────────────────────────────────────────
     if(sv.slicedFile&&serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile){

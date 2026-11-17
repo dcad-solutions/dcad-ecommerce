@@ -565,7 +565,10 @@ export default function App() {
   function finalize(){
     const freightVal=serviceType==="print"?freight.value:0;
     const svcName=service?.name||(specialty?.name+" — Serviço");
-    const svc={id:editingId||Date.now(),servicoId:service?._supabaseId||null,generico:!!service?.generico,specialty:specialty?.name,name:svcName+(!service?.generico&&A.teeth.length>1?" (2 dentes)":""),teeth:[...A.teeth],arch:{...A.arch},implantQty:A.implantQty,dsd3dAddon:A.dsd3dAddon,brand:A.brand,kit:A.kit,model:A.model||(A.modelText||"Não especificado"),comps:{...A.comps},observacoes:A.observacoes,urgency:A.urgency,slicedFile:A.slicedFile,printerId:A.printerId||null,serviceType,freight:freightVal>0?{...freight}:null,total:calcTotal(A)+freightVal};
+    const svc={id:editingId||Date.now(),servicoId:service?._supabaseId||null,generico:!!service?.generico,specialty:specialty?.name,name:svcName+(!service?.generico&&A.teeth.length>1?" (2 dentes)":""),teeth:[...A.teeth],arch:{...A.arch},implantQty:A.implantQty,dsd3dAddon:A.dsd3dAddon,brand:A.brand,kit:A.kit,model:A.model||(A.modelText||"Não especificado"),comps:{...A.comps},observacoes:A.observacoes,urgency:A.urgency,slicedFile:A.slicedFile,printerId:A.printerId||null,serviceType,
+      etapas:Object.fromEntries(Object.entries(A.etapas||{}).filter(([id,v])=>etapasDef[id]&&v?.length)),
+      etapasResumo:Object.entries(A.etapas||{}).filter(([id,v])=>etapasDef[id]&&v?.length).map(([id,v])=>({titulo:etapasDef[id].titulo,respostas:v.map(o=>etapasDef[id].opcoes.find(x=>x.id===o)?.rotulo).filter(Boolean)})),
+      freight:freightVal>0?{...freight}:null,total:calcTotal(A)+freightVal};
     setServices(s=>[...s,svc]);
     if(service){trackFrequentService({...service,specialty:specialty?.name,specialtyColor:specialty?.color});}
     setEditingId(null);
@@ -689,15 +692,51 @@ export default function App() {
   // arquivo fatiado, prazo/urgência, informações do caso e frete.
   const isGenerico=!!service?.generico;
   const temPasso=k=>service?.steps?(service.steps[k]===true):true;
+  // Ordem das etapas do meio (Admin → Wizard / Fluxo) e etapas personalizadas ('e:<id>')
+  const etapasDef=service?.etapasPers||{};
+  const ordemSv=(service?.ordemEtapas?.length?service.ordemEtapas:(isGenerico?["sel","fatiado","prazo"]:["implante","fatiado","prazo"]))
+    .filter(k=>!k.startsWith("e:")||etapasDef[k.slice(2)]);
+  const ehEtapaPers=k=>typeof k==="string"&&k.startsWith("e:");
   const ROTULO_PASSO={0:"Pré-planejamento",gSel:service?.fluxo==="arch"?"Arcada":"Dentes",slicedFile:"Arquivo p/ Impressão",6:"Prazo",7:"Informações do Caso",8:"Frete"};
+  const rotuloPasso=k=>ehEtapaPers(k)?(etapasDef[k.slice(2)]?.titulo||"Etapa"):ROTULO_PASSO[k];
   const seqGenerica=isGenerico?[
     temPasso("preplan")?0:null,
-    service?.fluxo==="arch"||service?.fluxo==="odonto"?"gSel":null,
-    hasPlanSliced?"slicedFile":null,
-    temPasso("urgencia")?6:null,
+    ...ordemSv.map(k=>k==="sel"?(service?.fluxo==="arch"||service?.fluxo==="odonto"?"gSel":null)
+      :k==="fatiado"?(hasPlanSliced?"slicedFile":null)
+      :k==="prazo"?(temPasso("urgencia")?6:null)
+      :ehEtapaPers(k)?k:null),
     7,
     serviceType==="print"&&temPasso("frete")?8:null,
   ].filter(x=>x!==null):[];
+  // Implantes: personalizadas antes do bloco (dentes → … → adicionais) e depois dele
+  const iBloco=ordemSv.indexOf("implante");
+  const etapasAntes=isGenerico?[]:ordemSv.filter((k,i)=>ehEtapaPers(k)&&iBloco>=0&&i<iBloco);
+  const etapasDepois=isGenerico?[]:ordemSv.filter((k,i)=>ehEtapaPers(k)&&(iBloco<0||i>iBloco));
+  /** Saída do bloco dos implantes: personalizadas "depois", depois arquivo fatiado/prazo */
+  function sairBloco(destino){
+    if(etapasDepois.length){setScreen(etapasDepois[0]);return;}
+    setScreen(destino);
+  }
+  function destinoAposBloco(){return serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile&&!isStackable?"slicedFile":6;}
+  function voltarAntesDoBloco1(){
+    if(etapasAntes.length){setScreen(etapasAntes[etapasAntes.length-1]);return;}
+    if(temPasso("preplan"))setScreen(0);else voltarDoInicio();
+  }
+  function proxEtapa(k){
+    if(isGenerico){proxGen(k);return;}
+    const ia=etapasAntes.indexOf(k);
+    if(ia>=0){setScreen(etapasAntes[ia+1]??1);return;}
+    const id=etapasDepois.indexOf(k);
+    setScreen(etapasDepois[id+1]??destinoAposBloco());
+  }
+  function antEtapa(k){
+    if(isGenerico){antGen(k);return;}
+    const ia=etapasAntes.indexOf(k);
+    if(ia>=0){if(ia>0)setScreen(etapasAntes[ia-1]);else if(temPasso("preplan"))setScreen(0);else voltarDoInicio();return;}
+    const id=etapasDepois.indexOf(k);
+    if(id>0){setScreen(etapasDepois[id-1]);return;}
+    setScreen(isStackable?4:5);
+  }
   function voltarDoInicio(){
     if(["imp3d","consult"].includes(specialty?.id)){setScreen("specialties");setSpecialty(null);}
     else if(selectedGroup){setScreen("serviceSubcat");}
@@ -724,12 +763,12 @@ export default function App() {
     if(screen!==0||!service||temPasso("preplan"))return;
     // eslint-disable-next-line react-hooks/set-state-in-effect
     if(isGenerico)setScreen(seqGenerica[0]??7);
-    else setScreen(1);
+    else setScreen(etapasAntes[0]??1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   },[screen,service]);
 
-  const WIZARD_STEPS=(()=>{
-    if(isGenerico)return[...seqGenerica.map(k=>ROTULO_PASSO[k]),"Pagamento"];
+  const PASSOS0=(()=>{
+    if(isGenerico)return[...seqGenerica.map(rotuloPasso),"Pagamento"];
     let base;
     if(isStackable)    base=hasPlanSliced?WIZARD_STEPS_STACKABLE_PL:WIZARD_STEPS_STACKABLE;
     else if(isProto)   base=hasPlanSliced?WIZARD_STEPS_PROTO_PL:WIZARD_STEPS_PROTO;
@@ -741,7 +780,11 @@ export default function App() {
     else               base=hasPlanSliced?WIZARD_STEPS_PLAN:WIZARD_STEPS_BASE;
     return serviceType==="print"?[...base,"Frete","Pagamento"]:[...base,"Pagamento"];
   })();
-  const stepNum=(()=>{
+  // Implantes: etapas personalizadas entram na barra de progresso (antes = após o pré-planejamento; depois = antes de arquivo/prazo)
+  const posDepois=(()=>{const a=PASSOS0.indexOf("Arquivo p/ Impressão"),b=PASSOS0.indexOf("Prazo");return a>=0?a:b>=0?b:PASSOS0.length-1;})();
+  const WIZARD_STEPS=isGenerico?PASSOS0:[...PASSOS0.slice(0,1),...etapasAntes.map(rotuloPasso),...PASSOS0.slice(1,posDepois),...etapasDepois.map(rotuloPasso),...PASSOS0.slice(posDepois)];
+  const stepNum0=(()=>{
+    const WIZARD_STEPS=PASSOS0;
     if(screen==="resumo") return WIZARD_STEPS.length-1;
     if(isGenerico){const i=seqGenerica.indexOf(screen);return i>=0?i:-1;}
     if(screen==="slicedFile") return WIZARD_STEPS.indexOf("Arquivo p/ Impressão");
@@ -775,7 +818,15 @@ export default function App() {
       }
     }
     return -1;
-  })();  const doubleGuide=A.teeth.length===2;
+  })();
+  const stepNum=(()=>{
+    if(isGenerico||screen==="resumo")return screen==="resumo"?WIZARD_STEPS.length-1:stepNum0;
+    if(etapasAntes.includes(screen))return 1+etapasAntes.indexOf(screen);
+    if(etapasDepois.includes(screen))return posDepois+etapasAntes.length+etapasDepois.indexOf(screen);
+    if(stepNum0<0)return -1;
+    return stepNum0+(stepNum0>=1?etapasAntes.length:0)+(stepNum0>=posDepois?etapasDepois.length:0);
+  })();
+  const doubleGuide=A.teeth.length===2;
   const totalAllBase=services.reduce((s,sv)=>s+sv.total,0);
   const totalAll=Math.max(0,parseFloat((totalAllBase-couponDiscount).toFixed(2)));
   const FRETE_GRATIS_MIN=1000;
@@ -3068,7 +3119,7 @@ input,textarea,select{touch-action:manipulation;}
               </div>
               <div style={{fontWeight:900,fontSize:15,color:C.red,flexShrink:0}}>{fmt(P.preplan)}</div>
             </button>
-            <button onClick={()=>{set("preplan","nao");if(isGenerico)proxGen(0);else setScreen(1);}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:8,background:C.dark2,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"13px 15px",cursor:"pointer",textAlign:"left",color:C.text}}>
+            <button onClick={()=>{set("preplan","nao");if(isGenerico)proxGen(0);else setScreen(etapasAntes[0]??1);}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:8,background:C.dark2,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"13px 15px",cursor:"pointer",textAlign:"left",color:C.text}}>
               <Zap size={16} color={C.textSec}/>
               <div><div style={{fontSize:14,fontWeight:700}}>Não — ir direto ao planejamento</div><div style={{fontSize:13,color:C.textSec,marginTop:2}}>Iniciar o planejamento sem análise prévia</div></div>
             </button>
@@ -3147,7 +3198,7 @@ input,textarea,select{touch-action:manipulation;}
         {screen===1&&(
           service?.usesArch
           /* ── Seleção de arcada (Protocolos / Stackable) ── */
-          ? <Step title="Selecione a(s) arcada(s)" sub="Selecione a(s) arcada(s) do caso." badge="Arcada" badgeColor={C.red} onBack={()=>temPasso("preplan")?setScreen(0):voltarDoInicio()}>
+          ? <Step title="Selecione a(s) arcada(s)" sub="Selecione a(s) arcada(s) do caso." badge="Arcada" badgeColor={C.red} onBack={voltarAntesDoBloco1}>
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
                 {[{key:"sup",label:"Arcada Superior"},{key:"inf",label:"Arcada Inferior"}].map(arc=>{
                   const sel=A.arch[arc.key];
@@ -3183,7 +3234,7 @@ input,textarea,select{touch-action:manipulation;}
               sub={service?.exactQty
                 ?`Selecione exatamente ${service.exactQty} dente${service.exactQty>1?"s":""} para marcar os implantes.`
                 :"Selecione o dente do implante."}
-              badge="Dentes" badgeColor={C.red} onBack={()=>temPasso("preplan")?setScreen(0):voltarDoInicio()}>
+              badge="Dentes" badgeColor={C.red} onBack={voltarAntesDoBloco1}>
               {/* Contador de seleção */}
               {(()=>{
                 const isParcial=!!service?.priceByQty;
@@ -3284,6 +3335,52 @@ input,textarea,select{touch-action:manipulation;}
               })()}
             </Step>
         )}
+
+        {/* ════════════════════════════════
+            ETAPA PERSONALIZADA (Admin → Serviços → Etapas personalizadas)
+        ════════════════════════════════ */}
+        {ehEtapaPers(screen)&&etapasDef[screen.slice(2)]&&(()=>{
+          const id=screen.slice(2);
+          const e=etapasDef[id];
+          const escolhas=A.etapas?.[id]||[];
+          const multipla=e.tipo==="multipla";
+          const marcar=opId=>setA(a=>{
+            const atual=a.etapas?.[id]||[];
+            const nova=multipla?(atual.includes(opId)?atual.filter(x=>x!==opId):[...atual,opId]):[opId];
+            return {...a,etapas:{...(a.etapas||{}),[id]:nova}};
+          });
+          const pode=!e.obrigatoria||escolhas.length>0;
+          const unidadeQtd=service?.usesArch||service?.fluxo==="arch"?"arcada":"dente";
+          return(
+            <Step title={e.pergunta} sub={[e.ajuda,multipla?"Você pode marcar mais de uma opção.":"",!e.obrigatoria?"Opcional.":""].filter(Boolean).join(" ")}
+              badge={e.titulo} badgeColor={C.red} onBack={()=>antEtapa(screen)}>
+              <div role={multipla?"group":"radiogroup"} aria-label={e.pergunta} style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+                {e.opcoes.map(o=>{
+                  const sel=escolhas.includes(o.id);
+                  const valor=e.cobrada&&o.acrescimo>0?`+ ${fmt(applyDiscount(o.acrescimo))}${o.cobranca==="quantidade"?` por ${unidadeQtd}`:""}`:"";
+                  return(
+                    <button key={o.id} type="button" role={multipla?"checkbox":"radio"} aria-checked={sel} onClick={()=>marcar(o.id)}
+                      style={{width:"100%",display:"flex",alignItems:"center",gap:14,background:sel?"rgba(229,34,41,0.10)":C.dark2,border:`1.5px solid ${sel?C.red:C.border}`,borderRadius:12,padding:"14px 16px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
+                      <div style={{width:22,height:22,borderRadius:multipla?6:11,background:sel?C.red:C.dark3,border:`2px solid ${sel?C.red:C.border}`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800}}>{sel?"✓":""}</div>
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:15,fontWeight:800,color:sel?"#fff":C.text}}>{o.rotulo}</div>
+                        {o.descricao&&<div style={{fontSize:13,color:C.textSec,marginTop:2}}>{o.descricao}</div>}
+                      </div>
+                      {valor&&<div style={{fontSize:13,fontWeight:800,color:C.green,flexShrink:0,textAlign:"right"}}>{valor}</div>}
+                    </button>
+                  );
+                })}
+              </div>
+              {e.cobrada&&(
+                <div style={{background:C.dark3,borderRadius:12,padding:"10px 14px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:13,color:C.textSec}}>Subtotal</span>
+                  <span style={{fontSize:16,fontWeight:900,color:C.red}}>{fmt(calcTotal(A))}</span>
+                </div>
+              )}
+              <Btn disabled={!pode} onClick={()=>proxEtapa(screen)}>{pode?(escolhas.length||e.obrigatoria?"Continuar":"Pular esta etapa"):"Escolha uma opção para continuar"}</Btn>
+            </Step>
+          );
+        })()}
 
         {/* ════════════════════════════════
             DENTES / ARCADA — serviços fora da Implantodontia (campo Fluxo no Admin)
@@ -3577,7 +3674,7 @@ input,textarea,select{touch-action:manipulation;}
               <input value={A.modelText} onChange={e=>set("modelText",e.target.value)} placeholder="Ex: BLT Ø 4.1 mm"
                 style={{width:"100%",background:C.dark2,border:`1px solid ${C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",marginBottom:14}}/></>
             }
-            <Btn disabled={modelsFor(A.brand,A.kit).length>0?!A.model:!A.modelText.trim()} onClick={()=>isStackable?setScreen(6):setScreen(5)}>
+            <Btn disabled={modelsFor(A.brand,A.kit).length>0?!A.model:!A.modelText.trim()} onClick={()=>isStackable?sairBloco(6):setScreen(5)}>
               {isStackable?"Continuar — Prazo de planejamento":"Continuar — Serviços Adicionais"}
             </Btn>
           </Step>
@@ -3599,7 +3696,7 @@ input,textarea,select{touch-action:manipulation;}
               <span style={{fontSize:13,color:C.textSec}}>Subtotal estimado</span>
               <span style={{fontSize:18,fontWeight:900,color:C.red}}>{fmt(calcTotal(A))}</span>
             </div>
-            <Btn onClick={()=>setScreen(6)}>Continuar — Prazo de planejamento</Btn>
+            <Btn onClick={()=>sairBloco(6)}>{etapasDepois.length?"Continuar":"Continuar — Prazo de planejamento"}</Btn>
           </Step>
         )}
         {screen===5&&service?.id!=="stackable"&&(
@@ -3783,7 +3880,7 @@ input,textarea,select{touch-action:manipulation;}
               <span style={{fontSize:13,color:C.textSec}}>Subtotal estimado</span>
               <span style={{fontSize:18,fontWeight:900,color:C.red}}>{fmt(calcTotal(A))}</span>
             </div>
-            <Btn onClick={()=>serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile?setScreen("slicedFile"):setScreen(6)}>
+            <Btn onClick={()=>sairBloco(serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile?"slicedFile":6)}>
               {serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile?"Continuar — Arquivo p/ Impressão":"Continuar — Prazo de planejamento"}
             </Btn>
           </Step>
@@ -3791,7 +3888,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP 5b — ARQUIVO PREPARADO PARA IMPRESSÃO (somente fluxo planOnly) */}
         {screen==="slicedFile"&&serviceType==="planOnly"&&(
-          <Step title="Arquivo preparado para impressão" sub="Receba o arquivo .chitubox com peças e suportes configurados." badge="Arquivo p/ Impressão" badgeColor={"#0D9488"} onBack={()=>isGenerico?antGen("slicedFile"):isStackable?setScreen(4):setScreen(5)}>
+          <Step title="Arquivo preparado para impressão" sub="Receba o arquivo .chitubox com peças e suportes configurados." badge="Arquivo p/ Impressão" badgeColor={"#0D9488"} onBack={()=>isGenerico?antGen("slicedFile"):etapasDepois.length?setScreen(etapasDepois[etapasDepois.length-1]):isStackable?setScreen(4):setScreen(5)}>
             {/* Explicação do serviço */}
             <div style={{background:"rgba(13,148,136,0.06)",border:"1px solid rgba(13,148,136,0.25)",borderRadius:12,padding:"16px",marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -3846,7 +3943,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP 6 — PRAZO DE PLANEJAMENTO */}
         {screen===6&&(
-          <Step title="Prazo de planejamento" sub="A urgência afeta apenas o planejamento digital. Impressão e frete mantém seus prazos normais após aprovação do planejamento." badge="Prazo" badgeColor={C.yellow} onBack={()=>isGenerico?antGen(6):isStackable?setScreen(4):setScreen(5)}>
+          <Step title="Prazo de planejamento" sub="A urgência afeta apenas o planejamento digital. Impressão e frete mantém seus prazos normais após aprovação do planejamento." badge="Prazo" badgeColor={C.yellow} onBack={()=>isGenerico?antGen(6):hasPlanSliced&&!isStackable?setScreen("slicedFile"):etapasDepois.length?setScreen(etapasDepois[etapasDepois.length-1]):isStackable?setScreen(4):setScreen(5)}>
             <div style={{fontSize:13,color:C.textSec,marginBottom:14,lineHeight:1.6,background:"rgba(234,179,8,0.06)",border:"1px solid rgba(234,179,8,0.15)",borderRadius:12,padding:"10px 13px"}}>
               <b style={{color:C.yellow}}>Como funciona:</b> O prazo de planejamento começa após o envio dos arquivos. Após o envio do planejamento e sua aprovação, damos início à impressão 3D (2 dias úteis + prazo de envio ou entrega).
             </div>
@@ -4176,6 +4273,7 @@ input,textarea,select{touch-action:manipulation;}
                             urgency:sv.urgency||"normal",
                             slicedFile:sv.slicedFile||false,
                             printerId:sv.printerId||null,
+                            etapas:{...(sv.etapas||{})},
                           });
                           setEditingId(sv.id);
                           setEditingOriginal({...sv});
@@ -4210,6 +4308,7 @@ input,textarea,select{touch-action:manipulation;}
                     :<Row label={`Guia(s) ×${sv.teeth.length}`} val={fmt(service?.price||P.unit)} small/>)
                   :(sv.arch?.sup||sv.arch?.inf)&&<Row label={`Arcada(s): ${[sv.arch.sup&&"Superior",sv.arch.inf&&"Inferior"].filter(Boolean).join(" + ")}${sv.implantQty?(()=>{const lbl={4:"ALL-ON-4",5:"ALL-ON-X",6:"ALL-ON-6"};return typeof sv.implantQty==="object"?` · Sup: ${lbl[sv.implantQty.sup]||"—"} / Inf: ${lbl[sv.implantQty.inf]||"—"}`:` · ${lbl[sv.implantQty]||sv.implantQty+" implantes"}`;})():""}`} val={sv.generico?"":fmt((service?.price||0)*((sv.arch?.sup?1:0)+(sv.arch?.inf?1:0)))} small/>
                 }
+                {(sv.etapasResumo||[]).map((r,i)=><Row key={"et"+i} label={`${r.titulo}: ${r.respostas.join(", ")}`} val="" small/>)}
                 {sv.brand==="STRAUMANN"&&<Row label="Adicional Straumann" val={`+ ${fmt(P.strauAdd)}`} small/>}
                 {sv.dsd3dAddon&&<Row label="Plan. Digital do Sorriso 3D" val={`+ ${fmt(P.dsd3dProto)}`} small/>}
                 {sv.comps?.captura?.length>0&&<Row label={`Prov. captura ×${sv.comps.captura.length}`} val={`+ ${fmt(P.provCaptura*sv.comps.captura.length)}`} small/>}
