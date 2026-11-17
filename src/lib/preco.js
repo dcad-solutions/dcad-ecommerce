@@ -128,6 +128,8 @@ export function mesclarCatalogo(data){
           unidade:  dynSvc.unidade,
           precoPorDente: dynSvc.precoPorDente,
           maxTeeth: dynSvc.maxTeeth ?? staticSvc.maxTeeth,
+          // Tabela "preço total por quantidade" do Admin (desconto por quantidade fora da Implantodontia)
+          tabelaQtd: generico ? dynSvc.priceByQty : undefined,
           // Campos que vêm do Supabase sobrescrevem o estático:
           _supabaseId: dynSvc._supabaseId, // id do serviço no banco (pedido, cupom e banners)
               name:     dynSvc.name     || staticSvc.name,
@@ -174,9 +176,14 @@ export function calcularPrecoItem({ service, serviceType, discount }, sv){
     let t=0;
     if(service?.generico){
       // Fora da Implantodontia: arcada cobra por arcada se a unidade for arco/arcada; dentes cobram por dente se marcado no Admin
+      // Tabela por quantidade (preço total para N arcadas/dentes) tem prioridade sobre a regra
       t=service?.price||0;
       const selArcadas=(sv.arch?.sup?1:0)+(sv.arch?.inf?1:0);
-      if(service.fluxo==="arch"&&["arco","arcada"].includes(service.unidade)&&selArcadas>0)t*=selArcadas;
+      const qtd=service.fluxo==="arch"?selArcadas:service.fluxo==="odonto"?nTeeth:0;
+      const tab=serviceType==="planOnly"?service.planOnly?.priceByQty:(service.tabelaQtd||service.priceByQty);
+      const daTabela=qtd>0&&tab?Number(tab[qtd]??tab[String(qtd)]):NaN;
+      if(daTabela>0)t=daTabela;
+      else if(service.fluxo==="arch"&&["arco","arcada"].includes(service.unidade)&&selArcadas>0)t*=selArcadas;
       else if(service.fluxo==="odonto"&&service.precoPorDente&&nTeeth>0)t*=nTeeth;
     } else if(pbyq){
       if(supCount>=2)t+=pbyq[Math.min(supCount,8)]||0;

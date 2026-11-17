@@ -3293,9 +3293,13 @@ input,textarea,select{touch-action:manipulation;}
           const limite=service?.maxTeeth||0;
           const pronto=porArcada?(A.arch.sup||A.arch.inf):A.teeth.length>0;
           const cobraArcada=porArcada&&["arco","arcada"].includes(service?.unidade);
+          // Tabela "preço total por quantidade" do Admin (desconto por quantidade)
+          const tabQ=(serviceType==="planOnly"?service?.planOnly?.priceByQty:(service?.tabelaQtd||service?.priceByQty))||{};
+          const faixas=Object.entries(tabQ).map(([q,v])=>[Number(q),Number(v)]).filter(([q,v])=>q>0&&v>0).sort((x,y)=>x[0]-y[0]);
+          const textoFaixas=faixas.length?faixas.map(([q,v])=>`${q} ${porArcada?(q>1?"arcadas":"arcada"):(q>1?"dentes":"dente")}: ${fmt(applyDiscount(v))}`).join(" · "):"";
           return(
             <Step title={porArcada?"Selecione a(s) arcada(s)":"Selecione o(s) dente(s)"}
-              sub={porArcada?(cobraArcada?"O valor é cobrado por arcada selecionada.":"Informe a(s) arcada(s) do caso."):(service?.precoPorDente?"O valor é cobrado por dente selecionado.":limite?`Selecione até ${limite} dente${limite>1?"s":""}.`:"Selecione os dentes do caso.")}
+              sub={textoFaixas?`Valores por quantidade — ${textoFaixas}`:porArcada?(cobraArcada?"O valor é cobrado por arcada selecionada.":"Informe a(s) arcada(s) do caso."):(service?.precoPorDente?"O valor é cobrado por dente selecionado.":limite?`Selecione até ${limite} dente${limite>1?"s":""}.`:"Selecione os dentes do caso.")}
               badge={porArcada?"Arcada":"Dentes"} badgeColor={C.red} onBack={()=>antGen("gSel")}>
               {porArcada?(
                 <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
@@ -3306,7 +3310,7 @@ input,textarea,select{touch-action:manipulation;}
                         style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel?"rgba(229,34,41,0.10)":C.dark2,border:`1.5px solid ${sel?C.red:C.border}`,borderRadius:12,padding:"16px 18px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
                         <div style={{width:22,height:22,borderRadius:8,background:sel?C.red:C.dark3,border:`2px solid ${sel?C.red:C.border}`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800}}>{sel?"✓":""}</div>
                         <div style={{flex:1,fontSize:15,fontWeight:800,color:sel?C.red:"#fff"}}>{arc.label}</div>
-                        {cobraArcada&&<div style={{fontSize:13,fontWeight:800,color:C.textSec,flexShrink:0}}>{fmt(applyDiscount(service.price))}</div>}
+                        {cobraArcada&&!faixas.length&&<div style={{fontSize:13,fontWeight:800,color:C.textSec,flexShrink:0}}>{fmt(applyDiscount(service.price))}</div>}
                       </button>
                     );
                   })}
