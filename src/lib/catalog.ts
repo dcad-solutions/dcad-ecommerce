@@ -203,10 +203,16 @@ export async function fetchCatalog(client: { from: typeof supabase.from } = supa
     if (esp.imagem) imagemMap[String(esp.nome)] = String(esp.imagem)
   }
 
+  // Especialidades desativadas no Admin (e seus serviços) não aparecem no portal
+  const ativas = especialidadesResult.error ? null : new Set((especialidadesResult.data || []).map(e => String(e.nome)))
+
   // Agrupar por especialidade
   const grouped: Record<string, { rows: Record<string, unknown>[] }> = {}
   for (const row of data) {
     const esp = String(row.especialidade || 'Outros')
+    if (ativas && !ativas.has(esp)) continue
+    // Fora da vitrine: só entra como complementar/adicional de outro serviço
+    if (row.vitrine === false) continue
     if (!grouped[esp]) grouped[esp] = { rows: [] }
     grouped[esp].rows.push(row as Record<string, unknown>)
   }
