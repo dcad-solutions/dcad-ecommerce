@@ -473,6 +473,7 @@ export default function App() {
     setA({preplan:null,teeth:[],arch:{sup:false,inf:false},implantQty:null,dsd3dAddon:false,brand:null,kit:null,model:null,modelText:"",comps:{},observacoes:"",urgency:"normal",slicedFile:false,printerId:null});
     if(["imp3d","consult"].includes(sp.id)){
       const sv=sp.services.find(x=>String(x._supabaseId)===String(servicoId));
+      setServiceType(sp.id==="imp3d"?"print":null);
       setService(sv);setScreen(0);
     }else{
       setBannerServico(servicoId);setScreen("serviceType");
@@ -564,7 +565,7 @@ export default function App() {
   function finalize(){
     const freightVal=serviceType==="print"?freight.value:0;
     const svcName=service?.name||(specialty?.name+" — Serviço");
-    const svc={id:editingId||Date.now(),servicoId:service?._supabaseId||null,specialty:specialty?.name,name:svcName+(A.teeth.length>1?" (2 dentes)":""),teeth:[...A.teeth],arch:{...A.arch},implantQty:A.implantQty,dsd3dAddon:A.dsd3dAddon,brand:A.brand,kit:A.kit,model:A.model||(A.modelText||"Não especificado"),comps:{...A.comps},observacoes:A.observacoes,urgency:A.urgency,slicedFile:A.slicedFile,printerId:A.printerId||null,serviceType,freight:freightVal>0?{...freight}:null,total:calcTotal(A)+freightVal};
+    const svc={id:editingId||Date.now(),servicoId:service?._supabaseId||null,generico:!!service?.generico,specialty:specialty?.name,name:svcName+(!service?.generico&&A.teeth.length>1?" (2 dentes)":""),teeth:[...A.teeth],arch:{...A.arch},implantQty:A.implantQty,dsd3dAddon:A.dsd3dAddon,brand:A.brand,kit:A.kit,model:A.model||(A.modelText||"Não especificado"),comps:{...A.comps},observacoes:A.observacoes,urgency:A.urgency,slicedFile:A.slicedFile,printerId:A.printerId||null,serviceType,freight:freightVal>0?{...freight}:null,total:calcTotal(A)+freightVal};
     setServices(s=>[...s,svc]);
     if(service){trackFrequentService({...service,specialty:specialty?.name,specialtyColor:specialty?.color});}
     setEditingId(null);
@@ -682,7 +683,53 @@ export default function App() {
   const isStackable=service?.id==="stackable";
   const isParcial=service?.id==="cgparc";
   const hasPlanSliced=serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile;
+
+  // ── Etapas ligadas no Admin (Serviços → Wizard / Fluxo) ──────────────────
+  // Fora da Implantodontia o pedido segue só as etapas ligadas: pré-planejamento, dentes/arcada (campo Fluxo),
+  // arquivo fatiado, prazo/urgência, informações do caso e frete.
+  const isGenerico=!!service?.generico;
+  const temPasso=k=>service?.steps?(service.steps[k]===true):true;
+  const ROTULO_PASSO={0:"Pré-planejamento",gSel:service?.fluxo==="arch"?"Arcada":"Dentes",slicedFile:"Arquivo p/ Impressão",6:"Prazo",7:"Informações do Caso",8:"Frete"};
+  const seqGenerica=isGenerico?[
+    temPasso("preplan")?0:null,
+    service?.fluxo==="arch"||service?.fluxo==="odonto"?"gSel":null,
+    hasPlanSliced?"slicedFile":null,
+    temPasso("urgencia")?6:null,
+    7,
+    serviceType==="print"&&temPasso("frete")?8:null,
+  ].filter(x=>x!==null):[];
+  function voltarDoInicio(){
+    if(["imp3d","consult"].includes(specialty?.id)){setScreen("specialties");setSpecialty(null);}
+    else if(selectedGroup){setScreen("serviceSubcat");}
+    else{setScreen("services");}
+  }
+  function irParaFrete(){
+    const _cep=(profile?.entregaIgual===false?profile.entCep:profile.cep)||"";
+    setCepDestino(_cep);if(_cep.replace(/\D/g,"").length>=8)calcularFrete(_cep.replace(/\D/g,""));
+    setScreen(8);
+  }
+  function proxGen(atual){
+    const n=seqGenerica[seqGenerica.indexOf(atual)+1];
+    if(n===undefined){finalize();return;}
+    if(n===8){irParaFrete();return;}
+    setScreen(n);
+  }
+  function antGen(atual){
+    const i=seqGenerica.indexOf(atual);
+    if(i<=0){voltarDoInicio();return;}
+    setScreen(seqGenerica[i-1]);
+  }
+  // Pré-planejamento desligado no Admin: pula direto para a próxima etapa
+  useEffect(()=>{
+    if(screen!==0||!service||temPasso("preplan"))return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    if(isGenerico)setScreen(seqGenerica[0]??7);
+    else setScreen(1);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  },[screen,service]);
+
   const WIZARD_STEPS=(()=>{
+    if(isGenerico)return[...seqGenerica.map(k=>ROTULO_PASSO[k]),"Pagamento"];
     let base;
     if(isStackable)    base=hasPlanSliced?WIZARD_STEPS_STACKABLE_PL:WIZARD_STEPS_STACKABLE;
     else if(isProto)   base=hasPlanSliced?WIZARD_STEPS_PROTO_PL:WIZARD_STEPS_PROTO;
@@ -696,6 +743,7 @@ export default function App() {
   })();
   const stepNum=(()=>{
     if(screen==="resumo") return WIZARD_STEPS.length-1;
+    if(isGenerico){const i=seqGenerica.indexOf(screen);return i>=0?i:-1;}
     if(screen==="slicedFile") return WIZARD_STEPS.indexOf("Arquivo p/ Impressão");
     if(screen==="implantQty") return WIZARD_STEPS.indexOf("Tipo de Caso");
     if(screen==="protoCompl") return WIZARD_STEPS.indexOf("Serviço Complementar");
@@ -1485,7 +1533,7 @@ input,textarea,select{touch-action:manipulation;}
               // Pre-planning
               ...(A.preplan!==null?[{icon:<Search size={14}/>, label:"Pré-planejamento", value:A.preplan==="sim"?"Sim (R$ 150)":"Não", active:true}]:[]),
               // Arcada (protocolo)
-              ...(service?.usesArch&&(A.arch?.sup||A.arch?.inf)?[{
+              ...((service?.usesArch||(isGenerico&&service?.fluxo==="arch"))&&(A.arch?.sup||A.arch?.inf)?[{
                 icon:<Activity size={14}/>, label:"Arcada",
                 value:[A.arch.sup&&"Superior",A.arch.inf&&"Inferior"].filter(Boolean).join(" + "),
                 active:true,
@@ -2633,7 +2681,11 @@ input,textarea,select{touch-action:manipulation;}
                   ))
                 : catalog.map((sp)=>(
                 <button key={sp.id}
-                  onClick={()=>{setSpecialty(sp);setServiceType(null);setA({preplan:null,teeth:[],arch:{sup:false,inf:false},implantQty:null,dsd3dAddon:false,brand:null,kit:null,model:null,modelText:"",comps:{},observacoes:"",urgency:"normal",slicedFile:false,printerId:null});setScreen(["imp3d","consult"].includes(sp.id)?0:"serviceType");}}
+                  onClick={()=>{setSpecialty(sp);setServiceType(null);setA({preplan:null,teeth:[],arch:{sup:false,inf:false},implantQty:null,dsd3dAddon:false,brand:null,kit:null,model:null,modelText:"",comps:{},observacoes:"",urgency:"normal",slicedFile:false,printerId:null});if(["imp3d","consult"].includes(sp.id)){
+                    // Impressão 3D e Consultoria não têm escolha de tipo: com um serviço só, abre ele direto
+                    setServiceType(sp.id==="imp3d"?"print":null);
+                    if(sp.services.length===1){setService(sp.services[0]);setScreen(0);}else{setService(null);setScreen("services");}
+                  }else setScreen("serviceType");}}
                   style={{position:"relative",border:"none",borderRadius:12,cursor:"pointer",overflow:"hidden",padding:0,display:"flex",flexDirection:"column",background:"#111",transition:"transform .15s,box-shadow .15s"}}
                   onMouseEnter={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow=`0 6px 20px ${sp.color}55`;}}
                   onMouseLeave={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="none";}}>
@@ -2998,7 +3050,7 @@ input,textarea,select{touch-action:manipulation;}
             STEP 0 — PRÉ-PLANEJAMENTO
         ════════════════════════════════ */}
         {screen===0&&(
-          <Step title="Deseja realizar um pré-planejamento?" sub="Análise prévia de viabilidade antes do planejamento completo." badge="Pré-Plan" badgeColor={C.yellow} onBack={()=>{if(["imp3d","consult"].includes(specialty?.id)){setScreen("specialties");setSpecialty(null);}else if(selectedGroup){setScreen("serviceSubcat");}else{setScreen("services");}}}>
+          <Step title="Deseja realizar um pré-planejamento?" sub="Análise prévia de viabilidade antes do planejamento completo." badge="Pré-Plan" badgeColor={C.yellow} onBack={voltarDoInicio}>
             <div style={{background:"rgba(234,179,8,0.08)",border:"1px solid rgba(234,179,8,0.25)",borderRadius:12,padding:"11px 14px",marginBottom:16,fontSize:13,lineHeight:1.6}}>
               O pré-planejamento é cobrado à parte. Se o caso tiver viabilidade, o valor é integralmente descontado do serviço principal.{" "}
               <button onClick={()=>setShowRules(true)} style={{background:"none",border:"none",color:C.yellow,fontWeight:700,fontSize:13,cursor:"pointer",textDecoration:"underline",padding:0}}>Ver regras</button>
@@ -3016,7 +3068,7 @@ input,textarea,select{touch-action:manipulation;}
               </div>
               <div style={{fontWeight:900,fontSize:15,color:C.red,flexShrink:0}}>{fmt(P.preplan)}</div>
             </button>
-            <button onClick={()=>{set("preplan","nao");setScreen(1);}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:8,background:C.dark2,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"13px 15px",cursor:"pointer",textAlign:"left",color:C.text}}>
+            <button onClick={()=>{set("preplan","nao");if(isGenerico)proxGen(0);else setScreen(1);}} style={{width:"100%",display:"flex",alignItems:"flex-start",gap:8,background:C.dark2,border:`1.5px solid ${C.border}`,borderRadius:12,padding:"13px 15px",cursor:"pointer",textAlign:"left",color:C.text}}>
               <Zap size={16} color={C.textSec}/>
               <div><div style={{fontSize:14,fontWeight:700}}>Não — ir direto ao planejamento</div><div style={{fontSize:13,color:C.textSec,marginTop:2}}>Iniciar o planejamento sem análise prévia</div></div>
             </button>
@@ -3095,7 +3147,7 @@ input,textarea,select{touch-action:manipulation;}
         {screen===1&&(
           service?.usesArch
           /* ── Seleção de arcada (Protocolos / Stackable) ── */
-          ? <Step title="Selecione a(s) arcada(s)" sub="Selecione a(s) arcada(s) do caso." badge="Arcada" badgeColor={C.red} onBack={()=>setScreen(0)}>
+          ? <Step title="Selecione a(s) arcada(s)" sub="Selecione a(s) arcada(s) do caso." badge="Arcada" badgeColor={C.red} onBack={()=>temPasso("preplan")?setScreen(0):voltarDoInicio()}>
               <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
                 {[{key:"sup",label:"Arcada Superior"},{key:"inf",label:"Arcada Inferior"}].map(arc=>{
                   const sel=A.arch[arc.key];
@@ -3131,7 +3183,7 @@ input,textarea,select{touch-action:manipulation;}
               sub={service?.exactQty
                 ?`Selecione exatamente ${service.exactQty} dente${service.exactQty>1?"s":""} para marcar os implantes.`
                 :"Selecione o dente do implante."}
-              badge="Dentes" badgeColor={C.red} onBack={()=>setScreen(0)}>
+              badge="Dentes" badgeColor={C.red} onBack={()=>temPasso("preplan")?setScreen(0):voltarDoInicio()}>
               {/* Contador de seleção */}
               {(()=>{
                 const isParcial=!!service?.priceByQty;
@@ -3232,6 +3284,52 @@ input,textarea,select{touch-action:manipulation;}
               })()}
             </Step>
         )}
+
+        {/* ════════════════════════════════
+            DENTES / ARCADA — serviços fora da Implantodontia (campo Fluxo no Admin)
+        ════════════════════════════════ */}
+        {screen==="gSel"&&isGenerico&&(()=>{
+          const porArcada=service?.fluxo==="arch";
+          const limite=service?.maxTeeth||0;
+          const pronto=porArcada?(A.arch.sup||A.arch.inf):A.teeth.length>0;
+          const cobraArcada=porArcada&&["arco","arcada"].includes(service?.unidade);
+          return(
+            <Step title={porArcada?"Selecione a(s) arcada(s)":"Selecione o(s) dente(s)"}
+              sub={porArcada?(cobraArcada?"O valor é cobrado por arcada selecionada.":"Informe a(s) arcada(s) do caso."):(service?.precoPorDente?"O valor é cobrado por dente selecionado.":limite?`Selecione até ${limite} dente${limite>1?"s":""}.`:"Selecione os dentes do caso.")}
+              badge={porArcada?"Arcada":"Dentes"} badgeColor={C.red} onBack={()=>antGen("gSel")}>
+              {porArcada?(
+                <div style={{display:"flex",flexDirection:"column",gap:8,marginBottom:20}}>
+                  {[{key:"sup",label:"Arcada Superior"},{key:"inf",label:"Arcada Inferior"}].map(arc=>{
+                    const sel=A.arch[arc.key];
+                    return(
+                      <button key={arc.key} onClick={()=>setA(a=>({...a,arch:{...a.arch,[arc.key]:!a.arch[arc.key]}}))} aria-pressed={sel}
+                        style={{width:"100%",display:"flex",alignItems:"center",gap:16,background:sel?"rgba(229,34,41,0.10)":C.dark2,border:`1.5px solid ${sel?C.red:C.border}`,borderRadius:12,padding:"16px 18px",cursor:"pointer",textAlign:"left",color:C.text,transition:"border-color .15s,background .15s"}}>
+                        <div style={{width:22,height:22,borderRadius:8,background:sel?C.red:C.dark3,border:`2px solid ${sel?C.red:C.border}`,flexShrink:0,display:"flex",alignItems:"center",justifyContent:"center",color:"#fff",fontSize:12,fontWeight:800}}>{sel?"✓":""}</div>
+                        <div style={{flex:1,fontSize:15,fontWeight:800,color:sel?C.red:"#fff"}}>{arc.label}</div>
+                        {cobraArcada&&<div style={{fontSize:13,fontWeight:800,color:C.textSec,flexShrink:0}}>{fmt(applyDiscount(service.price))}</div>}
+                      </button>
+                    );
+                  })}
+                </div>
+              ):(
+                <div style={{marginBottom:16}}>
+                  <Odontogram selected={A.teeth} onToggle={n=>setA(a=>a.teeth.includes(n)?{...a,teeth:a.teeth.filter(t=>t!==n)}:(limite&&a.teeth.length>=limite?a:{...a,teeth:[...a.teeth,n]}))}/>
+                  <div style={{fontSize:13,color:limite&&A.teeth.length>=limite?C.yellow:C.textSec,textAlign:"center",marginTop:8}}>
+                    {A.teeth.length===0?"Nenhum dente selecionado":`${A.teeth.length} dente${A.teeth.length>1?"s":""}${limite?` de ${limite}`:""}: ${[...A.teeth].sort((x,y)=>x-y).join(", ")}`}
+                    {limite>0&&A.teeth.length>=limite&&" · limite atingido"}
+                  </div>
+                </div>
+              )}
+              {pronto&&(
+                <div style={{background:C.dark3,borderRadius:12,padding:"10px 14px",marginBottom:16,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <span style={{fontSize:13,color:C.textSec}}>Subtotal</span>
+                  <span style={{fontSize:16,fontWeight:900,color:C.red}}>{fmt(calcTotal(A))}</span>
+                </div>
+              )}
+              <Btn disabled={!pronto} onClick={()=>proxGen("gSel")}>{pronto?"Continuar":porArcada?"Selecione ao menos uma arcada":"Selecione ao menos um dente"}</Btn>
+            </Step>
+          );
+        })()}
 
         {/* STEP 1b — TIPO DE CASO (Protocolo) */}
         {screen==="implantQty"&&service?.usesArch&&(()=>{
@@ -3689,7 +3787,7 @@ input,textarea,select{touch-action:manipulation;}
 
         {/* STEP 5b — ARQUIVO PREPARADO PARA IMPRESSÃO (somente fluxo planOnly) */}
         {screen==="slicedFile"&&serviceType==="planOnly"&&(
-          <Step title="Arquivo preparado para impressão" sub="Receba o arquivo .chitubox com peças e suportes configurados." badge="Arquivo p/ Impressão" badgeColor={"#0D9488"} onBack={()=>isStackable?setScreen(4):setScreen(5)}>
+          <Step title="Arquivo preparado para impressão" sub="Receba o arquivo .chitubox com peças e suportes configurados." badge="Arquivo p/ Impressão" badgeColor={"#0D9488"} onBack={()=>isGenerico?antGen("slicedFile"):isStackable?setScreen(4):setScreen(5)}>
             {/* Explicação do serviço */}
             <div style={{background:"rgba(13,148,136,0.06)",border:"1px solid rgba(13,148,136,0.25)",borderRadius:12,padding:"16px",marginBottom:16}}>
               <div style={{display:"flex",alignItems:"center",gap:8,marginBottom:10}}>
@@ -3738,13 +3836,13 @@ input,textarea,select{touch-action:manipulation;}
               </button>
             </div>
 
-            <Btn onClick={()=>setScreen(6)}>Continuar — Prazo de planejamento</Btn>
+            <Btn onClick={()=>isGenerico?proxGen("slicedFile"):setScreen(6)}>{isGenerico&&seqGenerica[seqGenerica.indexOf("slicedFile")+1]!==6?"Continuar":"Continuar — Prazo de planejamento"}</Btn>
           </Step>
         )}
 
         {/* STEP 6 — PRAZO DE PLANEJAMENTO */}
         {screen===6&&(
-          <Step title="Prazo de planejamento" sub="A urgência afeta apenas o planejamento digital. Impressão e frete mantém seus prazos normais após aprovação do planejamento." badge="Prazo" badgeColor={C.yellow} onBack={()=>isStackable?setScreen(4):setScreen(5)}>
+          <Step title="Prazo de planejamento" sub="A urgência afeta apenas o planejamento digital. Impressão e frete mantém seus prazos normais após aprovação do planejamento." badge="Prazo" badgeColor={C.yellow} onBack={()=>isGenerico?antGen(6):isStackable?setScreen(4):setScreen(5)}>
             <div style={{fontSize:13,color:C.textSec,marginBottom:14,lineHeight:1.6,background:"rgba(234,179,8,0.06)",border:"1px solid rgba(234,179,8,0.15)",borderRadius:12,padding:"10px 13px"}}>
               <b style={{color:C.yellow}}>Como funciona:</b> O prazo de planejamento começa após o envio dos arquivos. Após o envio do planejamento e sua aprovação, damos início à impressão 3D (2 dias úteis + prazo de envio ou entrega).
             </div>
@@ -3820,7 +3918,7 @@ input,textarea,select{touch-action:manipulation;}
         {/* STEP 7 — INFORMAÇÕES DO CASO */}
         {screen===7&&(
           <div>
-            <BackBtn onClick={()=>A.preplan==="sim"?setScreen(0):setScreen(6)}/>
+            <BackBtn onClick={()=>A.preplan==="sim"?setScreen(0):isGenerico?antGen(7):setScreen(6)}/>
             <span style={{display:"inline-block",fontSize:12,fontWeight:700,letterSpacing:1.5,textTransform:"uppercase",background:A.preplan==="sim"?"rgba(234,179,8,0.15)":"rgba(229,34,41,0.12)",color:A.preplan==="sim"?C.yellow:C.textSec,padding:"3px 10px",borderRadius:16,marginBottom:10}}>{A.preplan==="sim"?"PRÉ-PLANEJAMENTO":"INFORMAÇÕES DO CASO"}</span>
             <div style={{fontSize:18,fontWeight:800,marginBottom:6}}>{A.preplan==="sim"?"Observações para o pré-planejamento":"Observações para o planejamento"}</div>
             <div style={{fontSize:13,color:C.textSec,marginBottom:20,lineHeight:1.6}}>
@@ -3835,8 +3933,8 @@ input,textarea,select{touch-action:manipulation;}
                 rows={7} style={{width:"100%",background:C.dark2,border:`1px solid ${A.preplan==="sim"&&!A.observacoes.trim()?"rgba(229,34,41,0.4)":C.border}`,borderRadius:12,padding:"11px 14px",color:C.text,fontSize:13,outline:"none",boxSizing:"border-box",resize:"vertical",lineHeight:1.7,fontFamily:"inherit"}}/>
               {A.preplan==="sim"&&!A.observacoes.trim()&&<div style={{fontSize:13,color:C.red,marginTop:6}}>Preencha as informações do caso para continuar.</div>}
             </div>
-            <Btn disabled={A.preplan==="sim"&&!A.observacoes.trim()} onClick={()=>{if(A.preplan==="sim"){setScreen("preplanCO");return;}if(serviceType==="print"){const _cep=(profile?.entregaIgual===false?profile.entCep:profile.cep)||"";setCepDestino(_cep);if(_cep.replace(/\D/g,"").length>=8)calcularFrete(_cep.replace(/\D/g,""));setScreen(8);}else{finalize();}}}>
-              {A.preplan==="sim"?"Continuar para pagamento →":serviceType==="print"?"Continuar — Frete →":"Ver resumo e finalizar →"}
+            <Btn disabled={A.preplan==="sim"&&!A.observacoes.trim()} onClick={()=>{if(A.preplan==="sim"){setScreen("preplanCO");return;}if(isGenerico){proxGen(7);return;}if(serviceType==="print"&&temPasso("frete")){irParaFrete();}else{finalize();}}}>
+              {A.preplan==="sim"?"Continuar para pagamento →":serviceType==="print"&&temPasso("frete")?"Continuar — Frete →":"Ver resumo e finalizar →"}
             </Btn>
           </div>
         )}
@@ -4036,9 +4134,9 @@ input,textarea,select{touch-action:manipulation;}
                     <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap",marginBottom:4}}>
                       <span style={{fontSize:12,background:C.red,color:"#fff",padding:"2px 8px",borderRadius:16,fontWeight:700}}>SERVIÇO</span>
                       {discount>0&&<span style={{fontSize:13,fontWeight:700,background:"rgba(34,197,94,0.15)",color:C.green,padding:"2px 7px",borderRadius:16}}>15% parceiro</span>}
-                      <div style={{display:"inline-flex",alignItems:"center",gap:4,background:sv.serviceType==="print"?"rgba(34,197,94,0.1)":"rgba(234,179,8,0.1)",borderRadius:16,padding:"1px 7px"}}>
+                      {(sv.serviceType==="print"||sv.serviceType==="planOnly")&&<div style={{display:"inline-flex",alignItems:"center",gap:4,background:sv.serviceType==="print"?"rgba(34,197,94,0.1)":"rgba(234,179,8,0.1)",borderRadius:16,padding:"1px 7px"}}>
                         <span style={{fontSize:13,fontWeight:700,color:sv.serviceType==="print"?C.green:C.yellow}}>{sv.serviceType==="print"?"+ Impressão 3D":"Arquivo Digital (STL)"}</span>
-                      </div>
+                      </div>}
                     </div>
                     <div style={{fontSize:13,color:C.textSec}}>{sv.specialty}</div>
                     <div style={{fontWeight:700,fontSize:14,marginTop:2}}>{sv.name}</div>
@@ -4103,8 +4201,10 @@ input,textarea,select{touch-action:manipulation;}
                 </div>
                 {/* Linhas de detalhe */}
                 {sv.teeth?.length>0
-                  ?<Row label={`Guia(s) ×${sv.teeth.length}`} val={fmt(service?.price||P.unit)} small/>
-                  :sv.arch&&<Row label={`Arcada(s): ${[sv.arch.sup&&"Superior",sv.arch.inf&&"Inferior"].filter(Boolean).join(" + ")}${sv.implantQty?(()=>{const lbl={4:"ALL-ON-4",5:"ALL-ON-X",6:"ALL-ON-6"};return typeof sv.implantQty==="object"?` · Sup: ${lbl[sv.implantQty.sup]||"—"} / Inf: ${lbl[sv.implantQty.inf]||"—"}`:` · ${lbl[sv.implantQty]||sv.implantQty+" implantes"}`;})():""}`} val={fmt((service?.price||0)*((sv.arch?.sup?1:0)+(sv.arch?.inf?1:0)))} small/>
+                  ?(sv.generico
+                    ?<Row label={`Dente(s): ${[...sv.teeth].sort((x,y)=>x-y).join(", ")}`} val="" small/>
+                    :<Row label={`Guia(s) ×${sv.teeth.length}`} val={fmt(service?.price||P.unit)} small/>)
+                  :(sv.arch?.sup||sv.arch?.inf)&&<Row label={`Arcada(s): ${[sv.arch.sup&&"Superior",sv.arch.inf&&"Inferior"].filter(Boolean).join(" + ")}${sv.implantQty?(()=>{const lbl={4:"ALL-ON-4",5:"ALL-ON-X",6:"ALL-ON-6"};return typeof sv.implantQty==="object"?` · Sup: ${lbl[sv.implantQty.sup]||"—"} / Inf: ${lbl[sv.implantQty.inf]||"—"}`:` · ${lbl[sv.implantQty]||sv.implantQty+" implantes"}`;})():""}`} val={sv.generico?"":fmt((service?.price||0)*((sv.arch?.sup?1:0)+(sv.arch?.inf?1:0)))} small/>
                 }
                 {sv.brand==="STRAUMANN"&&<Row label="Adicional Straumann" val={`+ ${fmt(P.strauAdd)}`} small/>}
                 {sv.dsd3dAddon&&<Row label="Plan. Digital do Sorriso 3D" val={`+ ${fmt(P.dsd3dProto)}`} small/>}
