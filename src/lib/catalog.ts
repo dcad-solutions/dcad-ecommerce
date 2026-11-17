@@ -58,6 +58,11 @@ export interface CatalogService {
   // Regras de preço do Wizard (vindas do Supabase)
   brandFees?: Record<string, number>
   addons?: CatalogAddon[]
+  // Etapas ligadas no Admin (wizard_steps), Fluxo (arch = arcada, odonto = dentes) e cobrança
+  steps?: Record<string, boolean>
+  fluxo?: 'arch' | 'odonto' | null
+  unidade?: string
+  precoPorDente?: boolean
   // Metadados do Supabase
   _supabaseId?: number
 }
@@ -162,7 +167,11 @@ function rowToService(row: Record<string, unknown>): CatalogService {
     usesArch,
     archAffectsPrice: usesArch,
     ...flags,
-    maxTeeth:      row.max_dentes as number | undefined,
+    maxTeeth:      (row.max_dentes as number | null) ?? undefined,
+    steps:         ws || {},
+    fluxo:         row.fluxo === 'arch' || row.fluxo === 'odonto' ? row.fluxo : null,
+    unidade:       String(row.unidade || 'unidade'),
+    precoPorDente: row.preco_por_dente === true,
     // Regras de preço e fluxo vindas do Supabase
     priceByQty:    pbq && Object.keys(pbq).length > 0 ? pbq : undefined,
     brandFees:     bf  && Object.keys(bf).length  > 0 ? bf  : undefined,

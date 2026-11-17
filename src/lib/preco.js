@@ -103,8 +103,10 @@ export const CATALOG=[
 // Mescla o catálogo do banco (fetchCatalog) com os campos que só existem no catálogo base
 export function mesclarCatalogo(data){
   return data.map((dynSpec) => {
+    // Fora da Implantodontia o fluxo segue as etapas ligadas no Admin (sem dentes/marca/kit de implante)
+    const generico = dynSpec.id !== "implanto";
     const staticSpec = CATALOG.find((s) => s.id === dynSpec.id);
-    if (!staticSpec) return dynSpec;
+    if (!staticSpec) return { ...dynSpec, services: dynSpec.services.map((sv) => ({ ...sv, generico })) };
     return {
       ...staticSpec,
       ...dynSpec,
@@ -115,9 +117,17 @@ export function mesclarCatalogo(data){
         const staticSvc = staticSpec.services.find((s) => s.id === dynSvc.id)
           || staticSpec.services.find((s) => s.name === dynSvc.name)
           || (mesmoTipo.length === 1 ? mesmoTipo[0] : undefined);
-        if (!staticSvc) return dynSvc;
+        if (!staticSvc) return { ...dynSvc, generico };
+        // Arquivo fatiado só quando a etapa está ligada no Admin
+        const fatiado = dynSvc.steps ? !!dynSvc.steps.sliced : undefined;
         return {
           ...staticSvc,
+          generico,
+          steps:    dynSvc.steps,
+          fluxo:    dynSvc.fluxo,
+          unidade:  dynSvc.unidade,
+          precoPorDente: dynSvc.precoPorDente,
+          maxTeeth: dynSvc.maxTeeth ?? staticSvc.maxTeeth,
           // Campos que vêm do Supabase sobrescrevem o estático:
           _supabaseId: dynSvc._supabaseId, // id do serviço no banco (pedido, cupom e banners)
               name:     dynSvc.name     || staticSvc.name,
@@ -136,6 +146,7 @@ export function mesclarCatalogo(data){
                 ...dynSvc.planOnly,
                 price: dynSvc.planOnly.price ?? staticSvc.planOnly?.price,
                 days:  dynSvc.planOnly.days  ?? staticSvc.planOnly?.days,
+                ...(fatiado === undefined ? {} : { offersSlicedFile: fatiado && (staticSvc.planOnly?.offersSlicedFile ?? dynSvc.planOnly.offersSlicedFile ?? true) }),
               }
             : null,
         };
@@ -161,7 +172,13 @@ export function calcularPrecoItem({ service, serviceType, discount }, sv){
     const pbyq=baseMode==='per_qty'?(pr.priceByQty||service?.priceByQty||(serviceType==="planOnly"&&service?.planOnly?.priceByQty)||null):null;
 
     let t=0;
-    if(pbyq){
+    if(service?.generico){
+      // Fora da Implantodontia: arcada cobra por arcada se a unidade for arco/arcada; dentes cobram por dente se marcado no Admin
+      t=service?.price||0;
+      const selArcadas=(sv.arch?.sup?1:0)+(sv.arch?.inf?1:0);
+      if(service.fluxo==="arch"&&["arco","arcada"].includes(service.unidade)&&selArcadas>0)t*=selArcadas;
+      else if(service.fluxo==="odonto"&&service.precoPorDente&&nTeeth>0)t*=nTeeth;
+    } else if(pbyq){
       if(supCount>=2)t+=pbyq[Math.min(supCount,8)]||0;
       if(infCount>=2)t+=pbyq[Math.min(infCount,8)]||0;
       if(t===0)t=pbyq[2]||service?.price||0;
