@@ -232,7 +232,7 @@ export function calcularPrecoItem({ service, serviceType, discount }, sv){
 
     // ── Arquivo p/ impressão ───────────────────────────────────────────────
     if(sv.slicedFile&&serviceType==="planOnly"&&service?.planOnly?.offersSlicedFile){
-      const slicedStep=service?.steps?.find(s=>s.type==='file'||s.k==='sliced');
+      const slicedStep=Array.isArray(service?.steps)?service.steps.find(s=>s.type==='file'||s.k==='sliced'):null;
       t+=(slicedStep?.data?.price||P.slicedFile);
     }
 
